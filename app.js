@@ -1,5 +1,5 @@
-// تنظیمات اتصال به Supabase (تکمیل‌شده بر اساس اطلاعات پروژه شما)
-const SUPABASE_URL = 'https://daadelian-bot.supabase.co';
+// تنظیمات اتصال به Supabase (نسخه نهایی و تصحیح‌شده)
+const SUPABASE_URL = 'https://Fxxtyfurdzpzfvweoppo.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
 
 let supabaseClient = null;
