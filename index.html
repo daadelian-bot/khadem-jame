@@ -3,52 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سامانه جامع مدیریت خدام</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- بارگذاری کتابخانه Supabase -->
+    <title>سامانه مدیریت خادمین (نسخه ۲)</title>
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            direction: rtl;
+        }
+        header {
+            text-align: center;
+            padding: 15px 0;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            font-size: 1rem;
+            margin-top: 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        input, button {
+            font-family: Tahoma, Arial, sans-serif;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        .btn-primary {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary:active {
+            opacity: 0.85;
+        }
+        #connection-status {
+            font-size: 0.9rem;
+            color: #555;
+            margin: 0;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+    <!-- کتابخانه Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- هدر سامانه -->
-        <header class="app-header">
-            <img src="logo.png" alt="لوگو سامانه" class="app-logo">
-            <h1>سامانه جامع مدیریت خدام</h1>
-            <span id="system-version">نسخه V2</span>
-        </header>
 
-        <!-- محتوای اصلی -->
-        <main id="main-content">
-            <div class="card">
-                <h2>وضعیت اتصال به سامانه</h2>
-                <p id="connection-status">در حال اتصال به پایگاه داده Supabase...</p>
-            </div>
-            
-            <div class="dashboard-grid" id="modules-grid">
-                <div class="module-card">
-                    <h3>بانک خادمین</h3>
-                    <p>مدیریت اطلاعات و پرونده‌ها</p>
-                </div>
-                <div class="module-card">
-                    <h3>خدمت اصلی</h3>
-                    <p>ثبت و پیگیری حضور و خدمات</p>
-                </div>
-                <div class="module-card">
-                    <h3>امور مالی و خزانه</h3>
-                    <p>گزارش‌های مالی با قابلیت Audit</p>
-                </div>
-                <div class="module-card">
-                    <h3>گزارش‌ها و تنظیمات</h3>
-                    <p>تنظیمات پویا و خروجی‌ها</p>
-                </div>
-            </div>
-        </main>
+    <header>
+        <h1>سامانه جامع مدیریت خادمین</h1>
+    </header>
 
-        <footer class="app-footer">
-            <p>تمامی حقوق محفوظ است - مدیریت خدام</p>
-        </footer>
-    </div>
+    <main id="main-content">
+        <!-- وضعیت اتصال -->
+        <div class="card">
+            <h2>وضعیت سامانه</h2>
+            <p id="connection-status">در حال بررسی اتصال به پایگاه داده...</p>
+        </div>
+        
+        <!-- فرم ثبت خادم جدید -->
+        <div class="card">
+            <h3>ثبت خادم جدید</h3>
+            <form id="khadem-form">
+                <input type="text" id="khadem-name" class="form-control" placeholder="نام و نام خانوادگی" required>
+                <input type="tel" id="khadem-phone" class="form-control" placeholder="شماره تماس (اختیاری)">
+                <button type="submit" class="btn-primary">ثبت اطلاعات خادم</button>
+            </form>
+        </div>
 
+        <!-- لیست خادمین ثبت‌شده -->
+        <div class="card">
+            <h3>بانک خادمین</h3>
+            <div id="khadem-list">در حال بارگذاری لیست...</div>
+        </div>
+    </main>
+
+    <!-- اسکریپت اصلی اتصال و منطق برنامه -->
     <script src="app.js"></script>
 </body>
 </html>
