@@ -1,4 +1,4 @@
-// تنظیمات اتصال به Supabase (نسخه نهایی و تصحیح‌شده)
+// تنظیمات اتصال به Supabase
 const SUPABASE_URL = 'https://Fxxtyfurdzpzfvweoppo.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
 
@@ -9,22 +9,21 @@ if (window.supabase && SUPABASE_URL.startsWith('https://')) {
     document.getElementById('connection-status').innerText = 'اتصال موفق به پایگاه داده Supabase برقرار شد.';
     loadKhademin();
 } else {
-    document.getElementById('connection-status').innerText = 'لطفاً آدرس صحیح Supabase URL را در فایل app.js وارد کنید.';
+    document.getElementById('connection-status').innerText = 'خطا در تنظیمات اتصال.';
 }
 
-// تابع خواندن لیست خادمین از جدول پایگاه داده
+// تابع خواندن لیست خادمین با جزئیات کامل
 async function loadKhademin() {
     const listContainer = document.getElementById('khadem-list');
-    
     if (!supabaseClient) return;
 
     const { data, error } = await supabaseClient
         .from('khademin')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('id', { ascending: false });
 
     if (error) {
-        listContainer.innerHTML = 'خطا در بارگذاری اطلاعات (جدول ممکن است هنوز ایجاد نشده باشد).';
+        listContainer.innerHTML = 'خطا در بارگذاری اطلاعات از پایگاه داده.';
         console.error(error);
         return;
     }
@@ -34,31 +33,33 @@ async function loadKhademin() {
         return;
     }
 
-    let html = '<ul>';
+    let html = '<ul style="padding:0; list-style:none;">';
     data.forEach(item => {
-        html += `<li><span>${item.name}</span><span style="color: #6c757d; font-size: 0.85rem;">${item.phone || 'بدون شماره'}</span></li>`;
+        html += `<li style="padding: 10px; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>${item.name}</strong><br>
+                <small style="color: #6c757d;">تلفن: ${item.phone || 'ندارد'} | بخش: ${item.section || 'عمومی'}</small>
+            </div>
+        </li>`;
     });
     html += '</ul>';
     listContainer.innerHTML = html;
 }
 
-// ثبت خادم جدید در پایگاه داده
+// ثبت خادم جدید با جزئیات کامل
 document.getElementById('khadem-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    if (!supabaseClient) {
-        alert('پایگاه داده متصل نیست.');
-        return;
-    }
+    if (!supabaseClient) return;
 
     const name = document.getElementById('khadem-name').value.trim();
     const phone = document.getElementById('khadem-phone').value.trim();
+    const section = document.getElementById('khadem-section')?.value || 'عمومی';
 
     if (!name) return;
 
     const { error } = await supabaseClient
         .from('khademin')
-        .insert([{ name, phone }]);
+        .insert([{ name, phone, section }]);
 
     if (error) {
         alert('خطا در ثبت اطلاعات: ' + error.message);
