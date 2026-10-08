@@ -1,54 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سامانه جامع مدیریت خادمین (نسخه ۲)</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- کتابخانه Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#7b1e1e">
+<title>سامانه جامع مدیریت خدام</title>
+
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-    <header>
-        <div class="logo-container">
-            <img src="logo.png" alt="لوگو">
-        </div>
-        <h1>سامانه جامع مدیریت خادمین</h1>
-    </header>
+<div id="app">
 
-    <main id="main-content">
-        <!-- وضعیت اتصال -->
+<header class="top">
+  <div class="brand">
+    <img src="logo.png" alt="لوگو">
+    <div>
+      <h1>سامانه جامع مدیریت خدام</h1>
+      <small>مدیریت یکپارچه خادمین، خدمت، جلسات و امور مجموعه</small>
+    </div>
+  </div>
+
+  <span class="pill ok">آماده استفاده</span>
+</header>
+
+<div class="layout">
+
+  <aside>
+    <div class="nav" id="nav"></div>
+  </aside>
+
+  <main id="main">
+
+    <section class="section">
+
+      <h2>🏠 داشبورد</h2>
+
+      <div class="cards">
+
         <div class="card">
-            <h2>وضعیت سامانه</h2>
-            <p id="connection-status">در حال بررسی اتصال به پایگاه داده...</p>
-        </div>
-        
-        <!-- فرم ثبت خادم جدید -->
-        <div class="card">
-            <h3>ثبت خادم جدید</h3>
-            <form id="khadem-form">
-                <input type="text" id="khadem-name" class="form-control" placeholder="نام و نام خانوادگی" required>
-                <input type="tel" id="khadem-phone" class="form-control" placeholder="شماره تماس">
-                <select id="khadem-section" class="form-control">
-                    <option value="عمومی">بخش خدمت: عمومی</option>
-                    <option value="فرهنگی">بخش فرهنگی</option>
-                    <option value="تدارکات">بخش تدارکات و پشتیبانی</option>
-                    <option value="مالی">بخش مالی</option>
-                    <option value="مداحی و قرائت">بخش مداحی و قرائت</option>
-                </select>
-                <button type="submit" class="btn-primary">ثبت اطلاعات خادم</button>
-            </form>
+          کل خادمین
+          <div class="num">۰</div>
         </div>
 
-        <!-- لیست خادمین ثبت‌شده -->
         <div class="card">
-            <h3>بانک خادمین</h3>
-            <div id="khadem-list">در حال بارگذاری لیست...</div>
+          خدمت اصلی
+          <div class="num">۰</div>
         </div>
-    </main>
 
-    <!-- اسکریپت اصلی اتصال و منطق برنامه -->
-    <script src="app.js"></script>
+        <div class="card">
+          شب‌های جمعه
+          <div class="num">۰</div>
+        </div>
+
+        <div class="card">
+          جلسات
+          <div class="num">۰</div>
+        </div>
+
+      </div>
+
+      <div class="card" style="margin-top:16px">
+
+        <h3>سامانه آماده است</h3>
+
+        <p class="muted">
+          برای اتصال به اطلاعات آنلاین، از بخش ورود استفاده کنید.
+        </p>
+
+        <button class="btn" onclick="window.KJ.showLogin()">
+          ورود به سامانه
+        </button>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+</div>
+
+<script src="app.js"></script>
+
 </body>
 </html>
