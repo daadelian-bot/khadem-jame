@@ -107,7 +107,20 @@ $("content").innerHTML=body;initOfflineJalaliCalendars()}
 const faDigits='۰۱۲۳۴۵۶۷۸۹';
 function latinDigits(v){return String(v||'').replace(/[۰-۹]/g,c=>String(faDigits.indexOf(c))).replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));}
 function jalaliPartsFromGregorian(date){const p=new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric'}).formatToParts(date);const o={};p.forEach(x=>{if(x.type==='year'||x.type==='month'||x.type==='day')o[x.type]=Number(x.value)});return o;}
-function isoToJalali(iso){if(!iso)return '';const m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return String(iso);const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],12));return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d).replace(/\u200e/g,'');}
+function function isoToJalali(iso){
+  if(!iso)return '';
+  const m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return String(iso);
+  const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],12));
+  const parts=new Intl.DateTimeFormat(
+    'fa-IR-u-ca-persian',
+    {year:'numeric',month:'2-digit',day:'2-digit'}
+  ).formatToParts(d);
+  return parts.map(p=>p.type==='year'
+    ? faNum(Number(latinDigits(p.value).replace(/\D/g,'')))
+    : p.value
+  ).join('').replace(/\u200e/g,'');
+}
 function jalaliToISO(raw){const v=latinDigits(raw).trim().replace(/[.\-]/g,'/');const m=v.match(/^(\d{3,4})\s*\/\s*(\d{1,2})\s*\/\s*(\d{1,2})$/);if(!m)return null;const jy=+m[1],jm=+m[2],jd=+m[3];if(jm<1||jm>12||jd<1||jd>(jm<=6?31:jm<=11?30:30))return null;const start=new Date(Date.UTC(jy+621,2,1,12));for(let i=0;i<410;i++){const d=new Date(start.getTime()+i*86400000);const p=jalaliPartsFromGregorian(d);if(p.year===jy&&p.month===jm&&p.day===jd)return d.toISOString().slice(0,10)}return null;}
 document.addEventListener('blur',e=>{if(e.target.matches('[data-jalali-date]')){const v=e.target.value.trim();if(!v)return;const iso=jalaliToISO(v);if(iso){e.target.dataset.isoDate=iso;e.target.setCustomValidity('')}else{e.target.dataset.isoDate='';e.target.setCustomValidity('تاریخ شمسی را از تقویم انتخاب کنید یا به شکل ۱۴۰۵/۰۷/۱۷ وارد کنید.');e.target.reportValidity()}}},true);
 function initOfflineJalaliCalendars(){document.querySelectorAll('[data-jalali-date]').forEach(input=>{if(input.dataset.calendarReady)return;input.dataset.calendarReady='1';const btn=document.createElement('button');btn.type='button';btn.className='btn secondary';btn.style.cssText='margin-top:6px;padding:7px 11px;font-size:12px';btn.textContent='📅 انتخاب از تقویم آفلاین';btn.onclick=()=>openJalaliPicker(input);input.insertAdjacentElement('afterend',btn)})}
