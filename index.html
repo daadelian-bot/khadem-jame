@@ -98,6 +98,7 @@ const menus=[
 ["chat","💬","گفت‌وگو",[["private","گفت‌وگوی خصوصی"],["groups","گروه‌ها"],["comments","پیگیری و نظرات"]]],
 ["docs","📁","اسناد",[["all","همه اسناد"],["khadem","اسناد خادمین"],["finance","اسناد مالی"],["archive","آرشیو"],["attachments","پیوست همه بخش‌ها"]]],
 ["reports","📊","گزارش‌ساز",[["builder","ساخت گزارش"],["saved","گزارش‌های ذخیره‌شده"],["exports","خروجی‌ها"]]],
+["fileimport","📥","مرکز ورود فایل",[["hub","ورود Excel، Word، PDF و سایر فایل‌ها"]]],
 ["settings","⚙️","مدیریت سامانه",[["users","کاربران"],["requests","درخواست‌های عضویت"],["roles","نقش‌ها و مجوزها"],["fields","فیلدهای پویا"],["labels","عنوان‌ها و منوها"],["audit","Audit Log"],["backup","پشتیبان‌گیری"]]],
 ["ai","🤖","دستیار هوشمند",[["assistant","دستیار مدیر"],["search","جستجوی زبان طبیعی"],["planning","برنامه‌ریزی هوشمند"],["analysis","تحلیل هوشمند"],["report","گزارش‌نویسی هوشمند"]]]
 ];
@@ -1081,6 +1082,47 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 })();
 </script>
 <!-- v81: Excel importer can select workbook sheets and defaults to بانک خدام for khadems; ignores blank rows and improves Persian header mapping. -->
+<script>
+/* v82: standalone file-import hub with preview and destination selection */
+(function(){
+ const priorRender=window.render;
+ const $=id=>document.getElementById(id);
+ const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const targets=[['khadems','بانک خدام / پرونده خادمین'],['service_records','سوابق خدمت'],['meetings','جلسات'],['finance_transactions','تراکنش‌های مالی'],['fund_transactions','گردش خزانه'],['donors','نیکوکاران'],['vehicles','خودروها'],['drivers','رانندگان'],['documents','اسناد و پیوست‌ها (پیش‌نمایش/آرشیو فایل)']];
+ function hub(){
+  const content=$('content'); if(!content)return;
+  content.innerHTML='<div class="page-title"><h2>📥 مرکز ورود فایل و استخراج اطلاعات</h2><span class="muted">نسخه ۸۲</span></div>'+
+  '<div class="card"><div class="notice">فایل ابتدا فقط در مرورگر خوانده و پیش‌نمایش می‌شود. هیچ داده‌ای تا تأیید نهایی شما در جدول‌های اطلاعاتی ثبت نمی‌شود. برای Excel/CSV مسیر ورود ساختاریافته فعال است؛ Word/PDF/متن ابتدا استخراج و بازبینی می‌شوند.</div>'+
+  '<div class="form-grid"><div class="field"><label>منوی مقصد / محل استفاده از اطلاعات</label><select id="v82-dest">'+targets.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join('')+'</select></div><div class="field"><label>انتخاب فایل</label><input id="v82-file" type="file" accept=".xlsx,.xls,.csv,.docx,.doc,.pdf,.txt,.json,.xml,.html,.md,.rtf,.odt,.ods,.pptx,.jpg,.jpeg,.png" multiple></div></div>'+
+  '<div class="actions"><button class="btn primary" id="v82-read">خواندن فایل و ساخت پیش‌نمایش</button><button class="btn secondary" id="v82-continue" disabled>ادامه ورود ساختاریافته Excel/CSV</button><button class="btn secondary" id="v82-clear">پاک‌کردن پیش‌نمایش</button></div><div id="v82-status" class="notice" style="margin-top:12px">فایل و مقصد را انتخاب کنید.</div><div id="v82-preview"></div><div id="v82-actions"></div></div>'+
+  '<div class="card"><h3>فرمت‌های پشتیبانی‌شده در این مرحله</h3><ul><li><b>Excel و CSV:</b> خواندن برگه‌ها، پیش‌نمایش و ادامه به ابزار نگاشت ستون‌ها و تأیید ورود موجود.</li><li><b>Word DOCX و PDF:</b> استخراج متن برای بازبینی؛ تبدیل خودکار هر ساختار پیچیده به ردیف‌های قابل ثبت هنوز تضمین نمی‌شود.</li><li><b>TXT، JSON، XML، HTML و Markdown:</b> پیش‌نمایش محتوای متنی.</li><li><b>تصاویر:</b> پیش‌نمایش فایل انتخاب‌شده؛ OCR و استخراج خودکار متن تصویر در این مرحله فعال نیست.</li><li>فایل‌های DOC قدیمی، ODT/ODS و PPTX ممکن است نیاز به تبدیل به DOCX/XLSX/PDF داشته باشند.</li></ul><p class="muted">این صفحه فعلاً مرکز انتخاب مقصد و پیش‌نمایش است. ذخیرهٔ اصل فایل در فضای ابری، برای بخش «اسناد و پیوست‌ها»، به تنظیم مخزن امن فایل در Supabase نیاز دارد و با صرف انتخاب فایل انجام نمی‌شود.</p></div>';
+  let parsedTabular=false;
+  const status=$('v82-status'),preview=$('v82-preview'),continueBtn=$('v82-continue');
+  async function lib(url,check){if(check())return;await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=url;s.onload=resolve;s.onerror=()=>reject(Error('کتابخانهٔ خواندن فایل بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.'));document.head.appendChild(s)})}
+  async function readOne(f){const ext=(f.name.split('.').pop()||'').toLowerCase();
+   if(ext==='csv'||ext==='txt'||ext==='md'||ext==='json'||ext==='xml'||ext==='html'||ext==='rtf')return {kind:['csv'].includes(ext)?'tabular':'text',text:await f.text(),ext};
+   if(['xlsx','xls','ods'].includes(ext)){await lib('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});return {kind:'tabular',sheets:wb.SheetNames.map(n=>({name:n,rows:XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:false})})),ext};}
+   if(ext==='docx'){await lib('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',()=>!!window.mammoth);const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});return {kind:'text',text:r.value,ext};}
+   if(ext==='pdf'){await lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',()=>!!window.pdfjsLib);pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;let text='';for(let i=1;i<=pdf.numPages;i++){const p=await pdf.getPage(i),c=await p.getTextContent();text+='\n--- صفحه '+i+' ---\n'+c.items.map(x=>x.str).join(' ')}return {kind:'text',text,ext,pages:pdf.numPages};}
+   if(['png','jpg','jpeg'].includes(ext))return {kind:'image',url:URL.createObjectURL(f),ext};
+   return {kind:'unsupported',text:'پیش‌نمایش مستقیم این نوع فایل در این مرحله پشتیبانی نمی‌شود. فایل را به PDF، DOCX، XLSX یا CSV تبدیل کنید.',ext};
+  }
+  $('v82-read').onclick=async()=>{const files=[...$('v82-file').files];if(!files.length){status.textContent='ابتدا حداقل یک فایل انتخاب کنید.';return}preview.innerHTML='';continueBtn.disabled=true;parsedTabular=false;status.textContent='در حال خواندن فایل‌ها و استخراج محتوا…';let summaries=[],excelCsv=false;
+   for(const f of files){try{const r=await readOne(f);summaries.push({f,r});let html='<div class="card"><h3>'+esc(f.name)+'</h3><p>حجم: '+(f.size/1024).toLocaleString('fa-IR',{maximumFractionDigits:1})+' کیلوبایت | نوع: '+esc(r.ext.toUpperCase())+'</p>';
+    if(r.kind==='tabular'){excelCsv=true;let sheets=r.sheets;if(!sheets&&r.ext==='csv'){const lines=r.text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());const parse=line=>{let a=[],v='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'&&line[i+1]==='"'&&q){v+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){a.push(v);v=''}else v+=c}a.push(v);return a};const heads=parse(lines[0]||'');sheets=[{name:'CSV',rows:lines.slice(1).map(line=>Object.fromEntries(parse(line).map((v,i)=>[heads[i]||('ستون '+(i+1)),v])))}]}
+     html+='<p>برگه‌ها: '+esc(sheets.map(s=>s.name).join('، '))+'</p>';for(const sh of sheets){const rows=sh.rows||[],cols=[...new Set(rows.flatMap(x=>Object.keys(x)))];html+='<h4>'+esc(sh.name)+' — '+rows.length.toLocaleString('fa-IR')+' ردیف</h4><div style="overflow:auto"><table class="data-table"><thead><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,8).map(row=>'<tr>'+cols.map(c=>'<td>'+esc(row[c])+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}html+='<p class="muted">نمایش حداکثر ۸ ردیف از هر برگه در این صفحه.</p>';
+    }else if(r.kind==='text'){const t=r.text||'';html+='<p>حروف/نشانه‌های استخراج‌شده: '+t.length.toLocaleString('fa-IR')+(r.pages?' | صفحات PDF: '+r.pages.toLocaleString('fa-IR'):'')+'</p><pre style="white-space:pre-wrap;max-height:360px;overflow:auto;direction:auto">'+esc(t.slice(0,12000))+(t.length>12000?'\n… ادامه متن برای کوتاه‌شدن پیش‌نمایش نمایش داده نشده است.':'')+'</pre>';
+    }else if(r.kind==='image'){html+='<img alt="پیش‌نمایش فایل" style="max-width:100%;max-height:360px;object-fit:contain" src="'+r.url+'"><p class="muted">فقط پیش‌نمایش تصویر؛ استخراج متن خودکار در این نسخه فعال نیست.</p>';}else html+='<p>'+esc(r.text)+'</p>';html+='</div>';preview.insertAdjacentHTML('beforeend',html);
+   }catch(e){preview.insertAdjacentHTML('beforeend','<div class="card"><b>'+esc(f.name)+'</b><p class="notice">خواندن فایل ناموفق بود: '+esc(e.message)+'</p></div>')}}
+   parsedTabular=excelCsv;continueBtn.disabled=!excelCsv;status.textContent='پیش‌نمایش آماده است. مقصد انتخابی: '+$('v82-dest').selectedOptions[0].text+'. بررسی کنید؛ هیچ داده‌ای هنوز ثبت نشده است.';
+  };
+  continueBtn.onclick=()=>{const dest=$('v82-dest').value;if(dest==='documents'){status.textContent='برای ورود دادهٔ ساختاریافته، یک جدول مقصد انتخاب کنید. ذخیرهٔ اصل فایل در مخزن امن هنوز تنظیم نشده است.';return}priorRender('reports:builder');setTimeout(()=>{const t=$('v65-target');if(t){t.value=dest==='documents'?'khadems':dest; t.dispatchEvent(new Event('change'))}const card=$('v65-file')?.closest('.card');card?.scrollIntoView({behavior:'smooth',block:'start'});const st=$('v65-import-status');if(st)st.textContent='فایل را دوباره در ابزار ورود ساختاریافته انتخاب کنید تا نگاشت ستون‌ها و تأیید ورود انجام شود. مقصد انتخاب‌شده: '+dest;},100)};
+  $('v82-clear').onclick=()=>{preview.innerHTML='';$('v82-file').value='';status.textContent='پیش‌نمایش پاک شد؛ هیچ داده‌ای ثبت نشده بود.';continueBtn.disabled=true};
+ }
+ window.render=function(p){if(p==='fileimport:hub'||p==='fileimport')return hub();return priorRender.apply(this,arguments)};
+})();
+</script>
+
 </body>
 </html>\n<script>
 (()=>{
