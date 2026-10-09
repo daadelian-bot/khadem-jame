@@ -902,6 +902,12 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
  <div class="theme-field"><label for="khThemeRadius">گردی گوشه‌ها: <span id="khThemeRadiusLabel">22</span> پیکسل</label><input id="khThemeRadius" type="range" min="4" max="30" value="22"></div>
  <div class="theme-field"><label for="khThemeFont">اندازه نوشته‌ها: <span id="khThemeFontLabel">100</span>٪</label><input id="khThemeFont" type="range" min="85" max="120" value="100"></div>
  <div class="theme-actions"><button class="btn primary" id="khThemeSave">ذخیره تنظیمات</button><button class="btn secondary" id="khThemeReset">بازگردانی پیش‌فرض</button></div>
+ <div class="card" style="margin-top:12px;padding:12px;border:1px solid var(--border,#ddd)">
+  <h4 style="margin:0 0 8px">🛡️ ابزارهای نگهداری سامانه</h4>
+  <p class="muted" style="font-size:12px">پشتیبان‌گیری فقط از جدول‌هایی انجام می‌شود که حساب فعلی اجازهٔ خواندن آن‌ها را دارد. این فایل را در جای امن نگه دارید.</p>
+  <div class="theme-actions"><button type="button" class="btn primary" id="khBackupBtn">دریافت نسخهٔ پشتیبان JSON</button><button type="button" class="btn secondary" id="khHealthBtn">بررسی سلامت اتصال</button></div>
+  <div id="khMaintenanceResult" class="muted" style="font-size:12px;white-space:pre-wrap;margin-top:8px"></div>
+ </div>
  <p id="khThemeStatus" class="muted" style="font-size:12px"></p>
 </section>
 <script>
@@ -930,7 +936,7 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
  apply(prefs);matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if(prefs.mode==='auto')apply(prefs)});
 })();
 
-// نسخه ۷۴: اقساط و پیوست‌های عمومی
+// نسخه ۷۵: پشتیبان‌گیری و بررسی سلامت سامانه؛ حفظ اقساط و پیوست‌ها
 function installmentDate(id){const v=readDateInput(id);return v||null}
 async function saveInstallment(){const tx=$('ins_tx')?.value.trim(),n=Number($('ins_no')?.value),amount=Number($('ins_amount')?.value),due=installmentDate('ins_due'),paid=Number($('ins_paid')?.value||0);if(!tx||!Number.isInteger(n)||n<1||amount<=0||!due){toast('شناسه تراکنش، شماره قسط، مبلغ و سررسید الزامی است.');return}if(paid>amount){toast('مبلغ پرداخت‌شده نمی‌تواند از مبلغ قسط بیشتر باشد.');return}const b={transaction_id:tx,khadem_id:$('ins_khadem')?.value.trim()||null,installment_number:n,amount,due_date:due,status:$('ins_status')?.value||'pending',paid_amount:paid,paid_date:installmentDate('ins_paid_date'),notes:$('ins_notes')?.value.trim()||null};try{const r=await api('/rest/v1/finance_installments',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error((await r.text()).slice(0,220));toast('قسط ثبت شد.');await loadInstallments()}catch(e){toast('ثبت قسط ناموفق بود؛ مهاجرت SQL نسخه ۷۴ و مجوزها را بررسی کنید: '+e.message)}}
 let installmentCache=[];
@@ -944,4 +950,18 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 </body>
-</html>
+</html>\n<script>
+(()=>{
+ const out=document.getElementById('khMaintenanceResult');
+ const backupBtn=document.getElementById('khBackupBtn');
+ const healthBtn=document.getElementById('khHealthBtn');
+ if(!out||!backupBtn||!healthBtn)return;
+ const tables=[
+  ['khadems','پرونده خدام'],['service_records','سوابق خدمت'],['meeting_attendance','حضور و غیاب'],['meetings','جلسات'],['deployment_participants','شرکت‌کنندگان مأموریت'],['deployments','مأموریت‌ها'],['deployment_costs','هزینه مأموریت'],['finance_transactions','تراکنش‌های مالی'],['fund_transactions','گردش صندوق'],['finance_accounts','حساب‌های مالی'],['funds','صندوق‌ها'],['finance_installments','اقساط'],['khadem_receipt_attachments','مشخصات پیوست‌ها'],['vehicles','خودروها'],['drivers','رانندگان'],['donors','نیکوکاران'],['shrine_sites','مکان‌های خدمت'],['audit_logs','سوابق ممیزی']
+ ];
+ async function readTable(name){const r=await api('/rest/v1/'+encodeURIComponent(name)+'?select=*&limit=10000');if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+ function download(obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date();a.href=url;a.download='backup-khadem-jame-'+d.toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+ backupBtn.addEventListener('click',async()=>{backupBtn.disabled=true;out.textContent='در حال تهیهٔ نسخهٔ پشتیبان؛ لطفاً پنجره را نبندید…';const data={},errors=[];try{for(const [table,label] of tables){try{const rows=await readTable(table);if(Array.isArray(rows))data[table]=rows;else errors.push(label+': پاسخ نامعتبر')}catch(e){errors.push(label+': '+e.message)}}const pack={app:'سامانه جامع مدیریت خدام',version:75,created_at:new Date().toISOString(),warning:'این خروجی فقط شامل رکوردهای قابل خواندن با مجوز حساب فعلی است؛ برای نسخه پشتیبان کامل پایگاه داده، از ابزار Backup در Supabase نیز استفاده کنید.',tables:data,errors};download(pack);out.textContent='نسخهٔ پشتیبان ساخته شد. جدول‌های موفق: '+Object.keys(data).length+'؛ جدول‌های غیرقابل‌خواندن/خطادار: '+errors.length+(errors.length?'\n'+errors.join('\n'):'')+'\nاین فایل شامل داده‌های حساس است؛ آن را در اختیار افراد غیرمجاز نگذارید.'}catch(e){out.textContent='تهیهٔ پشتیبان ناموفق بود: '+e.message}finally{backupBtn.disabled=false}});
+ healthBtn.addEventListener('click',async()=>{healthBtn.disabled=true;out.textContent='در حال بررسی اتصال و دسترسی…';const results=[];try{for(const [table,label] of [['khadems','پرونده خدام'],['finance_transactions','امور مالی'],['fund_transactions','خزانه'],['finance_installments','اقساط'],['khadem_receipt_attachments','رسیدها']]){try{const r=await api('/rest/v1/'+table+'?select=*&limit=1');results.push((r.ok?'✓ ':'✗ ')+label+(r.ok?' — قابل دسترسی':' — HTTP '+r.status))}catch(e){results.push('✗ '+label+' — '+e.message)}}out.textContent='نتیجهٔ بررسی اولیه (بدون تغییر داده‌ها):\n'+results.join('\n')+'\nتوجه: دسترسی موفق به یک جدول، سلامت همهٔ سیاست‌های امنیتی و ذخیره‌سازی فایل را تضمین نمی‌کند.'}finally{healthBtn.disabled=false}});
+})();
+</script>
