@@ -107,7 +107,7 @@ $("content").innerHTML=body;initOfflineJalaliCalendars()}
 const faDigits='۰۱۲۳۴۵۶۷۸۹';
 function latinDigits(v){return String(v||'').replace(/[۰-۹]/g,c=>String(faDigits.indexOf(c))).replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));}
 function jalaliPartsFromGregorian(date){const p=new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric'}).formatToParts(date);const o={};p.forEach(x=>{if(x.type==='year'||x.type==='month'||x.type==='day')o[x.type]=Number(x.value)});return o;}
-function function isoToJalali(iso){
+function isoToJalali(iso){
   if(!iso)return '';
   const m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(!m)return String(iso);
@@ -185,7 +185,7 @@ function parseExtraFields(raw){const out={};String(raw||'').split(/\r?\n/).forEa
 function detail(label,value){return `<div class="detail-item"><small>${esc(label)}</small><strong>${esc(value||'—')}</strong></div>`}
 async function loadKhadems(){try{const r=await api('/rest/v1/khadems?select=id,khadem_code,full_name,tri_name,father_name,national_id,phone,membership_date,birth_date,occupation,residence,blood_type,medical_history,emergency_contact_name,emergency_contact_phone,extra_data,is_active,responsibility,notes&order=khadem_code.asc');const j=await r.json().catch(()=>[]);if(!r.ok)throw new Error(j.message||j.hint||('HTTP '+r.status));khademCache=Array.isArray(j)?j:[];drawKhadems(khademCache)}catch(e){$('khTable').innerHTML='<div class="notice">خطا در دریافت خادمین: '+esc(e.message)+'</div>'}}
 function drawKhadems(rows){if($('khTotal'))$('khTotal').textContent=faNum(rows.length);if($('khActive'))$('khActive').textContent=faNum(rows.filter(k=>k.is_active!==false).length);if($('khInactive'))$('khInactive').textContent=faNum(rows.filter(k=>k.is_active===false).length);$('khTable').innerHTML=rows.length?`<div style="overflow:auto"><table class="data-table"><thead><tr><th>کد</th><th>نام و نام خانوادگی</th><th>نام پدر</th><th>تلفن</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${rows.map(k=>`<tr><td>${esc(k.khadem_code)}</td><td><strong>${esc(k.full_name)}</strong><br><small class="muted">${esc(k.tri_name||'')}</small></td><td>${esc(k.father_name||'—')}</td><td>${esc(k.phone||'—')}</td><td><span class="status-pill ${k.is_active===false?'status-off':'status-on'}">${k.is_active===false?'غیرفعال':'فعال'}</span></td><td><div class="row-actions"><button class="mini-btn mini-view" onclick="openKhadem('${esc(k.id)}')">پرونده</button><button class="mini-btn mini-edit" onclick="editKhadem('${esc(k.id)}')">ویرایش</button><button class="mini-btn mini-toggle" onclick="toggleKhadem('${esc(k.id)}')">${k.is_active===false?'فعال‌سازی':'غیرفعال‌سازی'}</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">هنوز خادمی ثبت نشده است. با دکمهٔ «ثبت خادم جدید» اولین پرونده را ایجاد کنید.</div>'}
-function function faNum(n){
+function faNum(n){
   return new Intl.NumberFormat('fa-IR',{
     useGrouping:false,
     maximumFractionDigits:0
