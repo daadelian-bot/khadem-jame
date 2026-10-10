@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۹۵</title>
-<!-- نسخه ۹۵: گزارش چندمرحله‌ای و فقط‌خواندنی برای بررسی Supabase؛ اصلاحات نسخه ۹۴ و قابلیت‌های قبلی حفظ شده‌اند. -->
+<title>سامانه جامع مدیریت خدام — نسخه اصلاح ساختار ۱۳۶</title>
+<!-- نسخه ۱۳۶: بر پایه فایل ارسالی کاربر؛ حفظ کدها و قابلیت‌های نسخه ۹۵ و اصلاح جایگاه تگ‌های پایانی HTML. بدون تغییر طرح‌واره یا داده‌های Supabase. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
 *{box-sizing:border-box}body{margin:0;font-family:"Vazirmatn",Tahoma,"Segoe UI",sans-serif;background:linear-gradient(135deg,#f8f3ec,#f0e5d8);color:var(--ink);line-height:1.75}
@@ -49,6 +49,13 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 #khJalaliPicker{position:fixed;z-index:10050;width:min(350px,calc(100vw - 24px));background:#fffdf9;color:#2c211b;border:1px solid #d8c3aa;border-radius:18px;box-shadow:0 18px 55px #0004;padding:13px;direction:rtl;font-family:inherit}
 #khJalaliPicker .kj-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px}#khJalaliPicker button{border:1px solid #e3d5c5;border-radius:9px;background:#f7efe5;color:#3c2b20;padding:6px 9px;font:inherit}#khJalaliPicker .kj-title{font-weight:800;text-align:center;flex:1}#khJalaliPicker .kj-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#khJalaliPicker .kj-week{font-size:11px;text-align:center;color:#826d5a;padding:4px 0}#khJalaliPicker .kj-day{min-height:35px;padding:5px 0!important}#khJalaliPicker .kj-day:hover{background:#ead7bc}#khJalaliPicker .kj-day.kj-today{border:2px solid #ad7b3e;font-weight:800}#khJalaliPicker .kj-day.kj-selected{background:#6b3f24;color:white}#khJalaliPicker .kj-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#746457}input[data-kh-jalali='1']{cursor:pointer}
 </style>
+
+<!-- فایل ۱۳۳: افزونهٔ نصب‌پذیری PWA؛ کدهای نسخهٔ ۹۵ حفظ شده‌اند. -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
 </head>
 <body>
 <section id="loginPage">
@@ -1290,8 +1297,19 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 })();
 </script>
 
-</body>
-</html>\n<script>
+
+<!-- فایل ۱۳۳: ثبت Service Worker؛ درخواست‌های Supabase در Service Worker کش نمی‌شوند. -->
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js').catch(function (error) {
+      console.warn('ثبت حالت نصب‌پذیر انجام نشد:', error);
+    });
+  });
+}
+</script>
+
+<script>
 (()=>{
  const out=document.getElementById('khMaintenanceResult');
  const backupBtn=document.getElementById('khBackupBtn');
@@ -1324,3 +1342,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
  window.filterHelpGuide=function(query){const input=document.getElementById('helpSearch');if(!input)return;const card=input.closest('.card');if(!card)return;const q=String(query||'').trim().toLocaleLowerCase('fa');const nodes=[...card.children];let visible=0;for(const el of nodes){if(el===input.parentElement||el.id==='helpSearchStatus'||el.classList.contains('actions')||el.classList.contains('notice')){el.style.display='';continue;}const tag=el.tagName;if(tag==='H3'||tag==='P'||tag==='UL'||tag==='OL'){const txt=(el.innerText||el.textContent||'').toLocaleLowerCase('fa');const show=!q||txt.includes(q);el.style.display=show?'':'none';if(show)visible++;}}const st=document.getElementById('helpSearchStatus');if(st)st.textContent=q?(visible?'موارد مرتبط نمایش داده شد.':'موردی پیدا نشد؛ عبارت دیگری را امتحان کنید.'):'برای یافتن سریع توضیح یک قابلیت، کلمه‌ای وارد کنید.';};
 })();
 </script>
+
+<!-- پایان سند نسخه ۱۳۶؛ اسکریپت‌های افزوده نیز داخل بدنه سند قرار دارند. -->
+</body>
+</html>
