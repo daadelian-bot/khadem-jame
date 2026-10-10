@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۹۴</title>
-<!-- نسخه ۹۴: نمایش سال‌های تقویم شمسی بدون جداکننده هزارگان؛ سایر قابلیت‌های فایل پایه حفظ شده‌اند. -->
+<title>سامانه جامع مدیریت خدام — نسخه ۹۵</title>
+<!-- نسخه ۹۵: گزارش چندمرحله‌ای و فقط‌خواندنی برای بررسی Supabase؛ اصلاحات نسخه ۹۴ و قابلیت‌های قبلی حفظ شده‌اند. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
 *{box-sizing:border-box}body{margin:0;font-family:"Vazirmatn",Tahoma,"Segoe UI",sans-serif;background:linear-gradient(135deg,#f8f3ec,#f0e5d8);color:var(--ink);line-height:1.75}
@@ -1135,11 +1135,82 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const targets=[['khadems','بانک خدام / پرونده خادمین'],['service_records','سوابق خدمت'],['meetings','جلسات'],['finance_transactions','تراکنش‌های مالی'],['fund_transactions','گردش خزانه'],['donors','نیکوکاران'],['vehicles','خودروها'],['drivers','رانندگان'],['documents','اسناد و پیوست‌ها']];
  function hub(){const content=$('content');if(!content)return;
- content.innerHTML='<div class="page-title"><h2>📥 مرکز ورود فایل و انتقال اطلاعات</h2><span class="muted">نسخه ۹۲ — ورود ایمن، گزارش تکراری و اعتبارسنجی</span></div><div class="card"><div class="notice">۱) فایل را انتخاب کنید. ۲) تمام محتوای قابل‌خواندن در صفحات/برگه‌ها مرور می‌شود. ۳) ستون‌های دلخواه را انتخاب کنید. ۴) مقصد را تعیین کنید و اطلاعات انتخابی را به ابزار ورود منتقل کنید. هیچ رکوردی تا تأیید نهایی مدیر اصلی ثبت نمی‌شود.</div><div class="form-grid"><div class="field"><label>منوی مقصد</label><select id="v83-dest">'+targets.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join('')+'</select></div><div class="field"><label>انتخاب یک یا چند فایل</label><input id="v83-file" type="file" multiple accept=".xlsx,.xls,.csv,.docx,.pdf,.txt,.json,.xml,.html,.md,.rtf,.jpg,.jpeg,.png,.webp"></div></div><div class="actions"><button class="btn primary" id="v83-read">بارگذاری و نمایش کامل</button><button class="btn secondary" id="v87-test">آزمایش اتصال و مجوزها</button><button class="btn secondary" id="v83-clear">پاک‌کردن</button></div><div id="v83-status" class="notice" style="margin-top:10px">فایل را انتخاب کنید. اگر کتابخانه خواندن فایل دریافت نشود، خطای دقیق نمایش داده می‌شود.</div><div id="v83-preview"></div><div id="v83-transfer"></div><div id="v87-diagnostics" class="card" style="display:none"></div></div>';
+ content.innerHTML='<div class="page-title"><h2>📥 مرکز ورود فایل و انتقال اطلاعات</h2><span class="muted">نسخه ۹۲ — ورود ایمن، گزارش تکراری و اعتبارسنجی</span></div><div class="card"><div class="notice">۱) فایل را انتخاب کنید. ۲) تمام محتوای قابل‌خواندن در صفحات/برگه‌ها مرور می‌شود. ۳) ستون‌های دلخواه را انتخاب کنید. ۴) مقصد را تعیین کنید و اطلاعات انتخابی را به ابزار ورود منتقل کنید. هیچ رکوردی تا تأیید نهایی مدیر اصلی ثبت نمی‌شود.</div><div class="form-grid"><div class="field"><label>منوی مقصد</label><select id="v83-dest">'+targets.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join('')+'</select></div><div class="field"><label>انتخاب یک یا چند فایل</label><input id="v83-file" type="file" multiple accept=".xlsx,.xls,.csv,.docx,.pdf,.txt,.json,.xml,.html,.md,.rtf,.jpg,.jpeg,.png,.webp"></div></div><div class="actions"><button class="btn primary" id="v83-read">بارگذاری و نمایش کامل</button><button class="btn secondary" id="v87-test">آزمایش جامع اتصال Supabase</button><button class="btn secondary" id="v83-clear">پاک‌کردن</button></div><div id="v83-status" class="notice" style="margin-top:10px">فایل را انتخاب کنید. اگر کتابخانه خواندن فایل دریافت نشود، خطای دقیق نمایش داده می‌شود.</div><div id="v83-preview"></div><div id="v83-transfer"></div><div id="v87-diagnostics" class="card" style="display:none"></div></div>';
  let items=[],objectUrls=[];const status=$('v83-status'),preview=$('v83-preview'),transfer=$('v83-transfer');
  const diag=$('v87-diagnostics');
- async function testConnection(){diag.style.display='block';diag.innerHTML='<h3>بررسی اتصال</h3><p>در حال بررسی نشست و دسترسی پایگاه داده…</p>';const lines=[];const add=(label,ok,detail)=>lines.push('<li><b>'+(ok?'✓ ':'✗ ')+esc(label)+'</b>: '+esc(detail)+'</li>');try{const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');const token=sess.access_token;add('نشست ورود',!!token,token?'توکن نشست موجود است.':'توکن ورود پیدا نشد؛ دوباره وارد نرم‌افزار شوید.');if(!token)throw Error('نشست ورود معتبر نیست؛ دوباره وارد شوید.');const r=await fetch(CFG.url+'/auth/v1/user',{headers:{apikey:CFG.key,Authorization:'Bearer '+token}});const body=await r.text();let u={};try{u=JSON.parse(body)}catch(e){}if(!r.ok)throw Error('احراز هویت رد شد (HTTP '+r.status+'): '+body.slice(0,300));add('احراز هویت Supabase',true,u.email||u.id||'کاربر معتبر');const roleName=await currentUserRole();add('نقش مدیر اصلی',roleName==='admin',roleName||'نقش کاربر قابل خواندن نیست');for(const t of ['khadems','service_records','meetings','finance_transactions']){try{const q=await fetch(CFG.url+'/rest/v1/'+t+'?select=*&limit=1',{headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'}});const txt=await q.text();if(!q.ok)add('دسترسی جدول '+t,false,'HTTP '+q.status+' '+txt.slice(0,220));else{const j=JSON.parse(txt||'[]');add('خواندن جدول '+t,true,'دسترسی برقرار؛ نمونه '+j.length+' رکورد')}}catch(e){add('دسترسی جدول '+t,false,e.message)}}diag.innerHTML='<h3>گزارش اتصال و دسترسی</h3><ul>'+lines.join('')+'</ul><p class="muted">این بررسی ورود، مجوز و خواندن جدول‌ها را می‌آزماید. برای اثبات نوشتن باید ثبت آزمایشی انجام شود.</p>';status.textContent='آزمایش پایان یافت؛ نتیجه را در گزارش اتصال ببینید.'}catch(e){add('خطای اتصال',false,e.message);diag.innerHTML='<h3>گزارش اتصال و دسترسی</h3><ul>'+lines.join('')+'</ul><p style="color:#b91c1c">'+esc(e.message)+'</p>';status.textContent='آزمایش اتصال ناموفق بود: '+e.message}}
- $('v87-test').onclick=testConnection;
+ async function testConnection(){
+  diag.style.display='block';
+  diag.innerHTML='<h3>بررسی چندمرحله‌ای Supabase</h3><p>در حال بررسی تنظیمات، نشست، احراز هویت و دسترسی جداول…</p>';
+  const results=[];
+  const add=(label,ok,detail,kind='info')=>results.push({label,ok,detail,kind});
+  const safeText=async r=>{const t=await r.text();try{const j=JSON.parse(t);return j.message||j.msg||j.error_description||j.error||t.slice(0,240)}catch(_){return t.slice(0,240)}};
+  const run=async(label,url,headers,kind='table')=>{
+    try{
+      const r=await fetchTimeout(url,{method:'GET',headers},12000);
+      if(r.ok){add(label,true,'HTTP '+r.status+(kind==='table'?' — جدول و مجوز خواندن قابل دسترسی است.':' — پاسخ معتبر دریافت شد.'),kind)}
+      else{
+        const msg=await safeText(r);
+        let note='HTTP '+r.status+' — '+msg;
+        if(r.status===401)note+=' | نشست یا کلید معتبر نیست.';
+        else if(r.status===403)note+=' | سیاست RLS یا مجوز دسترسی مانع شده است.';
+        else if(r.status===404)note+=' | مسیر یا جدول/منبع پیدا نشد.';
+        else if(r.status===400)note+=' | احتمال ناسازگاری نام ستون، فیلتر یا طرح جدول وجود دارد.';
+        add(label,false,note,kind);
+      }
+    }catch(e){add(label,false,(e.name==='AbortError'?'مهلت پاسخ تمام شد.':'خطای شبکه/CORS: '+e.message),kind)}
+  };
+  try{
+    let sess={};
+    try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}
+    const cfgOk=!!(CFG&&/^https:\/\//i.test(CFG.url||'')&&CFG.key);
+    add('تنظیمات پروژه',cfgOk,cfgOk?'نشانی HTTPS و کلید عمومی تنظیم شده‌اند.':'نشانی HTTPS یا کلید عمومی در تنظیمات فایل ناقص است.','config');
+    if(!cfgOk)throw Error('تنظیمات پروژه ناقص است.');
+    const token=sess.access_token;
+    add('نشست ورود',!!token,token?'توکن نشست پیدا شد؛ مقدار توکن در گزارش نمایش داده نمی‌شود.':'نشست ورود پیدا نشد؛ ابتدا با حساب کاربری وارد شوید.','auth');
+    if(!token)throw Error('برای آزمایش مجوزها ابتدا وارد حساب کاربری شوید.');
+    const headers={apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'};
+    await run('اعتبار نشست Supabase',CFG.url+'/auth/v1/user',headers,'auth');
+    const uid=sess.user?.id||sess.user?.sub||sess.user_id;
+    if(uid){
+      await run('پروفایل کاربر',CFG.url+'/rest/v1/profiles?select=id,role&id=eq.'+encodeURIComponent(uid)+'&limit=1',headers,'role');
+    }else{
+      add('شناسه کاربر در نشست',false,'شناسه کاربر در نشست محلی پیدا نشد؛ نقش از پاسخ معتبر /auth/v1/user باید استخراج شود.','role');
+    }
+    const tables=[
+      ['khadems','بانک خدام'],
+      ['service_records','سوابق خدمت'],
+      ['meetings','جلسات'],
+      ['meeting_attendance','حضور و غیاب جلسات'],
+      ['meeting_invitees','مدعوین جلسات'],
+      ['deployments','مأموریت‌ها'],
+      ['deployment_participants','شرکت‌کنندگان مأموریت'],
+      ['finance_transactions','تراکنش‌های مالی'],
+      ['fund_transactions','گردش خزانه'],
+      ['finance_accounts','حساب‌های مالی'],
+      ['funds','صندوق‌ها'],
+      ['donors','نیکوکاران'],
+      ['vehicles','خودروها'],
+      ['drivers','رانندگان'],
+      ['shrine_sites','محل‌های خدمت'],
+      ['app_settings','تنظیمات سامانه'],
+      ['registration_requests','درخواست‌های ثبت‌نام']
+    ];
+    for(const [table,label] of tables){
+      await run('جدول '+label,CFG.url+'/rest/v1/'+encodeURIComponent(table)+'?select=*&limit=0',headers,'table');
+    }
+    const okCount=results.filter(x=>x.ok).length;
+    const failCount=results.filter(x=>!x.ok).length;
+    const tableFailures=results.filter(x=>x.kind==='table'&&!x.ok);
+    const authFail=results.some(x=>x.kind==='auth'&&!x.ok);
+    const heading=authFail?'بررسی نیازمند اصلاح — احراز هویت':tableFailures.length?'اتصال برقرار، اما چند دسترسی/جدول نیازمند بررسی است':'آزمون‌های در دسترس موفق بودند';
+    diag.innerHTML='<h3>گزارش چندمرحله‌ای اتصال Supabase</h3><p><b>'+esc(heading)+'</b></p><p>موفق: '+okCount+' | ناموفق: '+failCount+'</p><ul>'+results.map(x=>'<li style="margin:7px 0"><b>'+(x.ok?'✓ ':'✗ ')+esc(x.label)+'</b>: '+esc(x.detail)+'</li>').join('')+'</ul><p class="muted">این بررسی فقط خواندنی است؛ هیچ رکوردی ایجاد، ویرایش یا حذف نمی‌شود. خطای ۴۰۴ می‌تواند به معنی نبود جدول یا نبود مسیر باشد؛ خطای ۴۰۳ معمولاً نیازمند بررسی RLS/GRANT است. نتیجهٔ نهایی نوشتن، Storage و سیاست‌های کامل امنیتی باید جداگانه بررسی شود.</p>';
+    status.textContent='آزمون اتصال پایان یافت؛ '+okCount+' بررسی موفق و '+failCount+' مورد نیازمند توجه.';
+  }catch(e){
+    add('توقف آزمایش',false,e.message,'fatal');
+    diag.innerHTML='<h3>گزارش چندمرحله‌ای اتصال Supabase</h3><ul>'+results.map(x=>'<li style="margin:7px 0"><b>'+(x.ok?'✓ ':'✗ ')+esc(x.label)+'</b>: '+esc(x.detail)+'</li>').join('')+'</ul><p style="color:#b91c1c">'+esc(e.message)+'</p>';
+    status.textContent='آزمایش اتصال کامل نشد: '+e.message;
+  }
+ } $('v87-test').onclick=testConnection;
  async function lib(url,check){if(check())return;await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=url;sc.onload=resolve;sc.onerror=()=>reject(Error('کتابخانه لازم از اینترنت بارگذاری نشد. اتصال اینترنت یا مسدودکننده CDN را بررسی کنید و دوباره تلاش کنید.'));document.head.appendChild(sc)})}
  const parseCSV=text=>{let rows=[],row=[],v='',q=false;const t=text.replace(/^\uFEFF/,'');for(let i=0;i<t.length;i++){let c=t[i];if(c==='"'&&t[i+1]==='"'&&q){v+='"';i++}else if(c==='"')q=!q;else if((c===','||c===';'||c==='\t')&&!q){row.push(v);v=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&t[i+1]==='\n')i++;row.push(v);if(row.some(x=>String(x).trim()))rows.push(row);row=[];v=''}else v+=c}row.push(v);if(row.some(x=>String(x).trim()))rows.push(row);if(!rows.length)return [];const heads=rows.shift().map((x,i)=>x.trim()||('ستون '+(i+1)));return rows.map(a=>Object.fromEntries(heads.map((h,i)=>[h,a[i]||''])))};
  async function parse(f){const ext=f.name.split('.').pop().toLowerCase();if(ext==='csv')return {type:'table',sheets:[{name:'CSV',rows:parseCSV(await f.text())}]};if(['xlsx','xls'].includes(ext)){await lib('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});return {type:'table',sheets:wb.SheetNames.map(n=>({name:n,rows:XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:false})}))};}if(ext==='docx'){await lib('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',()=>!!window.mammoth);const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});return {type:'text',pages:splitPages(r.value)};}if(ext==='pdf'){await lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',()=>!!window.pdfjsLib);pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const doc=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;let pages=[];for(let n=1;n<=doc.numPages;n++){const pg=await doc.getPage(n),tc=await pg.getTextContent();pages.push(tc.items.map(x=>x.str).join(' '));}return {type:'text',pages};}if(['txt','md','json','xml','html','rtf'].includes(ext))return {type:'text',pages:splitPages(await f.text())};if(['png','jpg','jpeg','webp'].includes(ext)){const url=URL.createObjectURL(f);objectUrls.push(url);return {type:'image',url};}return {type:'unsupported',pages:['پیش‌نمایش این قالب در مرورگر پشتیبانی نشده است. فایل را به PDF، DOCX، XLSX یا CSV تبدیل کنید.']};}
