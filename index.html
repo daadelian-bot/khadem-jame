@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۹۸</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۹۹</title>
 <!-- نسخه ۹۵: گزارش چندمرحله‌ای و فقط‌خواندنی برای بررسی Supabase؛ اصلاحات نسخه ۹۴ و قابلیت‌های قبلی حفظ شده‌اند. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -1480,7 +1480,7 @@ body.kh-layout-edit [data-kh-drop-target="1"]{outline:2px solid #146c43!importan
  let enabled=false, isAdmin=false, layout={orders:{}};
  const session=()=>{try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}};
  const headers=(extra={})=>{const s=session();return {apikey:cfg.key,Accept:'application/json',...(s.access_token?{Authorization:'Bearer '+s.access_token}:{}),...extra}};
- async function api(path,opts={}){return fetch(cfg.url+path,{...opts,headers:headers(opts.headers||{})})}
+ async function api(path,opts={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);try{return await fetch(cfg.url+path,{...opts,signal:controller.signal,headers:headers(opts.headers||{})})}catch(e){if(e&&e.name==='AbortError')throw new Error('مهلت اتصال به پایگاه داده تمام شد (۱۲ ثانیه). اتصال شبکه، نشانی Supabase و سیاست‌های دسترسی را بررسی کنید.');throw e}finally{clearTimeout(timer)}}
  async function checkAdmin(){try{const s=session(),id=s.user?.id||s.user_id;if(!id)return false;const r=await api('/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(id)+'&limit=1');const j=await r.json();return r.ok&&j[0]?.role==='admin'}catch(_){return false}}
  async function load(){try{const r=await api('/rest/v1/app_settings?select=value&setting_key=eq.ui_layout_config&limit=1');const j=await r.json();if(r.ok&&j[0]?.value&&typeof j[0].value==='object')layout={orders:j[0].value.orders||{}}}catch(_){layout={orders:{}}}}
  async function save(){const s=session(),payload={setting_key:'ui_layout_config',value:layout,updated_at:new Date().toISOString(),updated_by:s.user?.id||s.user_id||null};let r=await api('/rest/v1/app_settings?setting_key=eq.ui_layout_config',{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({value:layout,updated_at:payload.updated_at,updated_by:payload.updated_by})});if(!r.ok)throw Error(await r.text());const q=await api('/rest/v1/app_settings?select=setting_key&setting_key=eq.ui_layout_config');const rows=await q.json();if(!rows.length){r=await api('/rest/v1/app_settings',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});if(!r.ok)throw Error(await r.text())}}
