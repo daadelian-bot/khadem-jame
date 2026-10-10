@@ -1,1 +1,22 @@
-
+{
+  "id": "./",
+  "name": "سامانه جامع مدیریت خادمین",
+  "short_name": "مدیریت خادمین",
+  "description": "سامانه مدیریت خادمین مجموعه السيدة زينب سلام الله علیها",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f8fa",
+  "theme_color": "#173f35",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
