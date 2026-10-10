@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-<head>\n<meta name="app-release" content="98">
+<head>\n<meta name="app-release" content="100">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4b2b1b">
@@ -538,7 +538,8 @@ window.addEventListener("online",()=>toast("🟢 اینترنت برقرار ش�
     function getReportExport(){const rows=selectedRows(),cols=Array.from(colBox.querySelectorAll('[data-report-col]:checked')).map(x=>x.value);if(!rows.length){toast('ابتدا رکوردهای موردنظر را انتخاب کنید.');return null}if(!cols.length){toast('حداقل یک ستون انتخاب کنید.');return null}return {rows,cols}}
     function reportTableHtml(rows,cols,numbered=true){const head=(numbered?'<th>ردیف</th>':'')+cols.map(c=>'<th>'+esc(reportLabel(c))+'</th>').join('');const body=rows.map((r,i)=>'<tr>'+(numbered?'<td>'+String(i+1)+'</td>':'')+cols.map(c=>'<td>'+esc(reportValue(c,r[c]))+'</td>').join('')+'</tr>').join('');return '<table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table>'}
     $('enhExcel').onclick=async()=>{const x=getReportExport();if(!x)return;try{if(!window.XLSX){await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';sc.onload=resolve;sc.onerror=()=>reject(Error('کتابخانه Excel بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.'));document.head.appendChild(sc)})}const data=x.rows.map((r,i)=>({'ردیف':i+1,...Object.fromEntries(x.cols.map(c=>[reportLabel(c),reportValue(c,r[c])]))}));const ws=XLSX.utils.json_to_sheet(data);ws['!rtl']=true;ws['!cols']=[{wch:8},...x.cols.map(c=>({wch:Math.min(30,Math.max(12,reportLabel(c).length+3))}))];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'گزارش');XLSX.writeFile(wb,'khadem-report-'+new Date().toISOString().slice(0,10)+'.xlsx');}catch(e){toast('خروجی Excel ناموفق بود: '+e.message)}};
-    $('enhWord').onclick=()=>{const x=getReportExport();if(!x)return;const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma,Arial;direction:rtl}h2{text-align:center}table{border-collapse:collapse;width:100%;font-size:10pt}th,td{border:1px solid #666;padding:5px;text-align:right}th{background:#e8edf3}</style></head><body><h2>گزارش سامانه جامع مدیریت خدام</h2><p>تعداد رکورد: '+x.rows.length+' — تاریخ تهیه: '+esc(new Date().toLocaleDateString('fa-IR'))+'</p>'+reportTableHtml(x.rows,x.cols,true)+'</body></html>';download('khadem-report-'+new Date().toISOString().slice(0,10)+'.doc',html,'application/msword;charset=utf-8')};
+    $('enhWord').onclick=()=>{const x=getReportExport();if(!x)return;const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma,Arial;direction:rtl}h2{text-align:center}table{border-collapse:collapse;width:100%;font-size:10pt}th,td{border:1px solid #666;padding:5px;text-align:right}th{background:#e8edf3}</style></head><body><h2>گزارش سامانه جامع مدیریت خدام</h2><p>تعداد رکورد: '+x.rows.length+' — تاریخ تهیه: '+esc(new Date().toLocaleDateString('fa-IR'))+'</p>'+reportTableHtml(x.rows,x.cols,true)+'
+</body></html>';download('khadem-report-'+new Date().toISOString().slice(0,10)+'.doc',html,'application/msword;charset=utf-8')};
     $("enhPrint").onclick=()=>{const x=getReportExport();if(!x)return;const pages=[];for(let i=0;i<x.rows.length;i+=15)pages.push(x.rows.slice(i,i+15));const body=pages.map((page,pi)=>'<section class="page"><h2>گزارش سامانه جامع مدیریت خدام</h2><div class="meta">تعداد کل: '+x.rows.length+' — صفحه '+(pi+1)+' از '+pages.length+' — تاریخ: '+esc(new Date().toLocaleDateString('fa-IR'))+'</div>'+reportTableHtml(page,x.cols,true)+'</section>').join('');const w=window.open('','_blank');if(!w)return toast('مرورگر پنجره چاپ را مسدود کرد. اجازه بازشدن پنجره را بدهید.');w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش سامانه خدام</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Tahoma,Arial;padding:0;direction:rtl}.page{page-break-after:always;break-after:page;min-height:170mm}.page:last-child{page-break-after:auto;break-after:auto}h2{text-align:center;font-size:16px}.meta{font-size:10px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:10px;table-layout:auto}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}@media screen{.page{padding:16px;border:1px solid #ddd;margin:12px}.page:last-child{margin-bottom:40px}}@media print{button{display:none}}</style></head><body>'+body+'<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>');w.document.close()};
   }
 
@@ -1506,5 +1507,41 @@ body.kh-layout-edit [data-kh-drop-target="1"]{outline:2px solid #146c43!importan
 })();
 </script>
 
+<style id="khadem-jame-v100-professional-refresh">
+/* Khadem Jame v100 — cohesive responsive UI refresh */
+:root{--kj-bg:#f4f7f5;--kj-surface:#fff;--kj-ink:#202d29;--kj-muted:#6e7b75;--kj-primary:#176b55;--kj-primary-dark:#105341;--kj-accent:#c89b45;--kj-border:#e0e8e3;--kj-radius:18px;--kj-shadow:0 8px 28px rgba(28,57,45,.075)}
+html{background:var(--kj-bg)!important;scroll-behavior:smooth}body{background:linear-gradient(180deg,#f7faf8 0%,#f0f5f1 100%)!important;color:var(--kj-ink)!important;font-family:Vazirmatn,Tahoma,sans-serif!important;line-height:1.75!important}
+body *{box-sizing:border-box}h1,h2,h3,h4{line-height:1.5;letter-spacing:-.2px}h2{font-weight:800!important;color:#23483b!important}p,.muted,.hint,.help-text{line-height:1.85}
+.card,.panel,.section-card,.settings-card,.dashboard-card,.stat-card,.modal-content,.dialog,.report-card,.form-card{border:1px solid var(--kj-border)!important;border-radius:var(--kj-radius)!important;background:var(--kj-surface)!important;box-shadow:var(--kj-shadow)!important;padding:clamp(14px,2.2vw,24px)!important;overflow:hidden}
+.page-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px!important;padding:0 0 14px;border-bottom:1px solid var(--kj-border)}
+.page-title h1,.page-title h2,.page-title h3{margin:0!important;font-size:clamp(1.15rem,2.3vw,1.55rem)!important}
+.notice,.alert,.message,.status-box{border-radius:14px!important;border:1px solid #e4e9e4!important;padding:13px 16px!important;background:#f8faf8!important;color:#43534b!important;line-height:1.9!important;overflow-wrap:anywhere}
+button,.btn,input[type=button],input[type=submit],.menu-button,.nav-link{font-family:inherit!important;transition:background .18s ease,box-shadow .18s ease,transform .18s ease,border-color .18s ease!important}
+button,.btn,input[type=button],input[type=submit]{border-radius:12px!important;font-weight:700!important;min-height:42px;box-shadow:none!important}
+button:hover,.btn:hover,input[type=button]:hover,input[type=submit]:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(25,75,56,.12)!important}
+.btn.primary,button.primary,input[type=submit]{background:linear-gradient(135deg,var(--kj-primary),var(--kj-primary-dark))!important;color:white!important;border:1px solid var(--kj-primary)!important}
+.btn.secondary,button.secondary{background:#f1f6f2!important;color:#2e5b49!important;border:1px solid #d8e5dc!important}
+button.danger,.btn.danger{background:#fff2f0!important;color:#a5362d!important;border:1px solid #f0d1cc!important}
+input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),select,textarea{font:inherit!important;border:1px solid #d7e2db!important;border-radius:12px!important;background:#fff!important;color:var(--kj-ink)!important;min-height:44px;padding:10px 13px!important;outline:none!important;max-width:100%;box-shadow:inset 0 1px 2px rgba(20,40,30,.025)!important}
+input:focus,select:focus,textarea:focus{border-color:#4c9b7e!important;box-shadow:0 0 0 3px rgba(37,126,91,.12)!important}
+label{font-weight:700!important;color:#3b5146!important;margin-bottom:6px;display:inline-block}
+.field,.form-group{margin-bottom:14px!important;min-width:0}.actions,.form-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:14px}
+table,.data-table{width:100%;border-collapse:separate!important;border-spacing:0!important;border:1px solid var(--kj-border)!important;border-radius:14px!important;overflow:hidden;background:#fff!important;font-size:.93rem}
+thead th{background:#edf4ef!important;color:#315744!important;font-weight:800!important;white-space:nowrap;border-bottom:1px solid #dce7df!important}
+th,td{padding:11px 13px!important;text-align:right;border-bottom:1px solid #edf1ee!important;vertical-align:middle;line-height:1.65}
+tbody tr:nth-child(even){background:#fbfcfb}tbody tr:hover{background:#f1f7f3!important}tbody tr:last-child td{border-bottom:0!important}
+nav,.sidebar,.side-nav,.app-sidebar,#sidebar,.main-nav,.menu-panel{border-radius:18px!important}
+.sidebar,.side-nav,.app-sidebar,#sidebar{box-shadow:0 8px 30px rgba(24,52,40,.09)!important}
+nav a,.sidebar a,.side-nav a,.menu-item,.nav-item{border-radius:11px!important;transition:background .18s ease,color .18s ease!important}
+nav a:hover,.sidebar a:hover,.side-nav a:hover,.menu-item:hover,.nav-item:hover{background:rgba(32,117,83,.09)!important}
+hr{border:0!important;border-top:1px solid var(--kj-border)!important;margin:18px 0!important}
+.badge,.chip,.tag,.status-badge{border-radius:999px!important;padding:4px 10px!important;font-weight:700}
+.modal,.modal-dialog,.popup,.confirm-dialog{border-radius:20px!important;box-shadow:0 20px 60px rgba(12,35,25,.22)!important;overflow:hidden}
+img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhere;white-space:pre-wrap}
+#systemUsersStatus,#systemRolesStatus,#requestsTable{min-height:56px;overflow-wrap:anywhere}#systemUsersStatus>p,#systemRolesStatus>p{color:var(--kj-muted)}
+@media(max-width:760px){body{font-size:14px!important}.card,.panel,.section-card,.settings-card,.dashboard-card,.stat-card{padding:14px!important;border-radius:15px!important}.page-title{align-items:flex-start}.page-title .btn,.page-title button{max-width:100%}th,td{padding:9px 10px!important;font-size:12px}table{min-width:560px}.actions button,.actions .btn{flex:1 1 auto}.form-grid,.grid,.stats-grid{gap:12px!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+</style>
 </body>
 </html>
