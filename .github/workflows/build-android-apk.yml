@@ -43,7 +43,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-          cache: gradle
 
       - name: Install Gradle 8.9
         shell: bash
@@ -71,7 +70,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          yes | sdkmanager --licenses >/dev/null || test "$?" -eq 141
+          yes | sdkmanager --licenses >/dev/null || true
 
       - name: Install Android SDK packages
         shell: bash
