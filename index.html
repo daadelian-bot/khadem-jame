@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="109">
+<meta name="app-release" content="110">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4b2b1b">
@@ -58,6 +58,11 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+
+<style id="khadem-menu-fix110">
+@media(max-width:760px){#sidebar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;right:0!important;top:126px!important;z-index:99999!important;width:min(88vw,350px)!important;height:calc(100dvh - 126px)!important;overflow-y:auto!important;background:linear-gradient(180deg,#382116,#24150f)!important;color:#fff!important;transform:none!important}#sidebar.show .nav-group{display:block!important;visibility:visible!important}#sidebar.show .nav-main{display:flex!important;visibility:visible!important;pointer-events:auto!important}#sidebar.show .nav-group.open>.submenu{display:block!important;visibility:visible!important;opacity:1!important}}
+#sidebar .nav-group.open>.submenu{display:block!important}
+</style>
 </head>
 <body>
 <section id="loginPage">
@@ -653,6 +658,22 @@ window.addEventListener("online",()=>toast("🟢 اینترنت برقرار ش�
 })();
 </script>
 
+
+<script id="khadem-menu-fix110-js">
+(function(){
+ function setup(){
+  const side=document.getElementById('sidebar'),btn=document.getElementById('mobileMenuBtn');
+  if(!side||!btn)return;
+  // Direct handler is intentionally re-assigned after all legacy scripts.
+  btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}const opened=!side.classList.contains('show');side.classList.toggle('show',opened);if(opened){side.style.display='block';side.style.visibility='visible';side.style.pointerEvents='auto';side.style.zIndex='99999'}else{side.style.removeProperty('display');side.style.removeProperty('visibility');side.style.removeProperty('pointer-events');side.style.removeProperty('z-index')}};
+  side.querySelectorAll('.nav-main').forEach(function(b){b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();const g=b.closest('.nav-group');if(!g)return;const opening=!g.classList.contains('open');side.querySelectorAll('.nav-group').forEach(function(x){x.classList.remove('open');const mb=x.querySelector('.nav-main');if(mb)mb.setAttribute('aria-expanded','false')});if(opening){g.classList.add('open');b.setAttribute('aria-expanded','true')} }});
+  side.querySelectorAll('.sub').forEach(function(b){b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();const page=b.dataset.customTarget||b.dataset.page;if(page&&typeof window.render==='function')window.render(page);side.classList.remove('show');side.style.removeProperty('display');side.style.removeProperty('visibility');side.style.removeProperty('pointer-events');side.style.removeProperty('z-index')}});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+ // Re-bind after app rebuilds navigation from saved settings.
+ const side=document.getElementById('sidebar');if(side&&window.MutationObserver){new MutationObserver(function(){setup()}).observe(side,{childList:true,subtree:false})}
+})();
+</script>
 </body></html>';download('گزارش-خادمین-'+new Date().toLocaleDateString('fa-IR').replaceAll('/','-')+'.doc',html,'application/msword;charset=utf-8')};
     $("enhPrint").onclick=()=>{const x=getReportExport();if(!x)return;const pages=[];for(let i=0;i<x.rows.length;i+=15)pages.push(x.rows.slice(i,i+15));const body=pages.map((page,pi)=>'<section class="page"><h2>گزارش سامانه جامع مدیریت خدام</h2><div class="meta">تعداد کل: '+x.rows.length+' — صفحه '+(pi+1)+' از '+pages.length+' — تاریخ: '+esc(new Date().toLocaleDateString('fa-IR'))+'</div>'+reportTableHtml(page,x.cols,true)+'</section>').join('');const w=window.open('','_blank');if(!w)return toast('مرورگر پنجره چاپ را مسدود کرد. اجازه بازشدن پنجره را بدهید.');w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش سامانه خدام</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Tahoma,Arial;padding:0;direction:rtl}.page{page-break-after:always;break-after:page;min-height:170mm}.page:last-child{page-break-after:auto;break-after:auto}h2{text-align:center;font-size:16px}.meta{font-size:10px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:10px;table-layout:auto}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}@media screen{.page{padding:16px;border:1px solid #ddd;margin:12px}.page:last-child{margin-bottom:40px}}@media print{button{display:none}}</style></head><body>'+body+'<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
 <script>
@@ -1310,7 +1331,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۰۹</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۰</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
