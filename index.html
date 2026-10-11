@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="110">
+<meta name="app-release" content="111">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4b2b1b">
@@ -1331,7 +1331,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۰</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۱</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -1931,43 +1931,22 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 </script>
 
 
-<script>
-/* نسخه ۱۰۹: ترمیم قطعی تعامل منوها در موبایل و دسکتاپ */
+
+
+
+<script id="khadem-menu-fix111">
 (function(){
- if(window.__khademMenuFix109)return;window.__khademMenuFix109=true;
- const $=id=>document.getElementById(id);
- document.addEventListener('click',function(e){
-  const target=e.target&&e.target.closest?e.target.closest('#mobileMenuBtn,.nav-main,.sub'):null;
-  if(!target)return;
-  if(target.id==='mobileMenuBtn'){
-   e.preventDefault();e.stopImmediatePropagation();
-   const side=$('sidebar');if(side)side.classList.toggle('show');return;
+  'use strict';
+  function bind(){
+    var side=document.getElementById('sidebar'), btn=document.getElementById('mobileMenuBtn');
+    if(!side||!btn)return;
+    btn.onclick=function(ev){ev.preventDefault();ev.stopPropagation();var open=!side.classList.contains('show');side.classList.toggle('show',open);if(open){side.style.cssText+=';display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;z-index:99999!important;position:fixed!important;right:0!important;top:126px!important;width:min(88vw,350px)!important;height:calc(100dvh - 126px)!important;overflow-y:auto!important;';}else{['display','visibility','opacity','pointer-events','z-index','position','right','top','width','height','overflow-y'].forEach(function(k){side.style.removeProperty(k)});}};
+    side.querySelectorAll('.nav-main').forEach(function(b){b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();var g=b.closest('.nav-group');if(!g)return;var open=!g.classList.contains('open');side.querySelectorAll('.nav-group').forEach(function(x){x.classList.remove('open');var mb=x.querySelector('.nav-main');if(mb)mb.setAttribute('aria-expanded','false')});if(open){g.classList.add('open');b.setAttribute('aria-expanded','true');}}});
+    side.querySelectorAll('.sub').forEach(function(b){b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();var page=b.dataset.customTarget||b.dataset.page;if(page&&typeof window.render==='function')window.render(page);side.classList.remove('show');['display','visibility','opacity','pointer-events','z-index','position','right','top','width','height','overflow-y'].forEach(function(k){side.style.removeProperty(k)});}});
   }
-  if(target.matches('.nav-main')){
-   const group=target.closest('.nav-group');if(!group)return;
-   const submenu=group.querySelector('.submenu');
-   if(submenu&&submenu.children.length){
-    e.preventDefault();e.stopImmediatePropagation();
-    const open=!group.classList.contains('open');
-    document.querySelectorAll('#sidebar .nav-group').forEach(g=>{g.classList.remove('open');g.querySelector('.nav-main')?.setAttribute('aria-expanded','false')});
-    if(open){group.classList.add('open');target.setAttribute('aria-expanded','true')}
-   }else{
-    e.preventDefault();e.stopImmediatePropagation();
-    if(typeof window.render==='function')window.render(target.dataset.nav||'dashboard');
-   }
-   return;
-  }
-  if(target.matches('.sub')){
-   e.preventDefault();e.stopImmediatePropagation();
-   document.querySelectorAll('#sidebar .sub').forEach(b=>b.classList.toggle('active',b===target));
-   const group=target.closest('.nav-group');document.querySelectorAll('#sidebar .nav-main').forEach(b=>b.classList.toggle('active',b.parentElement===group));
-   const page=target.dataset.customTarget||target.dataset.page;
-   if(page&&typeof window.render==='function')window.render(page);
-   $('sidebar')?.classList.remove('show');
-  }
- },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+  var side=document.getElementById('sidebar');if(side&&window.MutationObserver)new MutationObserver(function(){bind()}).observe(side,{childList:true,subtree:false});
 })();
 </script>
-
 </body>
 </html>
