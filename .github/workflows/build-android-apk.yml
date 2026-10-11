@@ -1,0 +1,192 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'logo.png'
+      - '.github/workflows/build-android-apk.yml'
+
+permissions:
+  contents: read
+
+env:
+  APP_ID: ir.sayedazainab.khademjame
+  APP_VERSION: 1.0.6
+
+jobs:
+  build-apk:
+    name: Build test APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform
+        run: sdkmanager 'platform-tools' 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Prepare Android WebView wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html || { echo 'ERROR: root index.html is missing'; exit 1; }
+          mkdir -p android-app/app/src/main/assets android-app/app/src/main/java/ir/sayedazainab/khademjame android-app/app/src/main/res/values
+          cp index.html android-app/app/src/main/assets/index.html
+          if [ -f logo.png ]; then cp logo.png android-app/app/src/main/assets/logo.png; fi
+          cat > android-app/settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = 'KhademJameAndroid'
+          include ':app'
+          EOF
+          cat > android-app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+          cat > android-app/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          EOF
+          cat > android-app/app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'ir.sayedazainab.khademjame'
+              compileSdk 35
+              defaultConfig {
+                  applicationId 'ir.sayedazainab.khademjame'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 106
+                  versionName '1.0.6'
+              }
+              buildTypes {
+                  debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
+                  release { minifyEnabled false }
+              }
+          }
+          EOF
+          cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"> <item name="android:fontFamily">sans</item> <item name="android:colorAccent">#4b2b1b</item> <item name="android:navigationBarColor">#4b2b1b</item> <item name="android:statusBarColor">#4b2b1b</item> <item name="android:windowLightStatusBar">false</item> <item name="android:windowActionModeOverlay">true</item> </style>
+          </resources>
+          EOF
+          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:allowBackup="false" android:label="سامانه جامع خادمین" android:theme="@style/AppTheme" android:usesCleartextTraffic="false" android:supportsRtl="true"> <activity android:name=".MainActivity" android:configChanges="orientation|screenSize|keyboardHidden" android:exported="true" android:screenOrientation="unspecified"> <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter> </activity> </application>
+          </manifest>
+          EOF
+          cat > android-app/app/src/main/java/ir/sayedazainab/khademjame/MainActivity.java <<'EOF'
+          package ir.sayedazainab.khademjame;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.os.Build;
+          import android.view.View;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.content.Intent;
+          import android.net.Uri;
+          import java.io.ByteArrayOutputStream;
+          import java.io.InputStream;
+          import java.nio.charset.StandardCharsets;
+
+          public class MainActivity extends Activity {
+              private WebView webView;
+              private static final String APP_BASE = "https://daadelian-bot.github.io/khadem-jame/";
+
+              @Override public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().getDecorView().setSystemUiVisibility(0);
+                  webView = new WebView(this);
+                  setContentView(webView);
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(false);
+                  settings.setAllowContentAccess(false);
+                  settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+                  settings.setSupportMultipleWindows(false);
+                  settings.setJavaScriptCanOpenWindowsAutomatically(false);
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) settings.setSafeBrowsingEnabled(true);
+                  webView.setWebChromeClient(new WebChromeClient());
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          Uri uri = request.getUrl();
+                          String host = uri.getHost() == null ? "" : uri.getHost();
+                          if ("https".equals(uri.getScheme()) && "daadelian-bot.github.io".equalsIgnoreCase(host)) return false;
+                          if ("https".equals(uri.getScheme()) || "http".equals(uri.getScheme())) {
+                              try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) {}
+                              return true;
+                          }
+                          return true;
+                      }
+                  });
+                  try (InputStream in = getAssets().open("index.html"); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                      byte[] buffer = new byte[16384]; int n;
+                      while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                      String html = out.toString(StandardCharsets.UTF_8.name());
+                      webView.loadDataWithBaseURL(APP_BASE, html, "text/html", "UTF-8", null);
+                  } catch (Exception e) {
+                      webView.loadUrl(APP_BASE);
+                  }
+              }
+
+              @Override public void onBackPressed() {
+                  if (webView != null && webView.canGoBack()) webView.goBack();
+                  else super.onBackPressed();
+              }
+
+              @Override protected void onDestroy() {
+                  if (webView != null) { webView.stopLoading(); webView.destroy(); webView = null; }
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+      - name: Build debug APK
+        run: gradle -p android-app --no-daemon assembleDebug
+
+      - name: Prepare downloadable APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk "dist/Samane-Jame-Khademin-${APP_VERSION}-debug.apk"
+          sha256sum "dist/Samane-Jame-Khademin-${APP_VERSION}-debug.apk" > dist/SHA256SUMS.txt
+          cat > dist/README.txt <<'EOF'
+          سامانه جامع خادمین — APK آزمایشی
+          این فایل نسخه debug است و برای آزمون نصب مستقیم تهیه شده، نه انتشار نهایی در فروشگاه.
+          این APK رابط فعلی را از index.html زمان build داخل برنامه قرار می‌دهد؛ داده‌ها و ورود همچنان به اتصال اینترنت و Supabase وابسته‌اند.
+          قبل از استفاده عملی، ورود، مجوزها، پرونده خادم، مالی، خدمت و حضور و غیاب با حساب‌های آزمایشی بررسی شوند.
+          برای انتشار رسمی باید نسخه release با کلید امضای اختصاصی مالک برنامه ساخته شود.
+          EOF
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Samane-Jame-Khademin-APK-${{ github.run_number }}
+          path: dist/* if-no-files-found: error retention-days: 30
