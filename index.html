@@ -96,7 +96,7 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 <div id="toast" class="toast"></div>
 
 <script>
-const CFG={url:"https://fxxtyfurdzpfzfvweoppo.supabase.co",key:"sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7"};
+const CFG={url:"https://fxxtyfurdzpzfvweoppo.supabase.co",key:"sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7"};
 const $=id=>document.getElementById(id);
 const menus=[
 ["dashboard","🏠","داشبورد",[]],
@@ -1260,7 +1260,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۳</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۴</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -1878,8 +1878,8 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
 })();
 </script>
-<script id="khadem-menu-fix113">
-/* v113: one capture-phase menu controller prevents the legacy handlers from double-toggling menus. */
+<script id="khadem-menu-fix114">
+/* v114: correct Supabase project URL; retain capture-phase menu controller prevents the legacy handlers from double-toggling menus. */
 (function(){
   'use strict';
   var sideStyles=['display','visibility','opacity','pointer-events','z-index','position','right','top','width','height','overflow-y'];
@@ -1903,8 +1903,8 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
       var group=button.closest('.nav-group');
       document.querySelectorAll('#sidebar .nav-main').forEach(function(b){b.classList.toggle('active',!!group&&b.closest('.nav-group')===group);});
     }
-    try{if(typeof window.render==='function')window.render(page);else console.error('v113: render() is unavailable');}
-    catch(err){console.error('v113 menu navigation error:',err);var toast=document.getElementById('toast');if(toast){toast.textContent='بازکردن این بخش با خطا روبه‌رو شد؛ صفحه را تازه‌سازی کنید.';toast.style.display='block';}}
+    try{if(typeof window.render==='function')window.render(page);else console.error('v114: render() is unavailable');}
+    catch(err){console.error('v114 menu navigation error:',err);var toast=document.getElementById('toast');if(toast){toast.textContent='بازکردن این بخش با خطا روبه‌رو شد؛ صفحه را تازه‌سازی کنید.';toast.style.display='block';}}
     var side=document.getElementById('sidebar');if(side){side.classList.remove('show');clearMobileStyles(side);}
   }
   document.addEventListener('click',function(ev){
