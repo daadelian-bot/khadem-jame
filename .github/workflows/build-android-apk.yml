@@ -1,26 +1,216 @@
-Skip to content
-khadem-jame
-Repository navigation
-Code
-Issues
-Pull requests
-.github/workflows/build-android-apk.yml
-Create build-android-apk.yml #1
-Triggered via push 1 minute ago
-@daadelian-botdaadelian-bot
-pushed
- 517d721
-main
-Status
-Failure
-Total duration
-–
-Artifacts
-–
-This workflow graph cannot be shown
-A graph will be generated the next time this workflow is run.
+name: Build Android APK
 
-Annotations
-1 error
-Invalid workflow file: .github/workflows/build-android-apk.yml#L192
-You have an error in your yaml syntax on line 192
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "index.html"
+      - "logo.png"
+      - ".github/workflows/build-android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform
+        shell: bash
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Create Android WebView project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p android-app/app/src/main/java/ir/sayedazainab/khademjame
+          mkdir -p android-app/app/src/main/assets
+          mkdir -p dist
+
+          test -s index.html
+          cp index.html android-app/app/src/main/assets/index.html
+          if [ -f logo.png ]; then
+            cp logo.png android-app/app/src/main/assets/logo.png
+          fi
+
+          cat > android-app/settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "SamaneJameKhademin"
+          include(":app")
+          EOF
+
+          cat > android-app/build.gradle <<'EOF'
+          plugins {
+              id "com.android.application" version "8.7.3" apply false
+          }
+          EOF
+
+          cat > android-app/app/build.gradle <<'EOF'
+          plugins {
+              id "com.android.application"
+          }
+
+          android {
+              namespace "ir.sayedazainab.khademjame"
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId "ir.sayedazainab.khademjame"
+                  minSdk 23
+                  targetSdk 28
+                  versionCode 106
+                  versionName "1.0.6"
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          EOF
+
+          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"> <uses-permission android:name="android.permission.INTERNET" /> <application android:allowBackup="false" android:label="سامانه جامع خادمین" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:supportsRtl="true"> <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:exported="true"> <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter> </activity> </application> </manifest>
+          EOF
+
+          cat > android-app/app/src/main/java/ir/sayedazainab/khademjame/MainActivity.java <<'EOF'
+          package ir.sayedazainab.khademjame;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import java.io.ByteArrayOutputStream;
+          import java.io.InputStream;
+          import java.nio.charset.StandardCharsets;
+
+          public class MainActivity extends Activity {
+              private WebView webView;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  webView = new WebView(this);
+                  setContentView(webView);
+                  webView.getSettings().setJavaScriptEnabled(true);
+                  webView.getSettings().setDomStorageEnabled(true);
+                  webView.getSettings().setDatabaseEnabled(true);
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient());
+
+                  try (InputStream input = getAssets().open("index.html");
+                       ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                      byte[] buffer = new byte[8192];
+                      int count;
+                      while ((count = input.read(buffer)) != -1) {
+                          output.write(buffer, 0, count);
+                      }
+                      String html = output.toString(StandardCharsets.UTF_8.name());
+                      webView.loadDataWithBaseURL(
+                          "https://daadelian-bot.github.io/khadem-jame/",
+                          html,
+                          "text/html",
+                          "UTF-8",
+                          null
+                      );
+                  } catch (Exception error) {
+                      webView.loadData(
+                          "<html><meta charset='utf-8'><body dir='rtl'>"
+                          + "<h3>بارگذاری برنامه انجام نشد</h3>"
+                          + "<p>فایل اصلی index.html را بررسی کنید.</p></body></html>",
+                          "text/html",
+                          "UTF-8"
+                      );
+                  }
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView != null && webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (webView != null) {
+                      webView.destroy();
+                  }
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+      - name: Build debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p android-app --no-daemon clean assembleDebug
+          APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK_PATH"
+          cp "$APK_PATH" "dist/Samane-Jame-Khademin-1.0.6-debug.apk"
+          sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > dist/SHA256SUMS.txt
+          cat > dist/README-FA.txt <<'EOF'
+          سامانه جامع خادمین — بسته آزمایشی اندروید
+          نسخه: 1.0.6 (کد نسخه 106)
+          نوع ساخت: Debug APK
+
+          نصب:
+          1) فایل APK را به گوشی اندرویدی منتقل کنید.
+          2) فایل را باز کنید و در صورت درخواست، اجازه نصب از این منبع را فعال کنید.
+          3) این نسخه برای آزمایش است و هنوز نسخه انتشار امضاشده محسوب نمی‌شود.
+
+          نکته:
+          محتوای index.html هنگام ساخت داخل برنامه قرار می‌گیرد. بخش‌هایی که به سرویس آنلاین
+          یا Supabase وابسته‌اند همچنان به اتصال اینترنت و تنظیمات صحیح سرویس نیاز دارند.
+          EOF
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Samane-Jame-Khademin-APK-${{ github.run_number }}
+          path: dist/* if-no-files-found: error retention-days: 30
