@@ -96,7 +96,7 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 <div id="toast" class="toast"></div>
 
 <script>
-const CFG={url:"https://fxxtyfurdzpzfvweoppo.supabase.co",key:"sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7"};
+const CFG={url:"https://fxxtyfurdzpfzfvweoppo.supabase.co",key:"sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7"};
 const $=id=>document.getElementById(id);
 const menus=[
 ["dashboard","🏠","داشبورد",[]],
@@ -1260,7 +1260,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۲</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۳</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -1876,6 +1876,61 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
  function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
  window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
+})();
+</script>
+<script id="khadem-menu-fix113">
+/* v113: one capture-phase menu controller prevents the legacy handlers from double-toggling menus. */
+(function(){
+  'use strict';
+  var sideStyles=['display','visibility','opacity','pointer-events','z-index','position','right','top','width','height','overflow-y'];
+  function clearMobileStyles(side){sideStyles.forEach(function(k){side.style.removeProperty(k);});}
+  function openMobileStyles(side){
+    var styles={display:'block',visibility:'visible',opacity:'1','pointer-events':'auto','z-index':'99999',position:'fixed',right:'0',top:'126px',width:'min(88vw,350px)',height:'calc(100dvh - 126px)','overflow-y':'auto'};
+    Object.keys(styles).forEach(function(k){side.style.setProperty(k,styles[k],'important');});
+  }
+  function closeGroups(except){
+    document.querySelectorAll('#sidebar .nav-group').forEach(function(g){
+      if(g===except)return;
+      g.classList.remove('open');
+      var b=g.querySelector('.nav-main');if(b)b.setAttribute('aria-expanded','false');
+      var sub=g.querySelector('.submenu');if(sub)sub.style.removeProperty('display');
+    });
+  }
+  function go(page, button){
+    if(!page)return;
+    if(button){
+      document.querySelectorAll('#sidebar .sub').forEach(function(b){b.classList.toggle('active',b===button);});
+      var group=button.closest('.nav-group');
+      document.querySelectorAll('#sidebar .nav-main').forEach(function(b){b.classList.toggle('active',!!group&&b.closest('.nav-group')===group);});
+    }
+    try{if(typeof window.render==='function')window.render(page);else console.error('v113: render() is unavailable');}
+    catch(err){console.error('v113 menu navigation error:',err);var toast=document.getElementById('toast');if(toast){toast.textContent='بازکردن این بخش با خطا روبه‌رو شد؛ صفحه را تازه‌سازی کنید.';toast.style.display='block';}}
+    var side=document.getElementById('sidebar');if(side){side.classList.remove('show');clearMobileStyles(side);}
+  }
+  document.addEventListener('click',function(ev){
+    var target=ev.target&&ev.target.closest?ev.target.closest('#mobileMenuBtn, #sidebar .nav-main, #sidebar .sub'):null;
+    if(!target)return;
+    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+    var side=document.getElementById('sidebar');if(!side)return;
+    if(target.id==='mobileMenuBtn'){
+      var opening=!side.classList.contains('show');side.classList.toggle('show',opening);
+      if(opening)openMobileStyles(side);else clearMobileStyles(side);
+      return;
+    }
+    if(target.matches('.nav-main')){
+      var group=target.closest('.nav-group');if(!group)return;
+      var submenu=group.querySelector('.submenu');var hasSub=!!(submenu&&submenu.querySelector('.sub'));
+      if(hasSub){
+        var opening=!group.classList.contains('open');closeGroups(group);group.classList.toggle('open',opening);target.setAttribute('aria-expanded',String(opening));
+        if(submenu){if(opening)submenu.style.setProperty('display','block','important');else submenu.style.removeProperty('display');}
+      }else{
+        closeGroups(null);document.querySelectorAll('#sidebar .nav-main').forEach(function(b){b.classList.toggle('active',b===target);});
+        go(target.dataset.nav||'dashboard',null);
+      }
+      return;
+    }
+    if(target.matches('.sub'))go(target.dataset.customTarget||target.dataset.page,target);
+  },true);
 })();
 </script>
 </body>
