@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="108">
+<meta name="app-release" content="109">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4b2b1b">
@@ -1310,7 +1310,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۰۸</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۰۹</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -1874,7 +1874,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  const origApi=window.api;
  if(typeof origApi==='function')window.api=async function(path,opt={}){const r=await origApi.apply(this,arguments);const method=String(opt?.method||'GET').toUpperCase();if(r.ok&&savePending&&['POST','PATCH','PUT','DELETE'].includes(method))markClean();return r};
  const origRender=window.render;
- if(typeof origRender==='function')window.render=function(page='dashboard'){const next=String(page||'dashboard');if(dirty&&next!==currentPage){if(!confirm('تغییراتی ذخیره‌نشده دارید. اگر ادامه دهید ممکن است از دست بروند. آیا بدون ذخیره خارج شوید؟'))return;markClean()}currentPage=next;const result=origRender.apply(this,arguments);if(!historyReady){history.replaceState({khademApp:true,page:next},'','#'+encodeURIComponent(next));historyReady=true}else history.pushState({khademApp:true,page:next},'','#'+encodeURIComponent(next));setTimeout(renderIdentityBadge,0);if(next==='dashboard')setTimeout(loadServiceDelayDashboard,0);if(next==='khadem:list')setTimeout(decorateKhademServiceSignals,150);return result};
+ if(typeof origRender==='function')window.render=function(page='dashboard'){const next=String(page||'dashboard');if(dirty&&next!==currentPage)markClean();currentPage=next;const result=origRender.apply(this,arguments);if(!historyReady){history.replaceState({khademApp:true,page:next},'','#'+encodeURIComponent(next));historyReady=true}else history.pushState({khademApp:true,page:next},'','#'+encodeURIComponent(next));setTimeout(renderIdentityBadge,0);if(next==='dashboard')setTimeout(loadServiceDelayDashboard,0);if(next==='khadem:list')setTimeout(decorateKhademServiceSignals,150);return result};
  // عمداً beforeunload نداریم؛ برگشت و خروج بدون پنجره مزاحم انجام می‌شود.
  window.addEventListener('popstate',e=>{markClean();const page=e.state?.khademApp&&e.state.page?e.state.page:'dashboard';currentPage=page;if(typeof origRender==='function')origRender(page);setTimeout(renderIdentityBadge,0)});
  function renderIdentityBadge(){const app=$('app');if(!app||app.style.display==='none')return;const sess=(()=>{try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}})();const u=sess.user||{},email=localStorage.getItem('khadem_last_email')||u.email||'',id=u.id||u.sub||sess.user_id||'';const label=u.user_metadata?.display_name||u.user_metadata?.full_name||u.user_metadata?.name||email||('شناسه '+String(id).slice(0,8));let badge=$('khademCurrentIdentity');if(!badge){badge=document.createElement('div');badge.id='khademCurrentIdentity';badge.style.cssText='margin:8px 14px;padding:7px 12px;border:1px solid var(--line,#ddd);border-radius:10px;background:var(--card,#fff);font-size:13px;overflow-wrap:anywhere';const header=document.querySelector('.topbar');if(header)header.insertAdjacentElement('afterend',badge);else app.prepend(badge)}badge.innerHTML='<b>حساب واردشده:</b> '+String(label).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+' <span style="color:#18865b">● فعال در سامانه</span>'}
@@ -1906,6 +1906,45 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
  function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
  window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
+})();
+</script>
+
+
+<script>
+/* نسخه ۱۰۹: ترمیم قطعی تعامل منوها در موبایل و دسکتاپ */
+(function(){
+ if(window.__khademMenuFix109)return;window.__khademMenuFix109=true;
+ const $=id=>document.getElementById(id);
+ document.addEventListener('click',function(e){
+  const target=e.target&&e.target.closest?e.target.closest('#mobileMenuBtn,.nav-main,.sub'):null;
+  if(!target)return;
+  if(target.id==='mobileMenuBtn'){
+   e.preventDefault();e.stopImmediatePropagation();
+   const side=$('sidebar');if(side)side.classList.toggle('show');return;
+  }
+  if(target.matches('.nav-main')){
+   const group=target.closest('.nav-group');if(!group)return;
+   const submenu=group.querySelector('.submenu');
+   if(submenu&&submenu.children.length){
+    e.preventDefault();e.stopImmediatePropagation();
+    const open=!group.classList.contains('open');
+    document.querySelectorAll('#sidebar .nav-group').forEach(g=>{g.classList.remove('open');g.querySelector('.nav-main')?.setAttribute('aria-expanded','false')});
+    if(open){group.classList.add('open');target.setAttribute('aria-expanded','true')}
+   }else{
+    e.preventDefault();e.stopImmediatePropagation();
+    if(typeof window.render==='function')window.render(target.dataset.nav||'dashboard');
+   }
+   return;
+  }
+  if(target.matches('.sub')){
+   e.preventDefault();e.stopImmediatePropagation();
+   document.querySelectorAll('#sidebar .sub').forEach(b=>b.classList.toggle('active',b===target));
+   const group=target.closest('.nav-group');document.querySelectorAll('#sidebar .nav-main').forEach(b=>b.classList.toggle('active',b.parentElement===group));
+   const page=target.dataset.customTarget||target.dataset.page;
+   if(page&&typeof window.render==='function')window.render(page);
+   $('sidebar')?.classList.remove('show');
+  }
+ },true);
 })();
 </script>
 
