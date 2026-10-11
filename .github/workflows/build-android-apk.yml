@@ -27,23 +27,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
+      - name: Install Gradle 8.9
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_VERSION="8.9"
+          curl --fail --location --retry 3 \
+            "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+            --output "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
+          unzip -q "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip" -d "${RUNNER_TEMP}"
+          echo "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}/bin/gradle" --version
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK platform
+      - name: Install Android SDK platform and build tools
         shell: bash
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses >/dev/null || true
 
       - name: Create Android WebView project
         shell: bash
@@ -56,6 +66,7 @@ jobs:
 
           test -s index.html
           cp index.html android-app/app/src/main/assets/index.html
+
           if [ -f logo.png ]; then
             cp logo.png android-app/app/src/main/assets/logo.png
           fi
@@ -68,6 +79,7 @@ jobs:
                   gradlePluginPortal()
               }
           }
+
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
@@ -75,6 +87,7 @@ jobs:
                   mavenCentral()
               }
           }
+
           rootProject.name = "SamaneJameKhademin"
           include(":app")
           EOF
@@ -111,7 +124,25 @@ jobs:
 
           cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"> <uses-permission android:name="android.permission.INTERNET" /> <application android:allowBackup="false" android:label="سامانه جامع خادمین" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:supportsRtl="true"> <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:exported="true"> <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter> </activity> </application> </manifest>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:allowBackup="false"
+                  android:label="سامانه جامع خادمین"
+                  android:usesCleartextTraffic="false"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
+                  android:supportsRtl="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
           EOF
 
           cat > android-app/app/src/main/java/ir/sayedazainab/khademjame/MainActivity.java <<'EOF'
@@ -190,10 +221,13 @@ jobs:
         run: |
           set -euo pipefail
           gradle -p android-app --no-daemon clean assembleDebug
+
           APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK_PATH"
+
           cp "$APK_PATH" "dist/Samane-Jame-Khademin-1.0.6-debug.apk"
           sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > dist/SHA256SUMS.txt
+
           cat > dist/README-FA.txt <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
           نسخه: 1.0.6 (کد نسخه 106)
@@ -202,15 +236,17 @@ jobs:
           نصب:
           1) فایل APK را به گوشی اندرویدی منتقل کنید.
           2) فایل را باز کنید و در صورت درخواست، اجازه نصب از این منبع را فعال کنید.
-          3) این نسخه برای آزمایش است و هنوز نسخه انتشار امضاشده محسوب نمی‌شود.
+          3) این نسخه برای آزمایش است و نسخه انتشار امضاشده محسوب نمی‌شود.
 
           نکته:
-          محتوای index.html هنگام ساخت داخل برنامه قرار می‌گیرد. بخش‌هایی که به سرویس آنلاین
-          یا Supabase وابسته‌اند همچنان به اتصال اینترنت و تنظیمات صحیح سرویس نیاز دارند.
+          محتوای index.html هنگام ساخت داخل برنامه قرار می‌گیرد. بخش‌های وابسته به سرویس آنلاین
+          یا Supabase همچنان به اتصال اینترنت و تنظیمات صحیح سرویس نیاز دارند.
           EOF
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Samane-Jame-Khademin-APK-${{ github.run_number }}
-          path: dist/* if-no-files-found: error retention-days: 30
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
