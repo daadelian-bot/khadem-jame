@@ -1,20 +1,13 @@
+/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۳۹
+   فقط فایل‌های ثابت رابط در Cache Storage نگهداری می‌شوند.
+   داده‌ها و درخواست‌های Supabase هرگز در این Service Worker ذخیره نمی‌شوند.
+*/
+'use strict';
 
-/* فایل شماره ۱۳۸ — پوستهٔ آفلاین سامانه خادمین
-   داده‌های سامانه و درخواست‌های Supabase در Cache Storage ذخیره نمی‌شوند. */
-"use strict";
+const CACHE_NAME = 'khadem-jame-shell-v139';
+const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
 
-const CACHE_NAME = "khadem-jame-shell-v138";
-
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./app.js",
-  "./styles.css",
-  "./logo.png"
-];
-
-self.addEventListener("install", event => {
+self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(APP_SHELL))
@@ -22,81 +15,47 @@ self.addEventListener("install", event => {
   );
 });
 
-self.addEventListener("activate", event => {
+self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(
-            key =>
-              key.startsWith("khadem-jame-shell-") &&
-              key !== CACHE_NAME
-          )
-          .map(key => caches.delete(key))
-      ))
+      .then(keys => Promise.all(keys
+        .filter(key => key.startsWith('khadem-jame-shell-') && key !== CACHE_NAME)
+        .map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener('fetch', event => {
   const request = event.request;
-
-  if (request.method !== "GET") return;
+  if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-
-  // فقط درخواست‌های مربوط به همین سایت
   if (url.origin !== self.location.origin) return;
+  // هرگز درخواست‌های Supabase (REST/Auth/Storage/Functions) را رهگیری یا کش نکن.
+  if (/\/(rest|auth|storage)\/v1\//.test(url.pathname) || url.pathname.includes('/functions/v1/')) return;
 
-  // اطلاعات و درخواست‌های Supabase را ذخیره نکن
-  if (
-    /\/(rest|auth|storage)\/v1\//.test(url.pathname) ||
-    url.pathname.includes("/functions/v1/")
-  ) {
-    return;
-  }
-
-  // بازکردن صفحه: ابتدا شبکه، سپس نسخهٔ ذخیره‌شده
-  if (request.mode === "navigate") {
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response && response.ok) {
-            const copy = response.clone();
-
-            caches.open(CACHE_NAME).then(cache =>
-              cache.put("./index.html", copy)
-            );
-          }
-
-          return response;
-        })
-        .catch(() => caches.match("./index.html"))
+      fetch(request).then(response => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+        }
+        return response;
+      }).catch(() => caches.match('./index.html'))
     );
-
     return;
   }
 
-  // سایر فایل‌ها: ابتدا حافظهٔ موقت، سپس شبکه
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(request).then(response => {
-        if (
-          response &&
-          response.ok &&
-          response.type === "basic"
-        ) {
+  if (APP_SHELL.some(path => new URL(path, self.location.href).pathname === url.pathname)) {
+    event.respondWith(
+      fetch(request).then(response => {
+        if (response && response.ok && response.type === 'basic') {
           const copy = response.clone();
-
-          caches.open(CACHE_NAME).then(cache =>
-            cache.put(request, copy)
-          );
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         }
-
         return response;
-      });
-    })
-  );
+      }).catch(() => caches.match(request).then(cached => cached || Response.error()))
+    );
+  }
 });
