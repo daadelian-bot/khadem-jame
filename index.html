@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="111">
+<meta name="app-release" content="112">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4b2b1b">
@@ -647,46 +647,8 @@ window.addEventListener("online",()=>toast("🟢 اینترنت برقرار ش�
     function getReportExport(){const rows=selectedRows(),cols=Array.from(colBox.querySelectorAll('[data-report-col]:checked')).map(x=>x.value);if(!rows.length){toast('ابتدا رکوردهای موردنظر را انتخاب کنید.');return null}if(!cols.length){toast('حداقل یک ستون انتخاب کنید.');return null}return {rows,cols}}
     function reportTableHtml(rows,cols,numbered=true){const head=(numbered?'<th>ردیف</th>':'')+cols.map(c=>'<th>'+esc(reportLabel(c))+'</th>').join('');const body=rows.map((r,i)=>'<tr>'+(numbered?'<td>'+String(i+1)+'</td>':'')+cols.map(c=>'<td>'+esc(reportValue(c,r[c]))+'</td>').join('')+'</tr>').join('');return '<table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table>'}
     $('enhExcel').onclick=async()=>{const x=getReportExport();if(!x)return;try{if(!window.XLSX){await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';sc.onload=resolve;sc.onerror=()=>reject(Error('ابزار ساخت فایل صفحه‌گسترده بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.'));document.head.appendChild(sc)})}const data=x.rows.map((r,i)=>({'ردیف':i+1,...Object.fromEntries(x.cols.map(c=>[reportLabel(c),reportValue(c,r[c])]))}));const ws=XLSX.utils.json_to_sheet(data);ws['!rtl']=true;ws['!cols']=[{wch:8},...x.cols.map(c=>({wch:Math.min(30,Math.max(12,reportLabel(c).length+3))}))];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'گزارش');XLSX.writeFile(wb,'گزارش-خادمین-'+new Date().toLocaleDateString('fa-IR').replaceAll('/','-')+'.xlsx');}catch(e){toast('ساخت فایل صفحه‌گسترده ناموفق بود: '+e.message)}};
-    $('enhWord').onclick=()=>{const x=getReportExport();if(!x)return;const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma,Arial;direction:rtl}h2{text-align:center}table{border-collapse:collapse;width:100%;font-size:10pt}th,td{border:1px solid #666;padding:5px;text-align:right}th{background:#e8edf3}</style></head><body><h2>گزارش سامانه جامع مدیریت خدام</h2><p>تعداد رکورد: '+x.rows.length+' — تاریخ تهیه: '+esc(new Date().toLocaleDateString('fa-IR'))+'</p>'+reportTableHtml(x.rows,x.cols,true)+'\n
-<script>
-/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
-(function(){
- let timer=null, busy=false;
- async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
- function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
- window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
-})();
-</script>
-
-
-<script id="khadem-menu-fix110-js">
-(function(){
- function setup(){
-  const side=document.getElementById('sidebar'),btn=document.getElementById('mobileMenuBtn');
-  if(!side||!btn)return;
-  // Direct handler is intentionally re-assigned after all legacy scripts.
-  btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}const opened=!side.classList.contains('show');side.classList.toggle('show',opened);if(opened){side.style.display='block';side.style.visibility='visible';side.style.pointerEvents='auto';side.style.zIndex='99999'}else{side.style.removeProperty('display');side.style.removeProperty('visibility');side.style.removeProperty('pointer-events');side.style.removeProperty('z-index')}};
-  side.querySelectorAll('.nav-main').forEach(function(b){b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();const g=b.closest('.nav-group');if(!g)return;const opening=!g.classList.contains('open');side.querySelectorAll('.nav-group').forEach(function(x){x.classList.remove('open');const mb=x.querySelector('.nav-main');if(mb)mb.setAttribute('aria-expanded','false')});if(opening){g.classList.add('open');b.setAttribute('aria-expanded','true')} }});
-  side.querySelectorAll('.sub').forEach(function(b){b.onclick=function(ev){ev.preventDefault();ev.stopPropagation();const page=b.dataset.customTarget||b.dataset.page;if(page&&typeof window.render==='function')window.render(page);side.classList.remove('show');side.style.removeProperty('display');side.style.removeProperty('visibility');side.style.removeProperty('pointer-events');side.style.removeProperty('z-index')}});
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
- // Re-bind after app rebuilds navigation from saved settings.
- const side=document.getElementById('sidebar');if(side&&window.MutationObserver){new MutationObserver(function(){setup()}).observe(side,{childList:true,subtree:false})}
-})();
-</script>
-</body></html>';download('گزارش-خادمین-'+new Date().toLocaleDateString('fa-IR').replaceAll('/','-')+'.doc',html,'application/msword;charset=utf-8')};
-    $("enhPrint").onclick=()=>{const x=getReportExport();if(!x)return;const pages=[];for(let i=0;i<x.rows.length;i+=15)pages.push(x.rows.slice(i,i+15));const body=pages.map((page,pi)=>'<section class="page"><h2>گزارش سامانه جامع مدیریت خدام</h2><div class="meta">تعداد کل: '+x.rows.length+' — صفحه '+(pi+1)+' از '+pages.length+' — تاریخ: '+esc(new Date().toLocaleDateString('fa-IR'))+'</div>'+reportTableHtml(page,x.cols,true)+'</section>').join('');const w=window.open('','_blank');if(!w)return toast('مرورگر پنجره چاپ را مسدود کرد. اجازه بازشدن پنجره را بدهید.');w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش سامانه خدام</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Tahoma,Arial;padding:0;direction:rtl}.page{page-break-after:always;break-after:page;min-height:170mm}.page:last-child{page-break-after:auto;break-after:auto}h2{text-align:center;font-size:16px}.meta{font-size:10px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:10px;table-layout:auto}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}@media screen{.page{padding:16px;border:1px solid #ddd;margin:12px}.page:last-child{margin-bottom:40px}}@media print{button{display:none}}</style></head><body>'+body+'<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
-<script>
-/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
-(function(){
- let timer=null, busy=false;
- async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
- function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
- window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
-})();
-</script>
-
-</body></html>');w.document.close()};
+    $('enhWord').onclick=()=>{const x=getReportExport();if(!x)return;const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma,Arial;direction:rtl}h2{text-align:center}table{border-collapse:collapse;width:100%;font-size:10pt}th,td{border:1px solid #666;padding:5px;text-align:right}th{background:#e8edf3}</style></head><body><h2>گزارش سامانه جامع مدیریت خدام</h2><p>تعداد رکورد: '+x.rows.length+' — تاریخ تهیه: '+esc(new Date().toLocaleDateString('fa-IR'))+'</p>'+reportTableHtml(x.rows,x.cols,true)+'\n</body></html>';download('گزارش-خادمین-'+new Date().toLocaleDateString('fa-IR').replaceAll('/','-')+'.doc',html,'application/msword;charset=utf-8')};
+    $("enhPrint").onclick=()=>{const x=getReportExport();if(!x)return;const pages=[];for(let i=0;i<x.rows.length;i+=15)pages.push(x.rows.slice(i,i+15));const body=pages.map((page,pi)=>'<section class="page"><h2>گزارش سامانه جامع مدیریت خدام</h2><div class="meta">تعداد کل: '+x.rows.length+' — صفحه '+(pi+1)+' از '+pages.length+' — تاریخ: '+esc(new Date().toLocaleDateString('fa-IR'))+'</div>'+reportTableHtml(page,x.cols,true)+'</section>').join('');const w=window.open('','_blank');if(!w)return toast('مرورگر پنجره چاپ را مسدود کرد. اجازه بازشدن پنجره را بدهید.');w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش سامانه خدام</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Tahoma,Arial;padding:0;direction:rtl}.page{page-break-after:always;break-after:page;min-height:170mm}.page:last-child{page-break-after:auto;break-after:auto}h2{text-align:center;font-size:16px}.meta{font-size:10px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:10px;table-layout:auto}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}@media screen{.page{padding:16px;border:1px solid #ddd;margin:12px}.page:last-child{margin-bottom:40px}}@media print{button{display:none}}</style></head><body>'+body+'<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>');w.document.close()};
   }
 
   function backupPage() {
@@ -1211,43 +1173,10 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
    results.querySelectorAll('[data-v67-col]').forEach(ch=>ch.onchange=()=>{let s=sections[+ch.dataset.v67Col];if(ch.checked&&!s.selected.includes(ch.value))s.selected.push(ch.value);if(!ch.checked)s.selected=s.selected.filter(c=>c!==ch.value)});results.querySelectorAll('[data-v67-allcols]').forEach(b=>b.onclick=()=>{let s=sections[+b.dataset.v67Allcols];s.selected=[...s.cols];results.querySelectorAll('[data-v67-col="'+b.dataset.v67Allcols+'"]').forEach(c=>c.checked=true)});results.querySelectorAll('[data-v67-nocols]').forEach(b=>b.onclick=()=>{let s=sections[+b.dataset.v67Nocols];s.selected=[];results.querySelectorAll('[data-v67-col="'+b.dataset.v67Nocols+'"]').forEach(c=>c.checked=false)});status.textContent='گزارش آماده است. ستون‌های دلخواه را علامت بزنید و خروجی بگیرید.';
   };
   $('v67-csv').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let out=[];sections.forEach(s=>{let cols=s.selected||[];if(!cols.length)return;out.push(cell('بخش: '+s.title));out.push([['کد خادم','نام خادم',...cols.map(label)].map(cell).join(','),...s.rows.map(r=>{let k=khadems.find(x=>String(x.id)===String(r.khadem_id)||String(x.id)===String(r.id)||(x.khadem_code&&x.khadem_code===r.khadem_code));return [k?.khadem_code||r.khadem_code||'',k?.full_name||r.khadem_name||r.full_name||'',...cols.map(c=>fmt(c,r[c]))].map(cell).join(',')})].join('\r\n'))});if(out.length)download('گزارش-جامع-خادمین.csv',out.join('\r\n\r\n'));else status.textContent='برای خروجی حداقل یک ستون انتخاب کنید.'};
-  function v67BuildReportHtml(){let content='';sections.forEach(s=>{let cols=s.selected||[];if(!cols.length)return;content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+['کد خادم','نام خادم',...cols.map(label)].map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>{let k=khadems.find(x=>String(x.id)===String(r.khadem_id)||String(x.id)===String(r.id)||(x.khadem_code&&String(x.khadem_code)===String(r.khadem_code)));return '<tr>'+[k?.khadem_code||r.khadem_code||'',k?.full_name||r.khadem_name||r.full_name||'',...cols.map(c=>fmt(c,r[c]))].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>'}).join('')+'</tbody></table>'});return '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش جامع خادمین</title><style>body{font-family:Tahoma,Arial,sans-serif;padding:18px}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}h2,h3{page-break-after:avoid}</style></head><body><h2>گزارش جامع خادمین</h2><p>تاریخ تهیه: '+esc(new Date().toLocaleString('fa-IR'))+'</p>'+content+'
-<script>
-/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
-(function(){
- let timer=null, busy=false;
- async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
- function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
- window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
-})();
-</script>
-
-</body></html>'}
+  function v67BuildReportHtml(){let content='';sections.forEach(s=>{let cols=s.selected||[];if(!cols.length)return;content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+['کد خادم','نام خادم',...cols.map(label)].map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>{let k=khadems.find(x=>String(x.id)===String(r.khadem_id)||String(x.id)===String(r.id)||(x.khadem_code&&String(x.khadem_code)===String(r.khadem_code)));return '<tr>'+[k?.khadem_code||r.khadem_code||'',k?.full_name||r.khadem_name||r.full_name||'',...cols.map(c=>fmt(c,r[c]))].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>'}).join('')+'</tbody></table>'});return '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش جامع خادمین</title><style>body{font-family:Tahoma,Arial,sans-serif;padding:18px}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}h2,h3{page-break-after:avoid}</style></head><body><h2>گزارش جامع خادمین</h2><p>تاریخ تهیه: '+esc(new Date().toLocaleString('fa-IR'))+'</p>'+content+'</body></html>'}
   $('v67-word').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}if(!sections.some(s=>(s.selected||[]).length)){status.textContent='برای خروجی حداقل یک ستون انتخاب کنید.';return}download('گزارش-جامع-خادمین.doc',v67BuildReportHtml(),'application/msword;charset=utf-8;')};
   $('v67-excel').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}if(!sections.some(s=>(s.selected||[]).length)){status.textContent='برای خروجی حداقل یک ستون انتخاب کنید.';return}download('گزارش-جامع-خادمین.xls',v67BuildReportHtml(),'application/vnd.ms-excel;charset=utf-8;')};
-  $('v67-print').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}const w=window.open('','_blank');if(!w){status.textContent='پنجره چاپ مسدود شده است؛ اجازه بازشدن پنجره را بدهید.';return}w.document.open();w.document.write(v67BuildReportHtml().replace('
-<script>
-/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
-(function(){
- let timer=null, busy=false;
- async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
- function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
- window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
-})();
-</script>
-
-</body>','<script>window.onload=()=>window.print()<\/script>
-<script>
-/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
-(function(){
- let timer=null, busy=false;
- async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
- function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
- window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
-})();
-</script>
-
-</body>'));w.document.close()};
+  $('v67-print').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}const w=window.open('','_blank');if(!w){status.textContent='پنجره چاپ مسدود شده است؛ اجازه بازشدن پنجره را بدهید.';return}w.document.open();w.document.write(v67BuildReportHtml().replace('</body>','<script>window.onload=()=>window.print()<\/script></body>'));w.document.close()};
  }
  window.render=function(p){if(p==='reports:builder'||p==='reports:saved'||p==='reports:exports')return reportPage();return previousRender.apply(this,arguments)};
 })();
@@ -1331,7 +1260,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۱</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۲</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -1920,15 +1849,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 </script>
 
 
-<script>
-/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
-(function(){
- let timer=null, busy=false;
- async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
- function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
- window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
-})();
-</script>
+
 
 
 
@@ -1946,6 +1867,15 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
   var side=document.getElementById('sidebar');if(side&&window.MutationObserver)new MutationObserver(function(){bind()}).observe(side,{childList:true,subtree:false});
+})();
+</script>
+<script>
+/* ثبت زمان آخرین حضور برای نمایش برخط/آفلاین در پنل مدیر اصلی */
+(function(){
+ let timer=null, busy=false;
+ async function beat(){if(busy)return;let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}const id=sess.user?.id||sess.user_id;if(!id||!sess.access_token||!window.api)return;busy=true;try{const r=await window.api('/rest/v1/user_presence?on_conflict=user_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:id,last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!r.ok){const t=await r.text().catch(()=> '');console.warn('ثبت آخرین حضور انجام نشد:',r.status,t.slice(0,160))}}catch(e){console.warn('ثبت آخرین حضور انجام نشد:',e.message||e)}finally{busy=false}}
+ function start(){if(timer)clearInterval(timer);beat();timer=setInterval(beat,60000)}
+ window.addEventListener('storage',e=>{if(e.key==='khadem_session')start()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});window.addEventListener('online',beat);setTimeout(start,1200);
 })();
 </script>
 </body>
