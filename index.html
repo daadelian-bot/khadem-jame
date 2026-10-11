@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="112">
+<meta name="app-release" content="120">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4b2b1b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۰۷</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۲۰</title>
 <!-- نسخه برنامه ۱۱۸: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -612,203 +612,7 @@ window.addEventListener("online",()=>toast("🟢 اینترنت برقرار ش�
 
 <!-- نسخه ۵۶: گزارش‌ساز، برنامه‌ریزی خدمت، جلسات و مرکز عملیات یکپارچه -->
 <script>
-(function () {
-  const originalRender = window.render;
-  const datasets = {
-    khadems: {label:"بانک خادمین", table:"khadems", cols:["khadem_code","full_name","father_name","national_id","phone","responsibility","is_active","membership_date"]},
-    services: {label:"سوابق خدمت", table:"service_records", cols:["service_date","service_type","khadem_code","khadem_name","status","notes"]},
-    meetings: {label:"جلسات", table:"meetings", cols:["title","meeting_date","location","status","notes"]},
-    vehicles: {label:"خودروها", table:"vehicles", cols:["plate_number","vehicle_type","driver_name","status","notes"]},
-    finance: {label:"امور مالی و گردش حساب", table:"finance_transactions", cols:["transaction_date","transaction_type","amount","account_name","khadem_id","khadem_code","khadem_name","category","payment_method","reference_number","description","notes","status","created_at"]},
-    fundFinance: {label:"امور مالی صندوق", table:"fund_transactions", cols:["transaction_date","transaction_type","amount","fund_id","khadem_id","khadem_code","khadem_name","category","payment_method","reference_number","description","notes","status","created_at"]},
-    discipline: {label:"امور انضباطی خادمین", table:"disciplinary_records", cols:["id","khadem_id","khadem_code","khadem_name","record_date","discipline_type","type","title","reason","description","decision","status","start_date","end_date","notes","created_at"]},
-    disciplineActions: {label:"اقدامات و تصمیمات انضباطی", table:"disciplinary_actions", cols:["id","khadem_id","khadem_code","khadem_name","action_date","action_type","title","reason","description","decision","status","start_date","end_date","notes","created_at"]}
-  };
 
-  function esc(v) {
-    return String(v == null ? "" : v).replace(/[&<>"']/g, c =>
-      ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
-  }
-  const reportColumnLabels = {
-    id:"شناسه", khadem_code:"کد خادم", full_name:"نام و نام خانوادگی",
-    tri_name:"نام ثلاثی", father_name:"نام پدر", national_id:"کد ملی",
-    phone:"شماره تلفن", responsibility:"مسئولیت", membership_date:"تاریخ عضویت",
-    is_active:"وضعیت فعالیت", service_count:"تعداد دفعات خدمت", service_days:"تعداد روزهای خدمت",
-    total_service_days:"مجموع روزهای خدمت", main_service_count:"تعداد خدمت اصلی",
-    friday_service_count:"تعداد خدمت شب جمعه", photo_url:"نشانی عکس",
-    photo_path:"مسیر عکس", created_at:"تاریخ ایجاد رکورد", updated_at:"تاریخ آخرین ویرایش",
-    description:"توضیحات", notes:"یادداشت‌ها", service_date:"تاریخ خدمت",
-    service_type:"برنامه خدمت", khadem_name:"نام خادم", status:"وضعیت",
-    title:"عنوان", meeting_date:"تاریخ جلسه", location:"محل برگزاری",
-    plate_number:"شماره پلاک", vehicle_type:"نوع خودرو", driver_name:"نام راننده",
-    transaction_date:"تاریخ تراکنش", transaction_type:"نوع تراکنش", amount:"مبلغ",
-    account_name:"عنوان حساب", khadem_id:"شناسه خادم", user_id:"شناسه کاربر",
-    birth_date:"تاریخ تولد", occupation:"شغل", residence:"محل سکونت",
-    blood_type:"گروه خونی", medical_history:"سابقه پزشکی",
-    emergency_contact_name:"نام تماس اضطراری", emergency_contact_phone:"تلفن تماس اضطراری",
-    first_main_service_date:"اولین خدمت اصلی", last_main_service_date:"آخرین خدمت اصلی",
-    first_friday_service_date:"اولین خدمت شب جمعه", last_friday_service_date:"آخرین خدمت شب جمعه",
-    event_time:"زمان رویداد", created_by:"ایجادکننده", updated_by:"ویرایش‌کننده",
-    payment_method:"روش پرداخت", category:"سرفصل", reference_number:"شماره پیگیری",
-    notes_count:"تعداد یادداشت‌ها", description:"شرح", transaction_id:"شناسه تراکنش",
-    fund_id:"شناسه صندوق", record_date:"تاریخ ثبت انضباطی", discipline_type:"نوع موضوع انضباطی",
-    type:"نوع", reason:"علت", decision:"تصمیم/رأی", start_date:"تاریخ شروع", end_date:"تاریخ پایان",
-    action_date:"تاریخ اقدام", action_type:"نوع اقدام", amount_paid:"مبلغ پرداخت‌شده",
-    balance:"مانده", due_date:"تاریخ سررسید", installment_number:"شماره قسط",
-    paid_at:"تاریخ پرداخت", fine_amount:"مبلغ جریمه", suspension_start:"شروع محرومیت",
-    suspension_end:"پایان محرومیت", disciplinary_status:"وضعیت انضباطی", attachment_url:"پیوست",
-    skills:"مهارت‌ها", education_level:"سطح تحصیلات", emergency_contact_name_2:"نام تماس اضطراری دوم",
-    emergency_contact_name_3:"نام تماس اضطراری سوم", emergency_contact_phone_2:"تلفن تماس اضطراری دوم",
-    emergency_contact_phone_3:"تلفن تماس اضطراری سوم", emergency_contact_phone_1:"تلفن تماس اضطراری اول",
-    emergency_contact_name_1:"نام تماس اضطراری اول", father_name:"نام پدر", national_code:"کد ملی",
-    full_name_3:"نام سه‌جزئی", primary_responsibility:"مسئولیت اصلی", job:"شغل",
-    finance_type:"نوع مالی", paid_amount:"مبلغ پرداخت‌شده", remaining_amount:"مانده بدهی",
-    installment_count:"تعداد اقساط", installment_amount:"مبلغ هر قسط", due_status:"وضعیت سررسید",
-    invite_status:"وضعیت دعوت", attendance_status:"وضعیت حضور", excuse_reason:"علت عذر",
-    arrival_time:"ساعت ورود", meeting_id:"شناسه جلسه", service_id:"شناسه خدمت",
-    is_paid:"وضعیت پرداخت", is_deleted:"وضعیت حذف", email:"رایانامه", role:"نقش کاربری",
-    username:"نام کاربری", category_name:"عنوان دسته‌بندی", transaction_category:"دسته‌بندی تراکنش",
-    payment_status:"وضعیت پرداخت", source:"منبع", destination:"مقصد", amount_rial:"مبلغ به ریال"
-  };
-  function reportLabel(key) {
-    if (reportColumnLabels[key]) return reportColumnLabels[key];
-    // Never expose an unknown database key to report viewers.
-    return "فیلد تکمیلی";
-  }
-  const reportDateColumns = /(^date$|_date$|_at$|^birth_date$|^membership_date$|^meeting_date$|^service_date$|^transaction_date$)/i;
-  function reportValue(key, value) {
-    if (value == null || value === "") return "—";
-    // Translate known database enum values for all report previews and exports.
-    if (typeof value === "string") {
-      const raw = value.trim();
-      const v = raw.toLowerCase();
-      const common = {
-        income:"دریافت", expense:"پرداخت", cash:"نقدی", bank:"حواله بانکی",
-        cheque:"چک", check:"چک", other:"سایر", pending:"در انتظار",
-        approved:"تأییدشده", rejected:"ردشده", cancelled:"لغوشده",
-        active:"فعال", inactive:"غیرفعال", present:"حاضر", absent:"غایب",
-        excused:"با عذر", unexcused:"بدون عذر", late:"تأخیردار",
-        paid:"پرداخت‌شده", unpaid:"پرداخت‌نشده", partial:"پرداخت ناقص",
-        maintenance:"در تعمیر", ready:"آماده‌به‌کار", completed:"تکمیل‌شده",
-        male:"مرد", female:"زن", yes:"بله", no:"خیر",
-        true:"بله", false:"خیر", monthly:"ماهانه", weekly:"هفتگی",
-        daily:"روزانه", online:"برخط", offline:"غیربرخط",
-        transfer:"انتقال", installment:"قسطی", installments:"اقساط", card:"کارت بانکی",
-        bank_transfer:"حواله بانکی", cash_payment:"پرداخت نقدی", credit:"اعتباری",
-        cancelled:"لغوشده", canceled:"لغوشده", draft:"پیش‌نویس", submitted:"ارسال‌شده",
-        processing:"در حال بررسی", failed:"ناموفق", success:"موفق", error:"خطا",
-        active_user:"کاربر فعال", manager:"مدیر", admin:"مدیر اصلی", user:"کاربر",
-        service:"خدمت", vehicle:"خودرو", driver:"راننده", tuition:"شهریه",
-        uniform:"لباس", equipment:"تجهیزات", support:"حمایت مالی",
-        cashbox:"صندوق", donation:"کمک مالی", refund:"بازپرداخت",
-        on_time:"به‌موقع", late_arrival:"تأخیردار", excused_absence:"غیبت باعذر",
-        no_show:"غایب", enabled:"فعال", disabled:"غیرفعال"
-      };
-      if (Object.prototype.hasOwnProperty.call(common, v)) return common[v];
-      // Keep Latin-only free-text out of user-facing reports; raw source data remains untouched.
-      if (/^[A-Za-z][A-Za-z0-9 _.-]*$/.test(raw)) return "متن غیرفارسی ثبت‌شده";
-    }
-    if (typeof value === "boolean" || key === "is_active") {
-      if (value === true || value === "true") return "فعال";
-      if (value === false || value === "false") return "غیرفعال";
-    }
-    if (reportDateColumns.test(key) && typeof value === "string") {
-      const m=value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](.*))?$/);
-      if(m) {
-        try {
-          const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],12));
-          const date=new Intl.DateTimeFormat("fa-IR-u-ca-persian", {year:"numeric",month:"2-digit",day:"2-digit"}).format(d).replace(/\u200e/g,"");
-          return m[4] ? date+" "+m[4].slice(0,5) : date;
-        } catch (_) {}
-      }
-    }
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value);
-  }
-  function fa(v) {
-    try { return new Intl.NumberFormat("fa-IR").format(v); }
-    catch (_) { return String(v); }
-  }
-  async function readTable(name, limit=3000) {
-    const session = JSON.parse(localStorage.getItem("khadem_session") || "{}");
-    const headers = {"apikey": CFG.key, "Accept":"application/json"};
-    if (session.access_token) headers.Authorization = "Bearer " + session.access_token;
-    const response = await fetch(CFG.url + "/rest/v1/" + encodeURIComponent(name) +
-      "?select=*&limit=" + limit, {headers, cache:"no-store"});
-    if (!response.ok) throw new Error(name + ": " + response.status + " " + response.statusText);
-    return response.json();
-  }
-  function download(name, text, mime="text/plain;charset=utf-8") {
-    const url = URL.createObjectURL(new Blob(["\ufeff", text], {type:mime}));
-    const a = document.createElement("a");
-    a.href = url; a.download = name; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1200);
-  }
-  function csvCell(v) {
-    const value = v == null ? "" : (typeof v === "object" ? JSON.stringify(v) : String(v));
-    return '"' + value.replace(/"/g, '""') + '"';
-  }
-  function exportCsv(rows, name) {
-    if (!rows || !rows.length) { toast("داده‌ای برای خروجی وجود ندارد"); return; }
-    const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
-    const headers = cols.map(c => reportLabel(c));
-    const body = rows.map(r => cols.map(c => reportValue(c, r[c])));
-    const ext = String(name || "").match(/\.[a-z0-9]+$/i)?.[0] || ".csv";
-    const safeName = /پشتیبان|backup/i.test(String(name||"")) ? "پشتیبان-سامانه"+ext : "گزارش-سامانه"+ext;
-    download(safeName, [headers.map(csvCell).join(","), ...body.map(r => r.map(csvCell).join(","))].join("\r\n"), "text/csv;charset=utf-8");
-  }
-  function showPage(title, html) {
-    $("content").innerHTML = '<div class="page-title"><h2>' + title +
-      '</h2><button class="btn secondary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>' + html;
-  }
-
-  function reportPage() {
-    showPage("📊 گزارش‌ساز پیشرفته", '<div class="card"><p class="muted">منبع داده، ستون‌های دلخواه و رکوردهای موردنظر را انتخاب کنید. فقط داده‌هایی نمایش داده می‌شود که دسترسی حساب فعلی اجازه می‌دهد.</p>' +
-      '<div class="form-grid"><div class="field"><label>منبع داده</label><select id="enhDataset">' +
-      Object.keys(datasets).map(k => '<option value="' + k + '">' + datasets[k].label + '</option>').join("") +
-      '</select></div><div class="field"><label>فیلتر بر اساس خادم (اختیاری)</label><select id="enhKhadem"><option value="">همه خادمین</option></select></div><div class="field"><label>جستجو در رکوردها</label><input id="enhQuery" placeholder="نام، کد، تاریخ..."></div></div>' +
-      '<div class="actions"><button class="btn primary" id="enhRun">دریافت رکوردها</button><button class="btn secondary" id="enhCsv">دریافت فایل جدولی انتخابی</button><button class="btn secondary" id="enhExcel">دریافت فایل صفحه‌گسترده</button><button class="btn secondary" id="enhWord">دریافت سند متنی</button><button class="btn secondary" id="enhPrint">چاپ / ذخیره به‌صورت سند چاپی</button></div>' +
-      '<div id="enhColumns" style="margin:14px 0"></div><div id="enhResult" style="margin-top:12px">منبع را انتخاب و دریافت رکوردها را بزنید.</div></div>');
-    let allRows = [], currentRows = [], currentCols = [];
-    const result = $("enhResult"), colBox = $("enhColumns");
-    let khademRows = [];
-    (async()=>{try{khademRows=await readTable("khadems",5000);$("enhKhadem").innerHTML='<option value="">همه خادمین</option>'+khademRows.map(k=>'<option value="'+esc(k.id)+'" data-code="'+esc(k.khadem_code||"")+'" data-name="'+esc(k.full_name||k.tri_name||"")+'">'+esc((k.khadem_code||"")+" — "+(k.full_name||k.tri_name||"نام بدون عنوان"))+'</option>').join("");}catch(e){$("enhKhadem").innerHTML='<option value="">همه خادمین (فهرست در دسترس نیست)</option>';}})();
-    function selectedRows(){ const ids=new Set(Array.from(document.querySelectorAll('[data-report-row]:checked')).map(x=>x.value)); return currentRows.filter((r,i)=>ids.has(String(i))); }
-    function drawColumns(){
-      const cfg=datasets[$("enhDataset").value];
-      const cols=Array.from(new Set([...(cfg.cols||[]),...allRows.flatMap(r=>Object.keys(r))])).filter(c=>allRows.some(r=>Object.prototype.hasOwnProperty.call(r,c)));
-      currentCols=cols;
-      colBox.innerHTML='<div class="notice"><b>ستون‌های گزارش</b><div class="actions" style="margin-top:8px"><button type="button" class="btn secondary" id="enhAllCols">انتخاب همه</button><button type="button" class="btn secondary" id="enhNoCols">پاک‌کردن انتخاب</button></div><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">'+cols.map((c,i)=>'<label style="display:inline-flex;align-items:center;gap:5px"><input type="checkbox" data-report-col value="'+esc(c)+'" '+((cfg.cols||[]).includes(c)?'checked':'')+'> '+esc(reportLabel(c))+'</label>').join('')+'</div><p class="muted">برای اطلاعات حساس، فقط ستون‌های لازم را انتخاب کنید.</p></div>';
-      $("enhAllCols").onclick=()=>{colBox.querySelectorAll('[data-report-col]').forEach(x=>x.checked=true);drawResult()};
-      $("enhNoCols").onclick=()=>{colBox.querySelectorAll('[data-report-col]').forEach(x=>x.checked=false);drawResult()};
-      colBox.querySelectorAll('[data-report-col]').forEach(x=>x.onchange=drawResult);
-    }
-    function drawResult(){
-      const hadChecks=!!result.querySelector('[data-report-row]');
-      const pickedBefore=selectedRows();
-      const selectedSet=new Set(pickedBefore.map(r=>currentRows.indexOf(r)));
-      const cols=Array.from(colBox.querySelectorAll('[data-report-col]:checked')).map(x=>x.value);
-      const initialAll=!hadChecks;
-      result.innerHTML='<p><b>تعداد رکوردهای یافت‌شده: '+fa(currentRows.length)+' | انتخاب‌شده: '+fa(initialAll?currentRows.length:selectedSet.size)+'</b></p>'+
-       (currentRows.length?'<div style="overflow:auto"><table class="data-table"><thead><tr><th>انتخاب</th>'+cols.map(c=>'<th>'+esc(reportLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+currentRows.slice(0,1000).map((r,i)=>'<tr><td><input type="checkbox" data-report-row value="'+i+'" '+((initialAll||selectedSet.has(i))?'checked':'')+'></td>'+cols.map(c=>'<td>'+esc(reportValue(c,r[c]))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>':'<div class="notice">رکوردی پیدا نشد.</div>')+
-       (currentRows.length>1000?'<p class="muted">برای جلوگیری از سنگینی صفحه، ۱۰۰۰ ردیف اول نمایش داده شده است؛ دریافت و خروجی براساس رکوردهای بازیابی‌شده انجام می‌شود.</p>':'');
-      result.querySelectorAll('[data-report-row]').forEach(x=>x.onchange=drawResult);
-    }
-    $("enhRun").onclick=async()=>{
-      result.textContent='در حال دریافت اطلاعات...';
-      try{const cfg=datasets[$("enhDataset").value];allRows=await readTable(cfg.table,5000);const q=$("enhQuery").value.trim().toLocaleLowerCase();const selected=$("enhKhadem").selectedOptions[0];const kid=$("enhKhadem").value,kcode=selected?.dataset.code||"",kname=selected?.dataset.name||"";currentRows=allRows.filter(r=>{const textMatch=!q||Object.values(r).some(v=>String(v??'').toLocaleLowerCase().includes(q));const rowId=String(r.khadem_id||r.khadem_uuid||r.person_id||"");const rowCode=String(r.khadem_code||r.code||"");const rowName=String(r.khadem_name||r.full_name||r.tri_name||"");const personMatch=!kid||(rowId===kid)||(kcode&&rowCode===kcode)||(kname&&rowName===kname);return textMatch&&personMatch;});drawColumns();drawResult();}
-      catch(e){colBox.innerHTML='';result.innerHTML='<div class="notice">دریافت داده ناموفق بود: '+esc(e.message)+'؛ دسترسی جدول و RLS را بررسی کنید.</div>';}
-    };
-    $("enhDataset").onchange=()=>{allRows=[];currentRows=[];colBox.innerHTML='';result.textContent='برای دریافت منبع جدید، «دریافت رکوردها» را بزنید.'};
-    $("enhKhadem").onchange=()=>{if(allRows.length){const q=$("enhQuery").value.trim().toLocaleLowerCase(),selected=$("enhKhadem").selectedOptions[0],kid=$("enhKhadem").value,kcode=selected?.dataset.code||"",kname=selected?.dataset.name||"";currentRows=allRows.filter(r=>{const textMatch=!q||Object.values(r).some(v=>String(v??'').toLocaleLowerCase().includes(q));const rowId=String(r.khadem_id||r.khadem_uuid||r.person_id||"");const rowCode=String(r.khadem_code||r.code||"");const rowName=String(r.khadem_name||r.full_name||r.tri_name||"");return textMatch&&(!kid||rowId===kid||(kcode&&rowCode===kcode)||(kname&&rowName===kname));});drawColumns();drawResult();}};
-    $("enhQuery").onkeydown=e=>{if(e.key==='Enter')$("enhRun").click()};
-    $("enhCsv").onclick=()=>{const rows=selectedRows();const cols=Array.from(colBox.querySelectorAll('[data-report-col]:checked')).map(x=>x.value);if(!rows.length)return toast('ابتدا رکوردهای موردنظر را انتخاب کنید.');if(!cols.length)return toast('حداقل یک ستون انتخاب کنید.');const cell=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';download('گزارش-خادمین.csv',[cols.map(c=>cell(reportLabel(c))).join(','),...rows.map(r=>cols.map(c=>cell(reportValue(c,r[c]))).join(','))].join('\r\n'),'text/csv;charset=utf-8');};
-    function getReportExport(){const rows=selectedRows(),cols=Array.from(colBox.querySelectorAll('[data-report-col]:checked')).map(x=>x.value);if(!rows.length){toast('ابتدا رکوردهای موردنظر را انتخاب کنید.');return null}if(!cols.length){toast('حداقل یک ستون انتخاب کنید.');return null}return {rows,cols}}
-    function reportTableHtml(rows,cols,numbered=true){const head=(numbered?'<th>ردیف</th>':'')+cols.map(c=>'<th>'+esc(reportLabel(c))+'</th>').join('');const body=rows.map((r,i)=>'<tr>'+(numbered?'<td>'+String(i+1)+'</td>':'')+cols.map(c=>'<td>'+esc(reportValue(c,r[c]))+'</td>').join('')+'</tr>').join('');return '<table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table>'}
-    $('enhExcel').onclick=async()=>{const x=getReportExport();if(!x)return;try{if(!window.XLSX){await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';sc.onload=resolve;sc.onerror=()=>reject(Error('ابزار ساخت فایل صفحه‌گسترده بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.'));document.head.appendChild(sc)})}const data=x.rows.map((r,i)=>({'ردیف':i+1,...Object.fromEntries(x.cols.map(c=>[reportLabel(c),reportValue(c,r[c])]))}));const ws=XLSX.utils.json_to_sheet(data);ws['!rtl']=true;ws['!cols']=[{wch:8},...x.cols.map(c=>({wch:Math.min(30,Math.max(12,reportLabel(c).length+3))}))];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'گزارش');XLSX.writeFile(wb,'گزارش-خادمین-'+new Date().toLocaleDateString('fa-IR').replaceAll('/','-')+'.xlsx');}catch(e){toast('ساخت فایل صفحه‌گسترده ناموفق بود: '+e.message)}};
-    $('enhWord').onclick=()=>{const x=getReportExport();if(!x)return;const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma,Arial;direction:rtl}h2{text-align:center}table{border-collapse:collapse;width:100%;font-size:10pt}th,td{border:1px solid #666;padding:5px;text-align:right}th{background:#e8edf3}</style></head><body><h2>گزارش سامانه جامع مدیریت خدام</h2><p>تعداد رکورد: '+x.rows.length+' — تاریخ تهیه: '+esc(new Date().toLocaleDateString('fa-IR'))+'</p>'+reportTableHtml(x.rows,x.cols,true)+'\n
-<!-- نسخه ۱۱۹: ثبت درخواست تلفنی بدون وابستگی به Phone Signups عمومی و تفکیک ابزارهای منو در مدیریت سامانه -->
-<script>
 (function(){
   const $=id=>document.getElementById(id);
   const settings=(window.menus||[]).find(m=>m[0]==='settings');
@@ -853,77 +657,9 @@ window.addEventListener("online",()=>toast("🟢 اینترنت برقرار ش�
   };
   if(typeof window.buildNav==='function')window.buildNav();
 })();
+
 </script>
 
-</body></html>';download('گزارش-خادمین-'+new Date().toLocaleDateString('fa-IR').replaceAll('/','-')+'.doc',html,'application/msword;charset=utf-8')};
-    $("enhPrint").onclick=()=>{const x=getReportExport();if(!x)return;const pages=[];for(let i=0;i<x.rows.length;i+=15)pages.push(x.rows.slice(i,i+15));const body=pages.map((page,pi)=>'<section class="page"><h2>گزارش سامانه جامع مدیریت خدام</h2><div class="meta">تعداد کل: '+x.rows.length+' — صفحه '+(pi+1)+' از '+pages.length+' — تاریخ: '+esc(new Date().toLocaleDateString('fa-IR'))+'</div>'+reportTableHtml(page,x.cols,true)+'</section>').join('');const w=window.open('','_blank');if(!w)return toast('مرورگر پنجره چاپ را مسدود کرد. اجازه بازشدن پنجره را بدهید.');w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش سامانه خدام</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Tahoma,Arial;padding:0;direction:rtl}.page{page-break-after:always;break-after:page;min-height:170mm}.page:last-child{page-break-after:auto;break-after:auto}h2{text-align:center;font-size:16px}.meta{font-size:10px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:10px;table-layout:auto}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}@media screen{.page{padding:16px;border:1px solid #ddd;margin:12px}.page:last-child{margin-bottom:40px}}@media print{button{display:none}}</style></head><body>'+body+'<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>');w.document.close()};
-  }
-
-  function backupPage() {
-    showPage("⚙️ پشتیبان‌گیری", '<div class="card"><div class="notice">فقط داده‌هایی که حساب فعلی اجازه خواندن آن‌ها را دارد در فایل قرار می‌گیرد. این ابزار داده‌ای را حذف یا بازنویسی نمی‌کند.</div>' +
-      '<p>از جدول‌های اصلی سامانه یک فایل JSON ساخته می‌شود. خطاهای احتمالی دسترسی نیز در فایل درج می‌شوند.</p>' +
-      '<button class="btn primary" id="enhBackup">⬇️ ساخت پشتیبان JSON</button><p class="muted">فایل ممکن است شامل اطلاعات شخصی باشد؛ آن را در محل امن نگه دارید.</p></div>');
-    $("enhBackup").onclick = async () => {
-      const names = ["khadems","service_records","meetings","vehicles","finance_accounts","finance_transactions","shrine_sites","profiles","app_settings","chat_messages","registration_requests"];
-      const out = {application:"سامانه جامع مدیریت خدام",created_at:new Date().toISOString(),tables:{},errors:[]};
-      for (const name of names) {
-        try { out.tables[name] = await readTable(name, 5000); }
-        catch (e) { out.errors.push({table:name,error:e.message}); }
-      }
-      download("پشتیبان-سامانه-" + new Date().toLocaleDateString("fa-IR").replaceAll("/","-") + ".json", JSON.stringify(out,null,2), "application/json;charset=utf-8");
-      toast("فایل پشتیبان ساخته شد؛ خطاهای احتمالی داخل فایل ثبت شده‌اند.");
-    };
-  }
-
-  function auditPage() {
-    showPage("🧾 گزارش رویدادها (Audit Log)", '<div class="card"><p class="muted">این صفحه فقط رویدادهای موجود را می‌خواند؛ خودش رویداد ساختگی ایجاد نمی‌کند.</p>' +
-      '<button class="btn secondary" id="enhAudit">به‌روزرسانی</button><div id="enhAuditResult" style="margin-top:12px"></div></div>');
-    $("enhAudit").onclick = async () => {
-      const box = $("enhAuditResult"); box.textContent = "در حال دریافت...";
-      try {
-        const rows = await readTable("audit_logs",1000);
-        box.innerHTML = '<button class="btn secondary" id="enhAuditCsv">دریافت فایل جدولی</button><p>تعداد رویدادها: ' + fa(rows.length) +
-          '</p><div style="overflow:auto"><table class="data-table"><thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>جدول</th><th>جزئیات</th></tr></thead><tbody>' +
-          rows.map(r => "<tr><td>"+esc(r.created_at||r.event_time||"—")+"</td><td>"+esc(r.user_email||r.user_id||"—")+
-          "</td><td>"+esc(r.action||r.operation||"—")+"</td><td>"+esc(r.table_name||r.entity||"—")+"</td><td>"+esc(JSON.stringify(r.details||r.metadata||{}))+"</td></tr>").join("") +
-          "</tbody></table></div>";
-        $("enhAuditCsv").onclick = () => exportCsv(rows,"گزارش-رخدادهای-سامانه.csv");
-      } catch (e) {
-        box.innerHTML = '<div class="notice">جدول audit_logs در دسترس نیست یا ساخته نشده است. ثبت امن رویدادها نیازمند جدول پایگاه داده و سیاست‌های RLS است. ' + esc(e.message) + '</div>';
-      }
-    };
-    $("enhAudit").click();
-  }
-
-  function aiPage(sub) {
-    const titles = {assistant:"دستیار مدیر",search:"جستجوی زبان طبیعی",planning:"برنامه‌ریزی هوشمند",analysis:"تحلیل هوشمند",report:"گزارش‌نویسی هوشمند"};
-    showPage("🤖 " + (titles[sub] || "دستیار"), '<div class="card"><div class="notice">این مرحله جستجوی کمکی در بانک خادمین است و هنوز به مدل هوش مصنوعی خارجی متصل نیست. اتصال هوش مصنوعی باید در سمت سرور انجام شود؛ کلید محرمانه را در مرورگر قرار ندهید.</div>' +
-      '<div class="field"><label>نام، کد یا عبارت جستجو</label><textarea id="enhAiQ" rows="3" placeholder="مثلاً نام خادم یا شماره تلفن"></textarea></div>' +
-      '<button class="btn primary" id="enhAiRun">جستجو در بانک خادمین</button><div id="enhAiResult" style="margin-top:14px"></div></div>');
-    $("enhAiRun").onclick = async () => {
-      const q = $("enhAiQ").value.trim().toLocaleLowerCase(), box = $("enhAiResult");
-      if (!q) { box.innerHTML = '<div class="notice">عبارت جستجو را وارد کنید.</div>'; return; }
-      box.textContent = "در حال جستجو...";
-      try {
-        const rows = await readTable("khadems",3000);
-        const hits = rows.filter(r => Object.values(r).some(v => String(v ?? "").toLocaleLowerCase().includes(q))).slice(0,100);
-        box.innerHTML = "<p>نتایج: " + fa(hits.length) + "</p>" + (hits.length ?
-          '<div style="overflow:auto"><table class="data-table"><thead><tr><th>کد</th><th>نام</th><th>تلفن</th><th>وضعیت</th></tr></thead><tbody>' +
-          hits.map(r => "<tr><td>"+esc(r.khadem_code||"—")+"</td><td>"+esc(r.full_name||"—")+"</td><td>"+esc(r.phone||"—")+"</td><td>"+(r.is_active===false?"غیرفعال":"فعال")+"</td></tr>").join("") +
-          "</tbody></table></div>" : '<div class="notice">موردی یافت نشد.</div>');
-      } catch (e) { box.innerHTML = '<div class="notice">جستجو ناموفق بود: ' + esc(e.message) + '</div>'; }
-    };
-  }
-
-  window.render = function (p) {
-    if (p === "reports:builder" || p === "reports:saved" || p === "reports:exports") return reportPage();
-    if (p === "settings:backup") return backupPage();
-    if (p === "settings:audit") return auditPage();
-    if (p && p.indexOf("ai:") === 0) return aiPage(p.split(":")[1]);
-    return originalRender(p);
-  };
-})();
-</script>
 <script>
 (function () {
   const priorRender = window.render;
@@ -1528,7 +1264,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۱۸</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۲۰</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -2247,6 +1983,6 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  const start=()=>{const c=$('content');if(!c)return;new MutationObserver(run).observe(c,{childList:true,subtree:true,characterData:true});const side=$('sidebar');if(side)new MutationObserver(run).observe(side,{childList:true,subtree:true,characterData:true});run();};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
-<!-- نسخه ۱۱۷: ورود تلفنی، صفحه ورود بازطراحی‌شده، مدیریت رمز موقت مدیر اصلی و حذف زیرمنوی تکراری درخواست عضویت -->
+<!-- نسخه ۱۲۰: اصلاح قطعه جاافتاده و بازیابی ساختار صحیح اسکریپت‌ها -->
 </body>
 </html>
