@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "index.html"
+      - "app.js"
+      - "styles.css"
       - "logo.png"
       - ".github/workflows/build-android-apk.yml"
   workflow_dispatch:
@@ -27,51 +29,66 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify required source and tools
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -s index.html || { echo "::error::فایل index.html در ریشه مخزن وجود ندارد یا خالی است."; exit 1; }
+          command -v curl
+          command -v unzip
+          command -v sha256sum
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
 
       - name: Install Gradle 8.9
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
           GRADLE_VERSION="8.9"
-          curl --fail --location --retry 3 \
-            "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
-            --output "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
-          unzip -q "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip" -d "${RUNNER_TEMP}"
-          echo "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
-          "${RUNNER_TEMP}/gradle-${GRADLE_VERSION}/bin/gradle" --version
+          GRADLE_HOME="${RUNNER_TEMP}/gradle-${GRADLE_VERSION}"
+          GRADLE_ZIP="${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
+
+          if [[ ! -x "${GRADLE_HOME}/bin/gradle" ]]; then
+            curl --fail --show-error --location --retry 3 --retry-all-errors \
+              "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+              --output "${GRADLE_ZIP}"
+            unzip -q "${GRADLE_ZIP}" -d "${RUNNER_TEMP}"
+          fi
+
+          test -x "${GRADLE_HOME}/bin/gradle"
+          echo "${GRADLE_HOME}/bin" >> "${GITHUB_PATH}"
+          "${GRADLE_HOME}/bin/gradle" --version
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK platform and build tools
+      - name: Accept Android SDK licenses
         shell: bash
         run: |
-          set -euo pipefail
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
-          yes | sdkmanager --licenses >/dev/null || true
+          set -Eeuo pipefail
+          yes | sdkmanager --licenses >/dev/null || test "$?" -eq 141
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Create Android WebView project
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
 
-          mkdir -p android-app/app/src/main/java/ir/sayedazainab/khademjame
-          mkdir -p android-app/app/src/main/assets
-          mkdir -p dist
+          APP_DIR="android-app"
+          JAVA_DIR="${APP_DIR}/app/src/main/java/ir/sayedazainab/khademjame"
+          mkdir -p "${JAVA_DIR}" "${APP_DIR}/app/src/main"
 
-          test -s index.html
-          cp index.html android-app/app/src/main/assets/index.html
-
-          if [ -f logo.png ]; then
-            cp logo.png android-app/app/src/main/assets/logo.png
-          fi
-
-          cat > android-app/settings.gradle <<'EOF'
+          cat > "${APP_DIR}/settings.gradle" <<'EOF'
           pluginManagement {
               repositories {
                   google()
@@ -92,13 +109,20 @@ jobs:
           include(":app")
           EOF
 
-          cat > android-app/build.gradle <<'EOF'
+          cat > "${APP_DIR}/build.gradle" <<'EOF'
           plugins {
               id "com.android.application" version "8.7.3" apply false
           }
           EOF
 
-          cat > android-app/app/build.gradle <<'EOF'
+          cat > "${APP_DIR}/gradle.properties" <<'EOF'
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          org.gradle.parallel=false
+          org.gradle.caching=true
+          android.useAndroidX=true
+          EOF
+
+          cat > "${APP_DIR}/app/build.gradle" <<'EOF'
           plugins {
               id "com.android.application"
           }
@@ -122,7 +146,7 @@ jobs:
           }
           EOF
 
-          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          cat > "${APP_DIR}/app/src/main/AndroidManifest.xml" <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
@@ -145,56 +169,55 @@ jobs:
           </manifest>
           EOF
 
-          cat > android-app/app/src/main/java/ir/sayedazainab/khademjame/MainActivity.java <<'EOF'
+          cat > "${JAVA_DIR}/MainActivity.java" <<'EOF'
           package ir.sayedazainab.khademjame;
 
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
-          import java.io.ByteArrayOutputStream;
-          import java.io.InputStream;
-          import java.nio.charset.StandardCharsets;
 
           public class MainActivity extends Activity {
               private WebView webView;
+              private static final String APP_URL =
+                  "https://daadelian-bot.github.io/khadem-jame/";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+
                   webView = new WebView(this);
                   setContentView(webView);
+
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
-                  webView.getSettings().setDatabaseEnabled(true);
-                  webView.setWebViewClient(new WebViewClient());
+                  webView.getSettings().setSupportZoom(true);
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public boolean shouldOverrideUrlLoading(
+                              WebView view, WebResourceRequest request) {
+                          String scheme = request.getUrl().getScheme();
+                          return !("https".equalsIgnoreCase(scheme)
+                              || "http".equalsIgnoreCase(scheme));
+                      }
+                  });
                   webView.setWebChromeClient(new WebChromeClient());
 
-                  try (InputStream input = getAssets().open("index.html");
-                       ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                      byte[] buffer = new byte[8192];
-                      int count;
-                      while ((count = input.read(buffer)) != -1) {
-                          output.write(buffer, 0, count);
-                      }
-                      String html = output.toString(StandardCharsets.UTF_8.name());
-                      webView.loadDataWithBaseURL(
-                          "https://daadelian-bot.github.io/khadem-jame/",
-                          html,
-                          "text/html",
-                          "UTF-8",
-                          null
-                      );
-                  } catch (Exception error) {
-                      webView.loadData(
-                          "<html><meta charset='utf-8'><body dir='rtl'>"
-                          + "<h3>بارگذاری برنامه انجام نشد</h3>"
-                          + "<p>فایل اصلی index.html را بررسی کنید.</p></body></html>",
-                          "text/html",
-                          "UTF-8"
-                      );
+                  if (savedInstanceState != null) {
+                      webView.restoreState(savedInstanceState);
+                  } else {
+                      webView.loadUrl(APP_URL);
                   }
+              }
+
+              @Override
+              protected void onSaveInstanceState(Bundle outState) {
+                  if (webView != null) {
+                      webView.saveState(outState);
+                  }
+                  super.onSaveInstanceState(outState);
               }
 
               @Override
@@ -209,39 +232,52 @@ jobs:
               @Override
               protected void onDestroy() {
                   if (webView != null) {
+                      webView.stopLoading();
+                      webView.setWebChromeClient(null);
+                      webView.setWebViewClient(null);
                       webView.destroy();
+                      webView = null;
                   }
                   super.onDestroy();
               }
           }
           EOF
 
+          test -s "${APP_DIR}/settings.gradle"
+          test -s "${APP_DIR}/app/build.gradle"
+          test -s "${APP_DIR}/app/src/main/AndroidManifest.xml"
+          test -s "${JAVA_DIR}/MainActivity.java"
+
       - name: Build debug APK
         shell: bash
         run: |
-          set -euo pipefail
-          gradle -p android-app --no-daemon clean assembleDebug
+          set -Eeuo pipefail
+          gradle -p android-app --no-daemon --stacktrace clean assembleDebug
 
           APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
-          test -s "$APK_PATH"
+          test -s "${APK_PATH}"
 
-          cp "$APK_PATH" "dist/Samane-Jame-Khademin-1.0.6-debug.apk"
-          sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > dist/SHA256SUMS.txt
+          mkdir -p dist
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.6-debug.apk"
+          sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > "dist/SHA256SUMS.txt"
 
-          cat > dist/README-FA.txt <<'EOF'
+          cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
           نسخه: 1.0.6 (کد نسخه 106)
           نوع ساخت: Debug APK
 
+          این برنامه یک پوسته WebView است و نسخه منتشرشده سامانه را از اینترنت باز می‌کند.
+          برای استفاده، اتصال اینترنت لازم است. تغییرات منتشرشده در GitHub Pages در اجرای برنامه
+          نمایش داده می‌شوند؛ فایل‌های سایت داخل APK به‌صورت آفلاین بسته‌بندی نشده‌اند.
+
           نصب:
           1) فایل APK را به گوشی اندرویدی منتقل کنید.
           2) فایل را باز کنید و در صورت درخواست، اجازه نصب از این منبع را فعال کنید.
-          3) این نسخه برای آزمایش است و نسخه انتشار امضاشده محسوب نمی‌شود.
-
-          نکته:
-          محتوای index.html هنگام ساخت داخل برنامه قرار می‌گیرد. بخش‌های وابسته به سرویس آنلاین
-          یا Supabase همچنان به اتصال اینترنت و تنظیمات صحیح سرویس نیاز دارند.
+          3) این نسخه آزمایشی است و APK انتشار نهایی با امضای رسمی نیست.
           EOF
+
+          test -s "dist/SHA256SUMS.txt"
+          test -s "dist/README-FA.txt"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
