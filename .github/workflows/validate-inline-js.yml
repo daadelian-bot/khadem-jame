@@ -42,7 +42,7 @@ jobs:
           const { spawnSync } = require('node:child_process');
 
           const html = fs.readFileSync('index.html', 'utf8');
-          const scriptTag = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+          const scriptTag = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
           const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'khadem-inline-js-'));
           let match;
           let checked = 0;
@@ -51,9 +51,9 @@ jobs:
           while ((match = scriptTag.exec(html)) !== null) {
             const attrs = match[1] || '';
             const source = (match[2] || '').trim();
-            if (!source || /\\bsrc\\s*=/i.test(attrs)) continue;
+            if (!source || /\bsrc\s*=/i.test(attrs)) continue;
 
-            const typeMatch = attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
+            const typeMatch = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i);
             const type = typeMatch ? typeMatch[1].toLowerCase() : 'text/javascript';
             if (type.includes('json') || type === 'importmap') continue;
             if (!type.includes('javascript') && type !== 'module' && type !== 'text/ecmascript') continue;
