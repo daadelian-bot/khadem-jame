@@ -88,8 +88,6 @@
   window.fetch = function (input, init) {
     var meta = shouldCache(input, init);
     if (!meta) return originalFetch(input, init);
-
-    if (!meta) return originalFetch(input, init);
     return cacheKey(meta.url, meta.auth).then(function (key) {
       return originalFetch(input, init).then(function (response) {
         if (!response || !response.ok) return response;
