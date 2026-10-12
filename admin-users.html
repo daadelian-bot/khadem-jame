@@ -71,6 +71,5 @@ $("createBtn").addEventListener("click",async()=>{
  finally{setBusy(b,false,"ساخت حساب و ارسال دعوت‌نامه");}
 });
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();await refreshSession();show("از حساب خارج شدید.");});
-supabase.auth.onAuthStateChange(()=>{void refreshSession();});
 await refreshSession();
 </script></body></html>
