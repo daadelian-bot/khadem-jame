@@ -456,8 +456,21 @@
     return genericPage("finance","امور مالی",rows,columns);
   }
   function fridayPage() {
-    const rows = state.services.filter(r => /جمعه|friday|night/i.test([r.service_type,r.category,r.title,r.notes,r.service_name].join(" ")));
-    return `<h1 class="kj-page-title">پایش خدمت شب جمعه</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"notes",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
+    const rows = state.services.filter(r =>
+      /جمعه|friday|night/i.test([r.service_type,r.category,r.title,r.description,r.notes,r.service_name,r.responsibility].join(" "))
+    ).map(r => {
+      const linkedKhadem = state.khadems.find(k =>
+        String(khademId(k)) === String(r.khadem_id) ||
+        (r.khadem_code !== undefined && r.khadem_code !== null && String(khademCode(k)) === String(r.khadem_code))
+      );
+      return {
+        ...r,
+        khadem_code: val(r, ["khadem_code", "personnel_code"]) || khademCode(linkedKhadem || {}),
+        service_date: val(r, ["service_date", "date", "created_at"]),
+        description: val(r, ["description", "notes", "note"])
+      };
+    });
+    return `<h1 class="kj-page-title">پایش خدمت شب جمعه</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
   }
   function reportsPage() {
     return `<h1 class="kj-page-title">گزارش‌ها</h1><div class="kj-grid">${[
