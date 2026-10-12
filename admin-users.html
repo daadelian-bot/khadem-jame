@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مدیریت امن حساب‌های سامانه خادمین</title>
+<style>
+:root{color-scheme:light;--ink:#18212f;--muted:#657084;--line:#d9e0e8;--accent:#175b45;--bg:#f4f7f6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Tahoma,"Vazirmatn",Arial,sans-serif;color:var(--ink);line-height:1.8}
+main{max-width:680px;margin:28px auto;padding:16px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 8px 26px #15251a0a}
+h1{font-size:1.35rem;margin:0 0 8px}p{margin:8px 0;color:var(--muted)}label{display:block;font-weight:700;margin:14px 0 5px}input,select,button{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}button{cursor:pointer;background:var(--accent);color:#fff;border:0;font-weight:700;margin-top:16px}button.secondary{background:#eef2f4;color:var(--ink);border:1px solid var(--line)}button:disabled{opacity:.6;cursor:wait}.hidden{display:none!important}.notice{padding:11px 13px;border-radius:10px;background:#f1f5f8;color:#27364a;margin-top:14px;white-space:pre-wrap}.notice.error{background:#fff0f0;color:#9c2626}.notice.ok{background:#eaf7ef;color:#155d35}.small{font-size:.9rem}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:520px){.row{grid-template-columns:1fr}main{margin:8px auto}.panel{padding:17px}}
+</style>
+</head>
+<body><main><section class="panel">
+<h1>مدیریت حساب‌های سامانه جامع خادمین</h1>
+<p>این صفحه فقط برای مدیر اصلی است. حساب جدید با دعوت‌نامه ایمیلی ساخته می‌شود؛ رمز عبور از طریق ایمیل ارسال نمی‌شود و کاربر پس از تأیید ایمیل، رمز خودش را تعیین می‌کند.</p>
+<div id="loginBox">
+<label for="adminEmail">ایمیل مدیر اصلی</label><input id="adminEmail" type="email" autocomplete="username" required>
+<label for="adminPassword">رمز عبور مدیر اصلی</label><input id="adminPassword" type="password" autocomplete="current-password" required>
+<button id="loginBtn">ورود مدیر اصلی</button>
+</div>
+<div id="createBox" class="hidden">
+<div class="notice">وارد شده‌اید. ساخت حساب جدید فقط پس از بررسی مجوز مدیر اصلی در سرور انجام می‌شود.</div>
+<label for="fullName">نام و نام خانوادگی</label><input id="fullName" autocomplete="name" required>
+<label for="email">ایمیل کاربر یا مدیر</label><input id="email" type="email" autocomplete="off" required>
+<label for="phone">شماره همراه (اختیاری)</label><input id="phone" type="tel" autocomplete="off">
+<label for="role">نوع دسترسی</label><select id="role"><option value="user">کاربر</option><option value="manager">مدیر</option></select>
+<button id="createBtn">ساخت حساب و ارسال دعوت‌نامه</button>
+<button id="logoutBtn" class="secondary">خروج از حساب مدیر</button>
+</div>
+<div id="message" class="notice" role="status" aria-live="polite">برای ادامه با حساب مدیر اصلی وارد شوید.</div>
+<p class="small">نکته: ایمیل دعوت باید به نشانی درست برسد. اگر دعوت‌نامه ارسال نشد، تنظیمات ایمیل و نشانی‌های مجاز تغییر مسیر در Supabase باید بررسی شود. این صفحه هیچ رمز کاربری را ذخیره نمی‌کند.</p>
+</section></main>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const URL = "https://fxxtyfurdzpzfvweoppo.supabase.co";
+const KEY = "sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
+const supabase = createClient(URL, KEY);
+const $ = id => document.getElementById(id);
+function show(message, kind=""){ $("message").textContent=message; $("message").className="notice"+(kind?" "+kind:""); }
+function setBusy(button,busy,label){button.disabled=busy;if(busy)button.dataset.old=button.textContent;button.textContent=busy?"لطفاً صبر کنید…":(button.dataset.old||label);}
+async function refreshSession(){
+ const {data:{session}}=await supabase.auth.getSession();
+ $("loginBox").classList.toggle("hidden",!!session);
+ $("createBox").classList.toggle("hidden",!session);
+ if(session) show("نشست برقرار است. هنگام ساخت حساب، سرور مجوز مدیر اصلی را دوباره بررسی می‌کند.","ok");
+}
+$("loginBtn").addEventListener("click",async()=>{
+ const b=$("loginBtn");setBusy(b,true,"ورود مدیر اصلی");
+ const {error}=await supabase.auth.signInWithPassword({email:$("adminEmail").value.trim(),password:$("adminPassword").value});
+ setBusy(b,false,"ورود مدیر اصلی");
+ if(error){show("ورود ناموفق بود. ایمیل و رمز مدیر اصلی را بررسی کنید. ("+error.message+")","error");return;}
+ $("adminPassword").value="";await refreshSession();
+});
+$("createBtn").addEventListener("click",async()=>{
+ const full_name=$("fullName").value.trim(),email=$("email").value.trim(),phone=$("phone").value.trim(),role=$("role").value;
+ if(!full_name||!email){show("نام و ایمیل را وارد کنید.","error");return;}
+ const b=$("createBtn");setBusy(b,true,"ساخت حساب و ارسال دعوت‌نامه");
+ try{
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session)throw new Error("نشست مدیر پایان یافته است؛ دوباره وارد شوید.");
+  const {data,error}=await supabase.functions.invoke("admin-create-user",{body:{full_name,email,phone,role},headers:{Authorization:"Bearer "+session.access_token}});
+  if(error){
+   let detail=error.message;
+   try{const j=await error.context.json();if(j.error)detail=j.error;}catch{}
+   throw new Error(detail);
+  }
+  if(data?.error)throw new Error(data.error);
+  show("حساب ساخته شد و دعوت‌نامه ارسال شد برای: "+email+"\nنوع دسترسی: "+(role==="manager"?"مدیر":"کاربر")+"\nکاربر باید ایمیل را باز کند، پیوند را دنبال کند و رمز شخصی خود را بسازد. شناسه حساب: "+(data?.user_id||"ثبت شد"),"ok");
+  $("fullName").value="";$("email").value="";$("phone").value="";$("role").value="user";
+ }catch(e){show("عملیات کامل نشد: "+(e?.message||"خطای نامشخص"),"error");}
+ finally{setBusy(b,false,"ساخت حساب و ارسال دعوت‌نامه");}
+});
+$("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();await refreshSession();show("از حساب خارج شدید.");});
+supabase.auth.onAuthStateChange(()=>{void refreshSession();});
+await refreshSession();
+</script></body></html>
