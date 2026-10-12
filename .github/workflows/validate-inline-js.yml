@@ -7,13 +7,16 @@ on:
       - "index.html"
       - "app.js"
       - "service-worker.js"
+      - "offline-runtime.js"
       - "manifest.webmanifest"
       - ".github/workflows/validate-inline-js.yml"
+      - ".github/workflows/build-android-apk.yml"
   pull_request:
     paths:
       - "index.html"
       - "app.js"
       - "service-worker.js"
+      - "offline-runtime.js"
       - "manifest.webmanifest"
       - ".github/workflows/validate-inline-js.yml"
   workflow_dispatch:
@@ -82,5 +85,6 @@ jobs:
         run: |
           node --check app.js
           node --check service-worker.js
+          node --check offline-runtime.js
       - name: Validate web app manifest JSON
         run: node -e "JSON.parse(require('node:fs').readFileSync('manifest.webmanifest', 'utf8')); console.log('manifest.webmanifest is valid JSON.');"

@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - main
+      - "feature/**"
     paths:
       - "index.html"
       - "app.js"
       - "styles.css"
       - "logo.png"
+      - "service-worker.js"
+      - "manifest.webmanifest"
+      - "offline-runtime.js"
       - ".github/workflows/build-android-apk.yml"
   workflow_dispatch:
 
@@ -87,7 +91,44 @@ jobs:
 
           APP_DIR="android-app"
           JAVA_DIR="${APP_DIR}/app/src/main/java/ir/sayedazainab/khademjame"
-          mkdir -p "${JAVA_DIR}" "${APP_DIR}/app/src/main"
+          mkdir -p "${JAVA_DIR}" "${APP_DIR}/app/src/main" "${APP_DIR}/app/src/main/assets"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p "${APP_DIR}/app/src/main/res/mipmap-${density}"; done
+
+          # Create Android launcher icon variants from the repository logo, preserving the logo itself.
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          src = Image.open("logo.png").convert("RGBA")
+          sizes = {"mdpi":48,"hdpi":72,"xhdpi":96,"xxhdpi":144,"xxxhdpi":192}
+          for density, size in sizes.items():
+              canvas = Image.new("RGBA", (size, size), (0,0,0,0))
+              logo = src.copy()
+              logo.thumbnail((int(size*0.84), int(size*0.84)), Image.Resampling.LANCZOS)
+              canvas.alpha_composite(logo, ((size-logo.width)//2, (size-logo.height)//2))
+              canvas.save(Path("android-app/app/src/main/res") / ("mipmap-" + density) / "ic_launcher.png")
+          PY
+
+          # Bundle the current web interface so the app shell opens without network access.
+          # Form data sync is not claimed until the application-level queue is implemented.
+          cp index.html service-worker.js manifest.webmanifest logo.png app.js styles.css offline-runtime.js "${APP_DIR}/app/src/main/assets/"
+
+          # Inject the offline runtime before the app's own inline scripts.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android-app/app/src/main/assets/index.html")
+          html = p.read_text(encoding="utf-8")
+          tag = '<script src="./offline-runtime.js"></script>'
+          if tag not in html:
+              if "</head>" in html:
+                  html = html.replace("</head>", tag + "\n</head>", 1)
+              elif "</body>" in html:
+                  html = html.replace("</body>", tag + "\n</body>", 1)
+              else:
+                  raise SystemExit("index.html has no insertion point for offline runtime")
+              p.write_text(html, encoding="utf-8")
+          assert tag in p.read_text(encoding="utf-8")
+          PY
 
           cat > "${APP_DIR}/settings.gradle" <<'EOF'
           pluginManagement {
@@ -136,13 +177,17 @@ jobs:
                   applicationId "ir.sayedazainab.khademjame"
                   minSdk 23
                   targetSdk 28
-                  versionCode 106
-                  versionName "1.0.6"
+                  versionCode 107
+                  versionName "1.0.7"
               }
 
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
+              }
+
+              dependencies {
+                  implementation "androidx.webkit:webkit:1.12.1"
               }
           }
           EOF
@@ -154,6 +199,8 @@ jobs:
               <application
                   android:allowBackup="false"
                   android:label="سامانه جامع خادمین"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
                   android:usesCleartextTraffic="false"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
                   android:supportsRtl="true">
@@ -178,16 +225,22 @@ jobs:
           import android.webkit.WebChromeClient;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
-          import android.webkit.WebViewClient;
+          import androidx.webkit.WebViewAssetLoader;
+          import androidx.webkit.WebViewClientCompat;
 
           public class MainActivity extends Activity {
               private WebView webView;
+              private WebViewAssetLoader assetLoader;
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/";
+                  "https://appassets.androidplatform.net/assets/index.html";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+
+                  assetLoader = new WebViewAssetLoader.Builder()
+                      .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                      .build();
 
                   webView = new WebView(this);
                   setContentView(webView);
@@ -195,13 +248,20 @@ jobs:
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
                   webView.getSettings().setSupportZoom(true);
-                  webView.setWebViewClient(new WebViewClient() {
+                  webView.setWebViewClient(new WebViewClientCompat() {
+                      @Override
+                      public android.webkit.WebResourceResponse shouldInterceptRequest(
+                              WebView view, WebResourceRequest request) {
+                          return assetLoader.shouldInterceptRequest(request.getUrl());
+                      }
+
                       @Override
                       public boolean shouldOverrideUrlLoading(
                               WebView view, WebResourceRequest request) {
+                          String host = request.getUrl().getHost();
                           String scheme = request.getUrl().getScheme();
-                          return !("https".equalsIgnoreCase(scheme)
-                              || "http".equalsIgnoreCase(scheme));
+                          if ("appassets.androidplatform.net".equalsIgnoreCase(host)) return false;
+                          return !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme));
                       }
                   });
                   webView.setWebChromeClient(new WebChromeClient());
@@ -259,17 +319,19 @@ jobs:
           test -s "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.6-debug.apk"
-          sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > "dist/SHA256SUMS.txt"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.7-debug.apk"
+          sha256sum "dist/Samane-Jame-Khademin-1.0.7-debug.apk" > "dist/SHA256SUMS.txt"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.0.6 (کد نسخه 106)
+          نسخه: 1.0.7 (کد نسخه 107)
           نوع ساخت: Debug APK
 
-          این برنامه یک پوسته WebView است و نسخه منتشرشده سامانه را از اینترنت باز می‌کند.
-          برای استفاده، اتصال اینترنت لازم است. تغییرات منتشرشده در GitHub Pages در اجرای برنامه
-          نمایش داده می‌شوند؛ فایل‌های سایت داخل APK به‌صورت آفلاین بسته‌بندی نشده‌اند.
+          این APK نسخه‌ای آزمایشی از پوسته WebView است. فایل‌های رابط کاربری فعلی (HTML، CSS، JS، لوگو و Service Worker)
+          داخل APK بسته‌بندی می‌شوند تا خود رابط در شروع برنامه به اینترنت وابسته نباشد.
+          پاسخ‌های موفق خواندنی (GET) پس از ورود آنلاین، به‌صورت محلی و وابسته به نشست ذخیره می‌شوند تا در قطع اینترنت
+          فقط برای مشاهدهٔ آخرین اطلاعات در دسترس باشند. ورود اولیه، ثبت/ویرایش داده‌ها و صف همگام‌سازی آفلاین هنوز
+          پیاده‌سازی نشده‌اند و برای آن‌ها اتصال اینترنت لازم است. این APK امضای انتشار رسمی ندارد.
 
           نصب:
           1) فایل APK را به گوشی اندرویدی منتقل کنید.

@@ -527,7 +527,7 @@ function tick(){try{const d=new Date();const ds=new Intl.DateTimeFormat("fa-IR-u
 setInterval(tick,1000);tick();buildNav();render();
 
 function endpoint(path){return CFG.url+path}
-async function fetchTimeout(url,opt={},ms=10000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{...opt,signal:c.signal,mode:"cors",cache:"no-store"})}finally{clearTimeout(t)}}
+async function fetchTimeout(url,opt={},ms=10000){const c=new AbortController();let timedOut=false;const t=setTimeout(()=>{timedOut=true;c.abort()},ms);try{return await fetch(url,{...opt,signal:c.signal,mode:"cors",cache:"no-store"})}catch(e){if(e&&e.name==="AbortError"){const err=new Error(timedOut?"زمان انتظار پاسخ سرور تمام شد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.":"درخواست شبکه لغو شد؛ اتصال اینترنت را بررسی کنید.");err.name="KhademNetworkAbort";throw err}throw e}finally{clearTimeout(t)}}
 async function api(path,opt={}){const token=JSON.parse(localStorage.getItem("khadem_session")||"{}").access_token;const headers=Object.assign({"apikey":CFG.key,"Accept":"application/json"},opt.headers||{});if(token)headers.Authorization="Bearer "+token;return fetchTimeout(endpoint(path),Object.assign({},opt,{headers}))}
 /* دریافت صفحه‌به‌صفحه بدون سقف ثابت؛ برای جدول‌های بزرگ، درخواست‌ها به بسته‌های کوچک تقسیم می‌شوند. */
 async function apiGetAll(path,pageSize=1000){let all=[],offset=0;const base=String(path).replace(/([?&])limit=\d+/,'$1').replace(/[?&]$/,'');while(true){const sep=base.includes('?')?'&':'?';const r=await api(base+sep+'limit='+pageSize,{headers:{'Range-Unit':'items','Range':offset+'-'+(offset+pageSize-1)}});const j=await r.json().catch(()=>[]);if(!r.ok)throw new Error(j.message||j.hint||('HTTP '+r.status));if(!Array.isArray(j))throw new Error('پاسخ دریافت سوابق، فهرست معتبر نیست.');const cr=r.headers?.get?.('content-range')||'';const match=cr.match(/^(\d+)-(\d+|\*)\//);if(offset>0&&match&&Number(match[1])!==offset)throw new Error('صفحه‌بندی سوابق درست پاسخ نداد؛ دریافت متوقف شد تا داده‌ای جا نیفتد.');if(!j.length)break;all.push(...j);offset+=j.length;if(j.length<pageSize)break;}return all}
@@ -692,11 +692,12 @@ $('loginBtn').onclick=async()=>{
  if(!email||!pass){toast('ایمیل و رمز عبور را وارد کنید.');return}
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('برای ورود، ایمیل معتبر حساب را وارد کنید؛ ورود با شماره تلفن در Supabase فعال نیست.');$('email').focus();return}
  localStorage.setItem('khadem_last_email',email);
+ if(navigator.onLine===false){$('loginStatus').innerHTML='<span class="bad">برای ورود به حساب، اینترنت لازم است. پس از اتصال دوباره تلاش کنید؛ اطلاعات ورود به‌صورت آفلاین بررسی نمی‌شود.</span>';return}
  $('loginStatus').textContent='در حال بررسی ایمیل و رمز عبور…';
  try{
   let r=await fetchTimeout(endpoint('/auth/v1/token?grant_type=password'),{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},body:JSON.stringify({email,password:pass})});
   let j=await r.json().catch(()=>({}));
-  if(!r.ok){$('loginStatus').innerHTML='<span class="bad">ورود انجام نشد: '+(j.error_description||j.msg||j.message||'ایمیل یا رمز عبور صحیح نیست')+'</span>';return}
+  if(!r.ok){const authErr=String(j.error_description||j.msg||j.message||'');const invalid=/invalid login credentials/i.test(authErr);$('loginStatus').innerHTML='<span class="bad">'+(invalid?'ایمیل یا رمز عبور با حساب احراز هویت‌شده مطابقت ندارد. تأیید مدیر اصلی به‌تنهایی رمز را تنظیم یا اصلاح نمی‌کند؛ از «راهنمای فراموشی رمز» لینک بازیابی بگیرید و سپس با همان ایمیل و رمز جدید وارد شوید. اگر باز هم خطا ماند، مدیر باید وجود حساب در بخش Authentication را بررسی کند.':'ورود انجام نشد: '+(authErr||'ایمیل یا رمز عبور صحیح نیست'))+'</span>';return}
   localStorage.setItem('khadem_session',JSON.stringify(j));
   if(j.user?.email){localStorage.setItem('khadem_last_email',j.user.email)}
   const uid=j.user?.id||j.user?.sub;
@@ -717,7 +718,7 @@ $('loginBtn').onclick=async()=>{
   }
   try{if(window.PasswordCredential&&window.isSecureContext&&navigator.credentials?.store){await navigator.credentials.store(new PasswordCredential({id:email,password:pass,name:email}))}}catch(_){}
   $('loginPage').style.display='none';$('app').style.display='block';$('connBadge').textContent='● متصل';toast('ورود موفق بود.');await loadUiConfig(false);render('dashboard');
- }catch(e){localStorage.removeItem('khadem_session');$('loginStatus').innerHTML='<span class="bad">خطای اتصال: '+(e.message||'اتصال برقرار نشد')+'</span>'}
+ }catch(e){localStorage.removeItem('khadem_session');const msg=e?.name==='KhademNetworkAbort'?e.message:(e?.name==='AbortError'?'درخواست اتصال لغو شد یا زمان انتظار پایان یافت؛ اینترنت را بررسی و دوباره تلاش کنید.':(e.message||'اتصال برقرار نشد'));$('loginStatus').innerHTML='<span class="bad">خطای اتصال: '+msg+'</span>'}
 };
 $('testBtn').onclick=testConnection;
 
