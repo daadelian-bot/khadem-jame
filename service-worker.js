@@ -3,7 +3,7 @@
    داده‌ها و درخواست‌های Supabase هرگز در این Service Worker ذخیره نمی‌شوند.
 */
 'use strict';
-const CACHE_NAME = 'khadem-jame-shell-v140';
+const CACHE_NAME = 'khadem-jame-shell-v134';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
