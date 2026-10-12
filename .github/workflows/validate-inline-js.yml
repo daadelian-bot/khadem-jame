@@ -1,0 +1,74 @@
+name: Validate inline JavaScript
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - ".github/workflows/validate-inline-js.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - ".github/workflows/validate-inline-js.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inline-js-syntax:
+    name: Check inline JavaScript syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse every inline JavaScript block
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scriptTag = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+          const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'khadem-inline-js-'));
+          let match;
+          let checked = 0;
+          let failed = 0;
+
+          while ((match = scriptTag.exec(html)) !== null) {
+            const attrs = match[1] || '';
+            const source = (match[2] || '').trim();
+            if (!source || /\\bsrc\\s*=/i.test(attrs)) continue;
+
+            const typeMatch = attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
+            const type = typeMatch ? typeMatch[1].toLowerCase() : 'text/javascript';
+            if (type.includes('json') || type === 'importmap') continue;
+            if (!type.includes('javascript') && type !== 'module' && type !== 'text/ecmascript') continue;
+
+            checked += 1;
+            const file = path.join(tempDir, `inline-${checked}.js`);
+            fs.writeFileSync(file, source, 'utf8');
+            const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (result.status !== 0) {
+              failed += 1;
+              console.error(`FAILED: inline script #${checked}`);
+              if (result.stdout) console.error(result.stdout);
+              if (result.stderr) console.error(result.stderr);
+            }
+          }
+
+          console.log(`Checked ${checked} inline JavaScript block(s); failures: ${failed}.`);
+          if (checked === 0) {
+            console.error('No inline JavaScript blocks were found; refusing a false-green result.');
+            process.exitCode = 1;
+          } else if (failed > 0) {
+            process.exitCode = 1;
+          }
+          NODE
