@@ -103,7 +103,7 @@ jobs:
               logo = src.copy()
               logo.thumbnail((int(size*0.84), int(size*0.84)), Image.Resampling.LANCZOS)
               canvas.alpha_composite(logo, ((size-logo.width)//2, (size-logo.height)//2))
-              canvas.save(Path("${APP_DIR}/app/src/main/res") / ("mipmap-" + density) / "ic_launcher.png")
+              canvas.save(Path("android-app/app/src/main/res") / ("mipmap-" + density) / "ic_launcher.png")
           PY
 
           # Bundle the current web interface so the app shell opens without network access.
