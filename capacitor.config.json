@@ -1,0 +1,8 @@
+{
+  "appId": "com.sedeyezainab.khademjame",
+  "appName": "سامانه جامع مدیریت خدام",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
