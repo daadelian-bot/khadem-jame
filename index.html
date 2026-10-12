@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="137">
+<meta name="app-release" content="138">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۳۷</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۳۸</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -82,6 +82,15 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 .login-card-pro.is-signup #signupConfirmWrap{display:block}
 [data-navorder]{min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px}
 [data-subparent]{max-width:190px;min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px;background:var(--card,#fff);color:inherit}
+/* نسخه ۱۳۸: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
+.nav-group[data-group="settings"] .settings-subgroup{margin:5px 0;border:1px solid #ffffff1a;border-radius:10px;overflow:hidden;background:#ffffff05}
+.nav-group[data-group="settings"] .settings-subgroup-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 9px;border:0;background:#ffffff0a;color:#e8d3b7;text-align:right;font-family:inherit;font-size:12px;font-weight:700;line-height:1.7;cursor:pointer}
+.nav-group[data-group="settings"] .settings-subgroup-toggle:focus-visible{outline:2px solid #d7ad6c;outline-offset:-2px}
+.nav-group[data-group="settings"] .settings-subgroup-arrow{transition:transform .15s}
+.nav-group[data-group="settings"] .settings-subgroup.open .settings-subgroup-arrow{transform:rotate(180deg)}
+.nav-group[data-group="settings"] .settings-subgroup-items[hidden]{display:none}
+.nav-group[data-group="settings"] .settings-subgroup-items{padding:3px 5px 6px}
+.nav-group[data-group="settings"] .settings-subgroup-items .sub{min-height:34px;padding:6px 8px;font-size:12px}
 /* نسخه ۱۳۶: گروه‌بندی خواناتر زیرمنوهای مدیریت سامانه */
 .nav-group[data-group="settings"] .settings-nav-heading{margin:8px 2px 4px;padding:7px 9px;border:1px solid #ffffff1b;border-radius:8px;background:#ffffff0b;color:#9dd9d0;font-size:11px;line-height:1.7}
 .nav-group[data-group="settings"] .settings-nav-heading:first-child{margin-top:2px}
@@ -180,7 +189,7 @@ const menus=[
 ["dashboard","🏠","داشبورد",[]],
 ["help","❔","راهنمای سامانه",[]],
 ["ops","🎯","مرکز عملیات",[["today","امروز و فردا"],["alerts","هشدارها"],["pending","در انتظار تأیید"]]],
-["khadem","👤","بانک خادمین",[["list","فهرست خادمین"],["add","ثبت خادم"],["profile","پرونده ۳۶۰ درجه"],["contacts","بستگان و تماس‌ها"],["discipline","انضباط و وضعیت"]]],
+["khadem","👤","بانک خادمین",[["list","فهرست خادمین"],["add","ثبت خادم"],["discipline","انضباط و وضعیت"]]],
 ["service","📋","خدمت",[["mainservice","خدمت اصلی"],["friday","شب جمعه"],["attendance","حضور و غیاب"],["history","سوابق خدمت"],["shrines","مدیریت حرم‌ها"]]],
 ["planning","🗓️","برنامه‌ریزی",[["schedule","نوبت‌دهی"],["conflicts","تداخل‌ها"],["replacement","جایگزین‌ها"],["approval","تأیید نهایی"]]],
 ["meetings","👥","جلسات",[["list","فهرست جلسات"],["attendance","حضور و غیاب"],["reports","گزارش حضور"]]],
@@ -207,10 +216,11 @@ function buildNav(){
   allMenus.forEach(source=>source[3].forEach(sub=>{const key=source[0]+':'+sub[0];const owner=parents[key]||source[0];if(owner===parent[0])children.push({source,sub,key})}));
   return {parent,children};
  });
- let h='';navItems.forEach(({parent,children})=>{h+=`<div class="nav-group" data-group="${parent[0]}"><button type="button" class="nav-main" data-nav="${parent[0]}" aria-expanded="false"><span><span class="nav-icon" aria-hidden="true">${parent[1]}</span><span>${parent[2]}</span></span><span class="nav-arrow">${children.length?'⌄':''}</span></button><div class="submenu">${parent[0]==="settings"?children.map(({source,sub},i)=>{const id=sub[0];const category=["users","roles","requests"].includes(id)?"۱. کاربران و سطح دسترسی":["fields","labels","menu-layout","menu-builder"].includes(id)?"۲. پیکربندی و چیدمان سامانه":"۳. گزارش‌ها، پشتیبان و نگهداری";const previous=i?children[i-1].sub[0]:"";const prevCategory=["users","roles","requests"].includes(previous)?"۱. کاربران و سطح دسترسی":["fields","labels","menu-layout","menu-builder"].includes(previous)?"۲. پیکربندی و چیدمان سامانه":"۳. گزارش‌ها، پشتیبان و نگهداری";return(category!==prevCategory?`<div class="settings-nav-heading">${category}</div>`:"")+`<button type="button" class="sub" data-page="${source[0]}:${sub[0]}">${sub[1]}</button>`}).join(""):children.map(({source,sub})=>`<button type="button" class="sub" data-page="${source[0]}:${sub[0]}">${sub[1]}</button>`).join("")}</div></div>`});
+ let h='';navItems.forEach(({parent,children})=>{h+=`<div class="nav-group" data-group="${parent[0]}"><button type="button" class="nav-main" data-nav="${parent[0]}" aria-expanded="false"><span><span class="nav-icon" aria-hidden="true">${parent[1]}</span><span>${parent[2]}</span></span><span class="nav-arrow">${children.length?'⌄':''}</span></button><div class="submenu">${parent[0]==="settings"?(()=>{const groups=[{id:"users",title:"۱. کاربران و سطح دسترسی",ids:["users","roles"]},{id:"config",title:"۲. تنظیمات و چیدمان",ids:["fields","labels","menu-layout","menu-builder"]},{id:"records",title:"۳. گزارش‌ها و نگهداری",ids:["audit","backup","delete"]}];const byId=new Map(children.map(item=>[item.sub[0],item]));return groups.map((group,gi)=>{const items=group.ids.map(id=>byId.get(id)).filter(Boolean);if(!items.length)return "";return `<div class="settings-subgroup ${gi===0?"open":""}"><button type="button" class="settings-subgroup-toggle" aria-expanded="${gi===0?"true":"false"}" data-setting-group="${group.id}"><span>${group.title}</span><span class="settings-subgroup-arrow">⌄</span></button><div class="settings-subgroup-items" ${gi===0?"":"hidden"}>${items.map(({source,sub})=>`<button type="button" class="sub" data-page="${source[0]}:${sub[0]}">${sub[1]}</button>`).join("")}</div></div>`}).join("")})():children.map(({source,sub})=>`<button type="button" class="sub" data-page="${source[0]}:${sub[0]}">${sub[1]}</button>`).join("")}</div></div>`});
  $('sidebar').innerHTML=h;
  document.querySelectorAll('.nav-main').forEach(b=>b.addEventListener('click',()=>{const g=b.parentElement;const hasSub=!!g.querySelector('.submenu')?.children.length;if(hasSub){const open=!g.classList.contains('open');g.classList.toggle('open',open);b.setAttribute('aria-expanded',String(open));document.querySelectorAll('.nav-group').forEach(other=>{if(other!==g){other.classList.remove('open');other.querySelector('.nav-main')?.setAttribute('aria-expanded','false')}})}else{render(b.dataset.nav);document.querySelectorAll('.nav-group').forEach(x=>x.querySelector('.nav-main')?.classList.remove('active'));b.classList.add('active')}}));
  document.querySelectorAll('.sub').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.sub').forEach(x=>x.classList.remove('active'));b.classList.add('active');const group=b.closest('.nav-group');document.querySelectorAll('.nav-main').forEach(x=>x.classList.toggle('active',x.parentElement===group));render(b.dataset.page);$('sidebar').classList.remove('show')}));
+ document.querySelectorAll('.settings-subgroup-toggle').forEach(btn=>btn.addEventListener('click',()=>{const group=btn.closest('.settings-subgroup');const items=group?.querySelector('.settings-subgroup-items');if(!group||!items)return;const open=!group.classList.contains('open');group.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));items.hidden=!open;}));
 }
 function render(page="dashboard"){window.khademCurrentPage=page;const base=page.split(":")[0], sub=page.split(":")[1]||"";const m=menus.find(x=>x[0]===base);const title=m?.[2]||"سامانه";let body="";
 if(page==="dashboard"){body=`<div class="page-title"><h2>🏠 داشبورد مدیریتی</h2><span class="muted">مرکز فرماندهی سامانه</span></div><div class="grid">${[["👤","خادمین","—","khadem:list"],["📋","خدمت امروز","—","service:mainservice"],["🌙","شب جمعه","—","service:friday"],["🚐","مأموریت‌ها","—","mission:list"],["💰","گردش مالی","—","finance:dashboard"],["🏦","موجودی خزانه","—","fund:balance"],["🤲","نیکوکاران","—","donors:list"],["⚠️","هشدارها","—","ops:alerts"]].map(x=>`<button class="card stat" onclick="render('${x[3]}')"><div class="icon">${x[0]}</div><span>${x[1]}</span><b>${x[2]}</b></button>`).join("")}</div><div class="section card"><h3>🎯 مرکز فرماندهی</h3><p class="muted">نمای یکپارچه برای پیگیری خادمین، خدمت، مأموریت، امور مالی و موارد نیازمند رسیدگی. شاخص‌هایی که هنوز به داده زنده متصل نشده‌اند با خط تیره مشخص می‌شوند.</p><div class="actions"><button class="btn primary" onclick="render('service:history')">سوابق خدمت</button><button class="btn secondary" onclick="render('meetings:list')">جلسات</button><button class="btn secondary" onclick="render('mission:vehicles')">خودروها</button><button class="btn secondary" onclick="render('finance:dashboard')">دفتر مالی</button></div></div><div id="serviceDelayDashboard" class="section card" style="margin-top:12px">در حال بررسی پیگیری آخرین خدمت‌ها…</div>`}
@@ -240,7 +250,7 @@ else if(page==="help"){body=`<div class="page-title"><h2>❔ راهنمای جا
 <h3>🚀 شروع سریع</h3><ol><li>با حساب خود وارد شوید. اگر حساب تازه است، ممکن است مدیر اصلی باید درخواست عضویت را تأیید کند.</li><li>ابتدا در «بانک خادمین ← ثبت خادم» پرونده افراد را ایجاد کنید و تا حد امکان کد ملی/شماره تماس را بررسی کنید تا رکورد تکراری ساخته نشود.</li><li>پس از ثبت خادم، از «پرونده ۳۶۰ درجه» اطلاعات، وضعیت و سوابق او را بررسی کنید.</li><li>برای ثبت خدمت یا حضور در جلسه، ابتدا خادم و تاریخ درست را انتخاب کنید و سپس اطلاعات را ذخیره کنید.</li><li>در پایان هر عملیات، پیام موفقیت/خطا را بخوانید و با دکمه «به‌روزرسانی» مطمئن شوید اطلاعات ذخیره شده است.</li></ol>
 <h3>🏠 داشبورد</h3><p>نمای کلی و میانبرهای سامانه را برای شروع کار استفاده کنید. اگر عددی نمایش داده نمی‌شود، ابتدا اتصال، مجوز دسترسی و کامل بودن داده‌های مربوط را بررسی کنید.</p>
 <h3>🎯 مرکز عملیات</h3><ul><li><b>امروز و فردا:</b> برای مرور کارها و برنامه‌های نزدیک.</li><li><b>هشدارها:</b> برای دیدن مواردی که نیاز به پیگیری دارند؛ هشدار را پیش از اقدام با پرونده اصلی تطبیق دهید.</li><li><b>در انتظار تأیید:</b> برای بررسی مواردی که تأیید مدیر یا مسئول لازم دارند.</li></ul>
-<h3>👤 بانک خادمین</h3><ul><li><b>فهرست خادمین:</b> جست‌وجو و مرور پرونده‌ها؛ برای ویرایش، رکورد صحیح را باز کنید.</li><li><b>ثبت خادم:</b> اطلاعات هویتی و تماس را تا حد امکان کامل و دقیق وارد کنید.</li><li><b>پرونده ۳۶۰ درجه:</b> نمای یکپارچه اطلاعات و سوابق خادم.</li><li><b>بستگان و تماس‌ها:</b> ثبت اطلاعات تماس و فرد اضطراری، فقط در صورت نیاز و با رعایت محرمانگی.</li><li><b>انضباط و وضعیت:</b> بررسی وضعیت پرونده؛ اطلاعات حساس را فقط برای افراد مجاز ثبت کنید.</li><li><b>کد خادم:</b> کدها باید یکتا باشند و از ۱۰۰۰ به بعد شماره‌گذاری شوند. تغییر دستی کد فقط برای مدیر اصلی مجاز است؛ اگر دکمه دیده نمی‌شود، حساب/نقش کاربر را بررسی کنید و محدودیت امنیتی پایگاه داده را حذف نکنید.</li></ul>
+<h3>👤 بانک خادمین</h3><ul><li><b>فهرست خادمین:</b> جست‌وجو و مرور پرونده‌ها؛ برای ویرایش، رکورد صحیح را باز کنید.</li><li><b>ثبت خادم:</b> اطلاعات هویتی و تماس را تا حد امکان کامل و دقیق وارد کنید.</li><li><b>سوابق خادم:</b> اطلاعات و سوابق را از بخش‌های مربوط به خادم، خدمت و امور مالی بررسی کنید.</li><li><b>اطلاعات تماس اضطراری:</b> در فرم مشخصات خادم، اطلاعات تماس ضروری را با رعایت محرمانگی ثبت کنید.</li><li><b>انضباط و وضعیت:</b> بررسی وضعیت پرونده؛ اطلاعات حساس را فقط برای افراد مجاز ثبت کنید.</li><li><b>کد خادم:</b> کدها باید یکتا باشند و از ۱۰۰۰ به بعد شماره‌گذاری شوند. تغییر دستی کد فقط برای مدیر اصلی مجاز است؛ اگر دکمه دیده نمی‌شود، حساب/نقش کاربر را بررسی کنید و محدودیت امنیتی پایگاه داده را حذف نکنید.</li></ul>
 <h3>📋 خدمت</h3><ul><li><b>خدمت اصلی / شب جمعه:</b> برنامه خدمت، تاریخ، محل و خادم را با دقت انتخاب کنید.</li><li><b>حضور و غیاب:</b> حضور افراد را برای برنامه درست ثبت کنید و قبل از ذخیره، تاریخ و فهرست را بازبینی کنید.</li><li><b>سوابق خدمت:</b> سابقه ثبت‌شده را جست‌وجو و بررسی کنید؛ از ثبت دوباره یک خدمت خودداری کنید.</li><li><b>مدیریت حرم‌ها:</b> محل‌های خدمت را مدیریت کنید. غیرفعال‌کردن محل با حذف سوابق قدیمی تفاوت دارد.</li></ul>
 <h3>🗓️ برنامه‌ریزی</h3><p>برای نوبت‌دهی از بخش «نوبت‌دهی» استفاده کنید، سپس «تداخل‌ها» و «جایگزین‌ها» را بررسی کرده و فقط پس از بازبینی، «تأیید نهایی» را انجام دهید. پیشنهاد یا پیش‌نویس برنامه را بدون بررسی مسئول، برنامه قطعی فرض نکنید.</p>
 <h3>👥 جلسات</h3><ul><li><b>فهرست جلسات:</b> عنوان، تاریخ، ساعت، محل و مسئول را وارد کنید.</li><li><b>تعیین مدعوین:</b> همه خدام فعال، افراد منتخب یا افراد بر اساس مسئولیت را انتخاب کنید.</li><li><b>حضور و غیاب:</b> وضعیت حضور مدعوین را ثبت و بازبینی کنید.</li><li><b>گزارش حضور:</b> برای مرور یا خروجی گرفتن از سوابق قابل دسترس استفاده کنید.</li></ul>
@@ -1132,7 +1142,7 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
  const csvCell=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
  const tables=[['پروفایل خادم','khadems'],['سوابق خدمت','service_records'],['تراکنش‌های مالی','finance_transactions'],['گردش خزانه','fund_transactions'],['جلسات','meetings'],['حضور و غیاب جلسات','meeting_attendance'],['مدعوین جلسات','meeting_invitees'],['شرکت‌کنندگان مأموریت','deployment_participants'],['مأموریت‌ها','deployments'],['سوابق انضباطی','disciplinary_records'],['تصمیم‌های انضباطی','disciplinary_actions'],['فیلدهای سفارشی','custom_field_values'],['سوابق تغییرات','audit_logs']];
  function reportPage(){
- shell('گزارش‌ساز جامع و پرونده ۳۶۰ درجه','<div class="card"><p>اطلاعات مرتبط با یک خادم از بخش‌های در دسترس گردآوری می‌شود؛ ستون‌ها و رکوردها قابل انتخاب‌اند. جدول‌های ناموجود یا غیرقابل‌دسترسی گزارش خطا می‌دهند و داده‌ای جعل نمی‌شود.</p><div class="form-grid"><div class="field"><label>خادم</label><select id="v65-k"><option value="">ابتدا فهرست را دریافت کنید</option></select></div><div class="field"><label>جستجو</label><input id="v65-q" placeholder="نام، کد یا کد ملی"></div></div><div class="actions"><button class="btn primary" id="v65-load">دریافت خادمین</button><button class="btn primary" id="v65-build">ساخت گزارش ۳۶۰ درجه</button><button class="btn secondary" id="v65-csv">دریافت فایل جدولی</button><button class="btn secondary" id="v65-print">چاپ / ذخیره به‌صورت سند چاپی</button></div><div id="v65-status" class="notice" style="margin-top:10px">خادم را انتخاب کنید.</div><div id="v65-report"></div></div>'+importUi()+aiUi());
+ shell('گزارش‌ساز جامع و گزارش یکپارچه خادم','<div class="card"><p>اطلاعات مرتبط با یک خادم از بخش‌های در دسترس گردآوری می‌شود؛ ستون‌ها و رکوردها قابل انتخاب‌اند. جدول‌های ناموجود یا غیرقابل‌دسترسی گزارش خطا می‌دهند و داده‌ای جعل نمی‌شود.</p><div class="form-grid"><div class="field"><label>خادم</label><select id="v65-k"><option value="">ابتدا فهرست را دریافت کنید</option></select></div><div class="field"><label>جستجو</label><input id="v65-q" placeholder="نام، کد یا کد ملی"></div></div><div class="actions"><button class="btn primary" id="v65-load">دریافت خادمین</button><button class="btn primary" id="v65-build">ساخت گزارش ۳۶۰ درجه</button><button class="btn secondary" id="v65-csv">دریافت فایل جدولی</button><button class="btn secondary" id="v65-print">چاپ / ذخیره به‌صورت سند چاپی</button></div><div id="v65-status" class="notice" style="margin-top:10px">خادم را انتخاب کنید.</div><div id="v65-report"></div></div>'+importUi()+aiUi());
  let khadems=[],sections=[],selected={};const status=$('v65-status'),box=$('v65-report');
  function fill(){const q=($('v65-q').value||'').toLocaleLowerCase();$('v65-k').innerHTML='<option value="">انتخاب خادم</option>'+khadems.filter(k=>!q||[k.full_name,k.tri_name,k.khadem_code,k.national_id,k.phone].some(v=>String(v||'').toLocaleLowerCase().includes(q))).map(k=>'<option value="'+esc(k.id)+'">'+esc(k.khadem_code||'—')+' — '+esc(k.full_name||'بدون نام')+'</option>').join('')}
  $('v65-load').onclick=async()=>{status.textContent='در حال دریافت بانک خادمین…';try{khadems=await get('khadems','select=*&order=khadem_code.asc&limit=5000');fill();status.textContent='تعداد خادمین قابل‌مشاهده: '+fa(khadems.length)}catch(e){status.textContent='دریافت ناموفق: '+e.message}};$('v65-q').oninput=fill;
@@ -1144,7 +1154,7 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
  box.innerHTML=out;box.querySelectorAll('[data-col]').forEach(x=>x.onchange=()=>{const i=+x.dataset.col;if(x.checked&&!selected[i].includes(x.value))selected[i].push(x.value);if(!x.checked)selected[i]=selected[i].filter(c=>c!==x.value)});box.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{const i=+b.dataset.all;selected[i]=[...new Set(sections[i].rows.flatMap(r=>Object.keys(r)))];box.querySelectorAll('[data-col="'+i+'"]').forEach(x=>x.checked=true)});box.querySelectorAll('[data-none]').forEach(b=>b.onclick=()=>{const i=+b.dataset.none;selected[i]=[];box.querySelectorAll('[data-col="'+i+'"]').forEach(x=>x.checked=false)});status.textContent='گزارش آماده است؛ ستون‌های لازم را انتخاب و خروجی بگیرید.';
  };
  $('v65-csv').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let chunks=[];sections.forEach((s,i)=>{const cols=selected[i]||[];if(cols.length){chunks.push(csvCell('بخش: '+s.title));chunks.push([cols.map(c=>csvCell(label(c))).join(','),...s.rows.map(r=>cols.map(c=>csvCell(value(c,r[c]))).join(','))].join('\r\n'))}});if(chunks.length)download('گزارش-۳۶۰-درجه-خادم.csv',chunks.join('\r\n\r\n'));else status.textContent='هیچ ستونی انتخاب نشده است.'};
- $('v65-print').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let content='';sections.forEach((s,i)=>{const cols=selected[i]||[];if(cols.length)content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+cols.map(c=>'<th>'+esc(label(c))+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(value(c,r[c]))+'</td>').join('')+'</tr>').join('')+'</tbody></table>'});const w=window.open('','_blank');if(!w){status.textContent='مرورگر پنجره چاپ را مسدود کرده است.';return}w.document.write('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><title>پرونده ۳۶۰ درجه</title><style>body{font-family:Tahoma,Arial;padding:18px;direction:rtl}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}h3{page-break-after:avoid}</style><h2>پرونده ۳۶۰ درجه خادم</h2>'+content+'<script>window.onload=()=>window.print()<\/script></html>');w.document.close()};
+ $('v65-print').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let content='';sections.forEach((s,i)=>{const cols=selected[i]||[];if(cols.length)content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+cols.map(c=>'<th>'+esc(label(c))+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(value(c,r[c]))+'</td>').join('')+'</tr>').join('')+'</tbody></table>'});const w=window.open('','_blank');if(!w){status.textContent='مرورگر پنجره چاپ را مسدود کرده است.';return}w.document.write('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><title>پرونده ۳۶۰ درجه</title><style>body{font-family:Tahoma,Arial;padding:18px;direction:rtl}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}h3{page-break-after:avoid}</style><h2>گزارش یکپارچه خادم</h2>'+content+'<script>window.onload=()=>window.print()<\/script></html>');w.document.close()};
  wireImport();wireAi();
  }
  function importUi(){return '<div class="card"><h3>ورود فایل صفحه‌گسترده یا فایل جدولی</h3><p>فایل ابتدا پیش‌نمایش می‌شود. ستون‌ها باید به فیلدهای مقصد نگاشت شوند؛ سپس فقط مدیر اصلی می‌تواند ورود را تأیید کند. از فایل و پایگاه داده پشتیبان بگیرید.</p><div class="form-grid"><div class="field"><label>جدول مقصد</label><select id="v65-target"><option value="khadems">بانک خادمین</option><option value="service_records">سوابق خدمت</option><option value="meetings">جلسات</option><option value="finance_transactions">تراکنش‌های مالی</option></select></div><div class="field"><label>فایل .xlsx / .xls / .csv</label><input id="v65-file" type="file" accept=".xlsx,.xls,.csv"></div></div><div class="actions"><button class="btn secondary" id="v65-preview-btn">خواندن و پیش‌نمایش</button><button class="btn primary" id="v65-import-btn" disabled>تأیید ورود داده‌ها</button><button class="btn secondary" id="v65-template">دانلود الگوی CSV خادمین</button></div><div id="v65-import-status" class="notice"></div><div id="v65-import-map"></div><div id="v65-import-preview" style="overflow:auto"></div></div>'}
@@ -1406,7 +1416,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۳۷</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۳۸</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -2220,16 +2230,23 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  const $=id=>document.getElementById(id);
  let lastRole='', checking=false;
  async function verifiedRole(){
+   let primaryRole='';
+   try{if(typeof window.currentUserRole==='function')primaryRole=String(await window.currentUserRole()||'').trim().toLowerCase()}catch(e){console.warn('بررسی اولیه نقش ناموفق بود:',e?.message||e)}
+   if(primaryRole==='admin')return 'admin';
+   if(primaryRole)return primaryRole;
+   // Fallback: ask the existing authenticated, RLS-protected admin check rather than trusting a role stored in localStorage.
+   try{if(typeof window.admin==='function'&&await window.admin())return 'admin'}catch(e){console.warn('بررسی جایگزین مدیر ناموفق بود:',e?.message||e)}
    try{
-     if(typeof window.currentUserRole==='function')return String(await window.currentUserRole()||'').toLowerCase();
      const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
      const token=sess.access_token||sess.session?.access_token;
-     const cfg=window.CFG||{};const id=sess.user?.id||sess.user_id;
-     if(!token||!id||!cfg.url||!cfg.key)return '';
-     const r=await fetch(cfg.url+'/rest/v1/profiles?select=role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'}});
+     const cfg=window.CFG||{};let id=sess.user?.id||sess.user?.sub||sess.user_id||sess.session?.user?.id;
+     if(!token||!cfg.url||!cfg.key)return '';
+     if(!id){const ur=await fetch(cfg.url+'/auth/v1/user',{headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});if(!ur.ok)return '';const u=await ur.json();id=u?.id||''}
+     if(!id)return '';
+     const r=await fetch(cfg.url+'/rest/v1/profiles?select=role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});
      const rows=await r.json().catch(()=>[]);
-     return r.ok&&rows[0]?.is_active!==false?String(rows[0]?.role||'').toLowerCase():'';
-   }catch(_){return ''}
+     return r.ok&&rows[0]?.is_active!==false?String(rows[0]?.role||'').trim().toLowerCase():'';
+   }catch(e){console.warn('بررسی نهایی نقش ناموفق بود:',e?.message||e);return ''}
  }
  function setSettingsVisibility(role){
    const allowed=role==='admin';
@@ -2259,6 +2276,6 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 })();
 </script>
 
-<!-- نسخه ۱۳۷: اصلاح بررسی نقش مدیر اصلی، پشتیبانی از نشست تو در تو و نمایش شماره نسخه صحیح -->
+<!-- نسخه ۱۳۸: رفع مسیر جایگزین تشخیص مدیر و گروه‌بندی تو‌در‌توی زیرمنوها -->
 </body>
 </html>
