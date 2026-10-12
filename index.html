@@ -697,7 +697,7 @@ $('loginBtn').onclick=async()=>{
  try{
   let r=await fetchTimeout(endpoint('/auth/v1/token?grant_type=password'),{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},body:JSON.stringify({email,password:pass})});
   let j=await r.json().catch(()=>({}));
-  if(!r.ok){$('loginStatus').innerHTML='<span class="bad">ورود انجام نشد: '+(j.error_description||j.msg||j.message||'ایمیل یا رمز عبور صحیح نیست')+'</span>';return}
+  if(!r.ok){const authErr=String(j.error_description||j.msg||j.message||'');const invalid=/invalid login credentials/i.test(authErr);$('loginStatus').innerHTML='<span class="bad">'+(invalid?'ایمیل یا رمز عبور با حساب احراز هویت‌شده مطابقت ندارد. تأیید مدیر اصلی به‌تنهایی رمز را تنظیم یا اصلاح نمی‌کند؛ از «راهنمای فراموشی رمز» لینک بازیابی بگیرید و سپس با همان ایمیل و رمز جدید وارد شوید. اگر باز هم خطا ماند، مدیر باید وجود حساب در بخش Authentication را بررسی کند.':'ورود انجام نشد: '+(authErr||'ایمیل یا رمز عبور صحیح نیست'))+'</span>';return}
   localStorage.setItem('khadem_session',JSON.stringify(j));
   if(j.user?.email){localStorage.setItem('khadem_last_email',j.user.email)}
   const uid=j.user?.id||j.user?.sub;
