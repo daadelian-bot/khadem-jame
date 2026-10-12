@@ -121,9 +121,9 @@ jobs:
           tag = '<script src="./offline-runtime.js"></script>'
           if tag not in html:
               if "</head>" in html:
-                  html = html.replace("</head>", tag + "\\n</head>", 1)
+                  html = html.replace("</head>", tag + "\n</head>", 1)
               elif "</body>" in html:
-                  html = html.replace("</body>", tag + "\\n</body>", 1)
+                  html = html.replace("</body>", tag + "\n</body>", 1)
               else:
                   raise SystemExit("index.html has no insertion point for offline runtime")
               p.write_text(html, encoding="utf-8")
