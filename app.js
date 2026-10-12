@@ -407,21 +407,21 @@
     const fields = dataFields(k, ["id"]);
     const serviceCols = [
       {key:"service_date",label:"تاریخ خدمت"},
-      {key:"service_type",label:"نوع خدمت"},
-      {key:"category",label:"دسته‌بندی"},
-      {key:"notes",label:"توضیحات"}
+      {key:"responsibility",label:"مسئولیت خدمت"},
+      {key:"service_type",label:"عنوان خدمت"},
+      {key:"description",label:"شرح خدمت"}
     ];
     const financeCols = [
       {key:"transaction_type",label:"نوع تراکنش"},
       {key:"category",label:"دسته‌بندی"},
-      {key:"amount",label:"مبلغ"},
-      {key:"paid_amount",label:"مبلغ پرداخت‌شده"},
-      {key:"date",label:"تاریخ"},
-      {key:"notes",label:"توضیحات"}
+      {key:"title",label:"عنوان"},
+      {key:"amount",label:"مبلغ ثبت‌شده"},
+      {key:"transaction_date",label:"تاریخ تراکنش"},
+      {key:"description",label:"شرح"}
     ];
-    const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,[key, ...(key==="date"?["transaction_date","created_at"]:key==="service_date"?["date","created_at"]:key==="notes"?["description","note"]:[])])]));
-    const financeRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","amount","paid_amount","date","notes"])}));
-    const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","service_type","category","notes"])}));
+    const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,[key, ...(key==="service_date"?["date","created_at"]:key==="description"?["notes","note"]:[])])]));
+    const financeRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","transaction_date","description"])}));
+    const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
       <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
       <div class="kj-card"><h3 class="kj-section-title" style="margin-top:0">مشخصات خادم</h3>${fields}</div>
@@ -438,20 +438,20 @@
       {key:"transaction_type",label:"نوع تراکنش"},
       {key:"khadem_code",label:"کد خادم"},
       {key:"category",label:"دسته‌بندی"},
-      {key:"amount",label:"مبلغ"},
-      {key:"paid_amount",label:"پرداخت‌شده"},
-      {key:"date",label:"تاریخ"},
-      {key:"notes",label:"توضیحات"}
+      {key:"title",label:"عنوان"},
+      {key:"amount",label:"مبلغ ثبت‌شده"},
+      {key:"transaction_date",label:"تاریخ تراکنش"},
+      {key:"description",label:"شرح"}
     ];
     const rows = state.finance.map(r => ({
       ...r,
       transaction_type: val(r,["transaction_type","type","kind"]),
       khadem_code: val(r,["khadem_code","personnel_code"]) || (r.khadem_id ? nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id)) || {}) : ""),
       category: val(r,["category","account_category"]),
+      title: val(r,["title","description"]),
       amount: val(r,["amount","total_amount"]),
-      paid_amount: val(r,["paid_amount","amount_paid"]),
-      date: val(r,["date","transaction_date","created_at"]),
-      notes: val(r,["notes","description","note"])
+      transaction_date: val(r,["transaction_date","date","created_at"]),
+      description: val(r,["description","notes","note"])
     }));
     return genericPage("finance","امور مالی",rows,columns);
   }
