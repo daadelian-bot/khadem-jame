@@ -10,6 +10,9 @@ on:
       - "app.js"
       - "styles.css"
       - "logo.png"
+      - "service-worker.js"
+      - "manifest.webmanifest"
+      - "offline-runtime.js"
       - ".github/workflows/build-android-apk.yml"
   workflow_dispatch:
 
@@ -108,7 +111,24 @@ jobs:
 
           # Bundle the current web interface so the app shell opens without network access.
           # Form data sync is not claimed until the application-level queue is implemented.
-          cp index.html service-worker.js manifest.webmanifest logo.png app.js styles.css "${APP_DIR}/app/src/main/assets/"
+          cp index.html service-worker.js manifest.webmanifest logo.png app.js styles.css offline-runtime.js "${APP_DIR}/app/src/main/assets/"
+
+          # Inject the offline runtime before the app's own inline scripts.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android-app/app/src/main/assets/index.html")
+          html = p.read_text(encoding="utf-8")
+          tag = '<script src="./offline-runtime.js"></script>'
+          if tag not in html:
+              if "</head>" in html:
+                  html = html.replace("</head>", tag + "\\n</head>", 1)
+              elif "</body>" in html:
+                  html = html.replace("</body>", tag + "\\n</body>", 1)
+              else:
+                  raise SystemExit("index.html has no insertion point for offline runtime")
+              p.write_text(html, encoding="utf-8")
+          assert tag in p.read_text(encoding="utf-8")
+          PY
 
           cat > "${APP_DIR}/settings.gradle" <<'EOF'
           pluginManagement {
@@ -309,8 +329,9 @@ jobs:
 
           این APK نسخه‌ای آزمایشی از پوسته WebView است. فایل‌های رابط کاربری فعلی (HTML، CSS، JS، لوگو و Service Worker)
           داخل APK بسته‌بندی می‌شوند تا خود رابط در شروع برنامه به اینترنت وابسته نباشد.
-          ثبت/ویرایش داده‌ها و همگام‌سازی صف آفلاین با Supabase هنوز پیاده‌سازی نشده است و عملیات داده‌ای
-          در این نسخه برای ذخیره در پایگاه داده به اتصال اینترنت نیاز دارد. این APK امضای انتشار رسمی ندارد.
+          پاسخ‌های موفق خواندنی (GET) پس از ورود آنلاین، به‌صورت محلی و وابسته به نشست ذخیره می‌شوند تا در قطع اینترنت
+          فقط برای مشاهدهٔ آخرین اطلاعات در دسترس باشند. ورود اولیه، ثبت/ویرایش داده‌ها و صف همگام‌سازی آفلاین هنوز
+          پیاده‌سازی نشده‌اند و برای آن‌ها اتصال اینترنت لازم است. این APK امضای انتشار رسمی ندارد.
 
           نصب:
           1) فایل APK را به گوشی اندرویدی منتقل کنید.
