@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="136">
+<meta name="app-release" content="137">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۳۶</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۳۷</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -460,20 +460,25 @@ async function loadShrineOptions(){const sel=$('s_shrine');if(!sel)return;try{co
 async function currentUserRole(){
  try{
   const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
-  const token=sess.access_token;
+  const token=String(sess.access_token||sess.session?.access_token||'');
   if(!token)return '';
-  // Prefer the user ID verified by Supabase Auth; session payload formats can vary.
-  let id='';
+  const authUrl=String(CFG.url||'').replace(/\/$/,'');
+  if(!authUrl||!CFG.key)return '';
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
   try{
-   const ur=await fetchTimeout(endpoint('/auth/v1/user'),{headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'}});
-   if(ur.ok){const u=await ur.json();id=String(u.id||'');}
-  }catch(_){}
-  if(!id)id=String(sess.user?.id||sess.user?.sub||sess.user_id||'');
-  if(!id)return '';
-  const r=await api('/rest/v1/profiles?select=id,role&id=eq.'+encodeURIComponent(id)+'&limit=1');
-  const j=await r.json().catch(()=>[]);
-  return r.ok&&Array.isArray(j)&&j[0]?.role?String(j[0].role).trim().toLowerCase():'';
- }catch(e){return ''}
+   const ur=await fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',signal:controller.signal});
+   if(!ur.ok)return '';
+   const user=await ur.json();
+   const id=String(user?.id||'');
+   if(!id)return '';
+   const pr=await fetch(authUrl+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',signal:controller.signal});
+   if(!pr.ok)return '';
+   const rows=await pr.json();
+   if(!Array.isArray(rows)||!rows.length||rows[0].is_active===false)return '';
+   return String(rows[0].role||'').trim().toLowerCase();
+  }finally{clearTimeout(timer)}
+ }catch(e){console.warn('بررسی نقش حساب کامل نشد:',e?.message||e);return ''}
 }
 async function addShrine(){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم اضافه کند.');return}const name=$('shrineName').value.trim(),city=$('shrineCity').value.trim();if(!name){toast('نام حرم الزامی است.');return}try{const r=await api('/rest/v1/shrine_sites',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name,city:city||null,is_active:true})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.hint||'خطای ثبت')}toast('محل خدمت اضافه شد.');$('shrineName').value='';$('shrineCity').value='';await loadShrines()}catch(e){toast('افزودن حرم: '+e.message)}}
 async function removeShrine(id){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم حذف کند.');return}if(!confirm('این محل از فهرست فعال حذف شود؟ سوابق قبلی خدمت حفظ می‌شوند.'))return;try{const r=await api('/rest/v1/shrine_sites?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_active:false})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||'خطا')}toast('محل از فهرست فعال خارج شد؛ سوابق قدیمی حذف نشدند.');await loadShrines()}catch(e){toast('حذف محل: '+e.message)}}
@@ -1401,7 +1406,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۳۱</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۳۷</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -2254,5 +2259,6 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 })();
 </script>
 
+<!-- نسخه ۱۳۷: اصلاح بررسی نقش مدیر اصلی، پشتیبانی از نشست تو در تو و نمایش شماره نسخه صحیح -->
 </body>
 </html>
