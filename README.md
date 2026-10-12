@@ -8,6 +8,7 @@
 - فایل اصلی برنامه: `index.html`
 - پوستهٔ آفلاین: `service-worker.js`
 - راهنمای ادامهٔ کار در ChatGPT و اتصال حساب‌های دیگر: [CHATGPT_HANDOFF.md](CHATGPT_HANDOFF.md)
+- مشخصات بخش البسه خادمی: [ALBASE_REQUIREMENTS.md](ALBASE_REQUIREMENTS.md)
 
 ## نکات مهم پیش از تغییر کد
 - فایل `logo.png` در ریشهٔ مخزن باید حفظ شود؛ آن را حذف یا جایگزین نکنید مگر با اجازهٔ صریح کاربر.
