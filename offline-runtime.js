@@ -73,6 +73,8 @@
     if (url.origin !== "https://fxxtyfurdzpzfvweoppo.supabase.co") return null;
     if (!url.pathname.startsWith("/rest/v1/")) return null;
     var auth = req.headers.get("Authorization") || (init && init.headers && init.headers.Authorization) || "";
+    // Never persist potentially sensitive table rows without an authenticated session.
+    if (!auth || !/^Bearer\\s+\\S+/i.test(auth)) return null;
     return { request: req, url: req.url, auth: auth };
   }
 
@@ -87,6 +89,7 @@
     var meta = shouldCache(input, init);
     if (!meta) return originalFetch(input, init);
 
+    if (!meta) return originalFetch(input, init);
     return cacheKey(meta.url, meta.auth).then(function (key) {
       return originalFetch(input, init).then(function (response) {
         if (!response || !response.ok) return response;
@@ -110,10 +113,10 @@
             return responseFrom(record);
           }
           throw networkError;
-        });
+        }, function () { throw networkError; });
       });
-    }).catch(function () {
-      // If hashing or local storage is unavailable, preserve normal network semantics.
+    }, function () {
+      // If hashing is unavailable, preserve normal network semantics without storing data.
       return originalFetch(input, init);
     });
   };
@@ -136,9 +139,7 @@
       el.style.display = "block";
       el.style.background = "#fff1d6";
       el.style.color = "#7a3e00";
-      el.textContent = localStorage.getItem("kj_access_token")
-        ? "حالت آفلاین: فقط داده‌های دریافت‌شده در اتصال قبلی قابل مشاهده‌اند؛ ورود مجدد و ثبت تغییرات به اینترنت نیاز دارد."
-        : "حالت آفلاین: برای ورود امن، ابتدا یک‌بار با اینترنت وارد سامانه شوید. اطلاعات محرمانه بدون ورود ذخیره یا نمایش داده نمی‌شود.";
+      el.textContent = "حالت آفلاین: اگر قبلاً با اینترنت وارد شده‌اید، آخرین داده‌های خواندنی ذخیره‌شده قابل مشاهده‌اند؛ ورود اولیه و ثبت تغییرات به اینترنت نیاز دارد.";
     }
   }
 
