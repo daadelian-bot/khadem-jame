@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="139">
+<meta name="app-release" content="140">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۳۹</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۴۰</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -2220,28 +2220,27 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 })();
 </script>
 
-<!-- نسخه ۱۳۰: مدیریت سامانه فقط برای مدیر اصلی -->
-
-<!-- نسخه ۱۳۰: مدیریت سامانه فقط برای مدیر اصلی -->
-<script id="khadem-v131-admin-only-settings">
+<!-- نسخه ۱۴۰: جلوگیری از رد دسترسی موقت هنگام بازسازی منو -->
+<script id="khadem-v140-admin-only-settings">
 (function(){
  'use strict';
- if(window.__khAdminOnlySettingsV130)return;window.__khAdminOnlySettingsV130=true;
+ if(window.__khAdminOnlySettingsV140)return;
+ window.__khAdminOnlySettingsV140=true;
  const $=id=>document.getElementById(id);
- let lastRole='', checking=false;
+ let lastRole='', checking=false, requestNo=0;
+
  async function verifiedRole(){
-   // A non-admin/empty answer from the first helper is not final: try independent
-   // authenticated checks before denying access. Never trust a locally stored role.
-   let primaryRole='';
+   let role='';
    try{
-     if(typeof window.currentUserRole==='function')
-       primaryRole=String(await window.currentUserRole()||'').trim().toLowerCase();
-   }catch(e){console.warn('بررسی اولیه نقش ناموفق بود:',e?.message||e)}
-   if(primaryRole==='admin')return 'admin';
+     if(typeof window.currentUserRole==='function'){
+       role=String(await window.currentUserRole()||'').trim().toLowerCase();
+       if(role==='admin')return 'admin';
+     }
+   }catch(e){console.warn('بررسی اولیه نقش مدیر:',e?.message||e)}
 
    try{
      if(typeof window.admin==='function' && await window.admin())return 'admin';
-   }catch(e){console.warn('بررسی جایگزین مدیر ناموفق بود:',e?.message||e)}
+   }catch(e){console.warn('بررسی نقش مدیر از مسیر جایگزین:',e?.message||e)}
 
    try{
      const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
@@ -2249,58 +2248,95 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
      const cfg=(typeof CFG!=='undefined'&&CFG)?CFG:(window.CFG||window.config||{});
      const base=String(cfg.url||cfg.supabaseUrl||'').replace(/\/$/,'');
      const key=String(cfg.key||cfg.anonKey||cfg.publishableKey||'');
-     if(!token||!base||!key){
-       console.warn('بررسی دسترسی مدیر: نشست یا تنظیمات احراز هویت کامل نیست.');
-       return primaryRole;
-     }
+     if(!token||!base||!key)return role;
      let id=String(sess.user?.id||sess.user?.sub||sess.user_id||sess.session?.user?.id||sess.currentSession?.user?.id||'');
      if(!id){
-       const ur=await fetch(base+'/auth/v1/user',{
-         headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
-         cache:'no-store'
-       });
-       if(!ur.ok){console.warn('بررسی هویت مدیر با خطای HTTP',ur.status);return primaryRole}
-       const user=await ur.json();id=String(user?.id||'');
+       const ur=await fetch(base+'/auth/v1/user',{headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});
+       if(!ur.ok)return role;
+       id=String((await ur.json())?.id||'');
      }
-     if(!id)return primaryRole;
-     const r=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{
+     if(!id)return role;
+     const pr=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{
        headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
        cache:'no-store'
      });
-     if(!r.ok){console.warn('بررسی نقش مدیر از profiles با خطای HTTP',r.status);return primaryRole}
-     const rows=await r.json();
-     if(Array.isArray(rows)&&rows[0]?.is_active!==false&&String(rows[0]?.role||'').trim().toLowerCase()==='admin')return 'admin';
-     return primaryRole || String(rows?.[0]?.role||'').trim().toLowerCase();
-   }catch(e){console.warn('بررسی نهایی نقش ناموفق بود:',e?.message||e);return primaryRole}
+     if(!pr.ok)return role;
+     const rows=await pr.json();
+     if(Array.isArray(rows)&&rows.length&&rows[0].is_active!==false){
+       const dbRole=String(rows[0].role||'').trim().toLowerCase();
+       if(dbRole==='admin')return 'admin';
+       return dbRole||role;
+     }
+   }catch(e){console.warn('بررسی نهایی نقش مدیر:',e?.message||e)}
+   return role;
  }
+
  function setSettingsVisibility(role){
+   // This function only changes navigation visibility. It must NEVER replace page
+   // content while an asynchronous role check is in progress.
+   const known=role==='admin'||role==='user'||role==='operator'||role==='manager';
+   if(!known)return;
    const allowed=role==='admin';
-   document.querySelectorAll('#sidebar .nav-group[data-group="settings"]').forEach(el=>{el.style.display=allowed?'':'none';el.setAttribute('aria-hidden',String(!allowed));});
-   if(!allowed&&String(window.khademCurrentPage||'').split(':')[0]==='settings'){
-     const content=$('content');if(content)content.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">سامانه نتوانست نقش «مدیر اصلی» را از نشست و پروفایل تأیید کند. از حساب مدیر اصلی خارج شوید و دوباره وارد شوید؛ اگر خطا باقی ماند، پاسخ احراز هویت یا مجوز خواندن پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
-   }
+   document.querySelectorAll('#sidebar .nav-group[data-group="settings"]').forEach(el=>{
+     el.style.display=allowed?'':'none';
+     el.setAttribute('aria-hidden',String(!allowed));
+   });
  }
- async function refresh(){if(checking)return;checking=true;try{const role=await verifiedRole();lastRole=role;setSettingsVisibility(role)}finally{checking=false}}
+
+ async function refresh(){
+   if(checking)return;
+   checking=true;
+   const myRequest=++requestNo;
+   try{
+     const role=await verifiedRole();
+     if(myRequest!==requestNo)return;
+     lastRole=role;
+     setSettingsVisibility(role);
+   }finally{checking=false}
+ }
+
  const oldBuild=window.buildNav;
- if(typeof oldBuild==='function')window.buildNav=function(){const out=oldBuild.apply(this,arguments);setSettingsVisibility('');refresh();return out};
+ if(typeof oldBuild==='function')window.buildNav=function(){
+   const out=oldBuild.apply(this,arguments);
+   setSettingsVisibility(lastRole);
+   refresh();
+   return out;
+ };
+
  const oldRender=window.render;
  if(typeof oldRender==='function')window.render=function(page){
    const target=String(page||'dashboard');
    if(target.split(':')[0]==='settings'){
-     const content=$('content');if(content)content.innerHTML='<div class="card"><h2>بررسی دسترسی…</h2><div class="notice">در حال بررسی مجوز مدیر اصلی.</div></div>';
-     verifiedRole().then(role=>{setSettingsVisibility(role);if(role==='admin'){oldRender.call(this,target)}else{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">سامانه نتوانست نقش «مدیر اصلی» را از نشست و پروفایل تأیید کند. از حساب مدیر اصلی خارج شوید و دوباره وارد شوید؛ اگر خطا باقی ماند، پاسخ احراز هویت یا مجوز خواندن پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>'}}).catch(()=>{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">تأیید نقش مدیر اصلی ناموفق بود. نشست ورود و پاسخ احراز هویت/پروفایل بررسی شود.</div></div>'});
+     const content=$('content');
+     if(content)content.innerHTML='<div class="card"><h2>بررسی دسترسی مدیر</h2><div class="notice">در حال تأیید نشست ورود و نقش ثبت‌شده…</div></div>';
+     const myRequest=++requestNo;
+     verifiedRole().then(role=>{
+       if(myRequest!==requestNo)return;
+       lastRole=role;
+       setSettingsVisibility(role);
+       if(role==='admin'){
+         oldRender.call(this,target);
+       }else{
+         const c=$('content');
+         if(c)c.innerHTML='<div class="card"><h2>دسترسی تأیید نشد</h2><div class="notice">حساب جاری از پایگاه داده به‌عنوان مدیر اصلی تأیید نشد. لطفاً از حساب خارج شوید و دوباره وارد شوید. اگر ادامه داشت، وضعیت نقش و پاسخ درخواست پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
+       }
+     }).catch(e=>{
+       console.error('بررسی دسترسی مدیریت سامانه ناموفق بود:',e);
+       const c=$('content');
+       if(c)c.innerHTML='<div class="card"><h2>بررسی دسترسی ناموفق بود</h2><div class="notice">ارتباط با سرویس احراز هویت یا پروفایل کامل نشد. دوباره تلاش کنید.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
+     });
      return;
    }
    return oldRender.apply(this,arguments);
  };
- // The initial menu is hidden until the role check completes. Refresh after login/logout without requiring a page reload.
- function watch(){refresh();}
+
+ function watch(){refresh()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});else watch();
  window.addEventListener('focus',watch);
- setInterval(()=>{const roleNow=JSON.parse(localStorage.getItem('khadem_session')||'{}').access_token?'signed-in':'signed-out';if(roleNow!==window.__khAdminOnlyLastSession){window.__khAdminOnlyLastSession=roleNow;refresh()}},3000);
+ window.addEventListener('online',watch);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)watch()});
 })();
 </script>
 
-<!-- نسخه ۱۳۹: رفع مسیر جایگزین تشخیص مدیر و گروه‌بندی تو‌در‌توی زیرمنوها -->
 </body>
 </html>
