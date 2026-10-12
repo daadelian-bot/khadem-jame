@@ -177,8 +177,8 @@ jobs:
                   applicationId "ir.sayedazainab.khademjame"
                   minSdk 23
                   targetSdk 28
-                  versionCode 106
-                  versionName "1.0.6"
+                  versionCode 107
+                  versionName "1.0.7"
               }
 
               compileOptions {
@@ -319,12 +319,12 @@ jobs:
           test -s "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.6-debug.apk"
-          sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > "dist/SHA256SUMS.txt"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.7-debug.apk"
+          sha256sum "dist/Samane-Jame-Khademin-1.0.7-debug.apk" > "dist/SHA256SUMS.txt"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.0.6 (کد نسخه 106)
+          نسخه: 1.0.7 (کد نسخه 107)
           نوع ساخت: Debug APK
 
           این APK نسخه‌ای آزمایشی از پوسته WebView است. فایل‌های رابط کاربری فعلی (HTML، CSS، JS، لوگو و Service Worker)
