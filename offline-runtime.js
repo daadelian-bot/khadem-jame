@@ -11,6 +11,7 @@
   var MAX_BODY = 2 * 1024 * 1024;
   var originalFetch = window.fetch.bind(window);
   var dbPromise;
+  var offlineCacheUsed = false;
 
   function openDb() {
     if (dbPromise) return dbPromise;
@@ -104,6 +105,7 @@
       }).catch(function (networkError) {
         return readCache(key).then(function (record) {
           if (record) {
+            offlineCacheUsed = true;
             window.dispatchEvent(new CustomEvent("khadem-offline-cache-hit", { detail: { url: meta.url, savedAt: record.savedAt } }));
             return responseFrom(record);
           }
@@ -127,7 +129,7 @@
       if (document.body) document.body.insertBefore(el, document.body.firstChild);
     }
     if (!el || !document.body) return;
-    if (navigator.onLine) {
+    if (navigator.onLine && !offlineCacheUsed) {
       el.style.display = "none";
       el.textContent = "";
     } else {
@@ -142,11 +144,9 @@
 
   function init() {
     banner();
-    window.addEventListener("online", banner);
+    window.addEventListener("online", function () { offlineCacheUsed = false; banner(); });
     window.addEventListener("offline", banner);
-    window.addEventListener("khadem-offline-cache-hit", function () {
-      if (!navigator.onLine) banner();
-    });
+    window.addEventListener("khadem-offline-cache-hit", banner);
     // DOM updates from the app can replace the body contents; reinsert the status banner if needed.
     var observer = new MutationObserver(function () {
       if (!document.getElementById("kj-offline-status")) banner();
