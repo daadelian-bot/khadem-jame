@@ -164,7 +164,7 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
     </div>
     <div class="login-utility"><button type="button" id="userRecoveryBtn">راهنمای فراموشی رمز</button></div>
     <div class="login-caption"><span>🔐</span><span>درخواست حساب تا بررسی مدیر اصلی در حالت انتظار می‌ماند. رمز عبور برای مدیر ارسال نمی‌شود؛ آن را محرمانه نگه دارید.</span></div>
-    <div id="loginStatus" class="status">برای ورود، شماره تلفن و رمز عبور را وارد کنید. اگر اتصال برقرار نشد، سامانه را از نشانی آنلاین امن باز کنید.</div>
+    <div id="loginStatus" class="status">برای ورود، ایمیل حساب و رمز عبور را وارد کنید. ورود با شماره تلفن فعال نیست؛ اگر اتصال برقرار نشد، سامانه را از نشانی آنلاین امن باز کنید.</div>
   </div>
 </section>
 
@@ -2229,7 +2229,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 
 <script id="khadem-jame-v126-fixes">
 (function(){'use strict';if(window.__khV126Fixes)return;window.__khV126Fixes=true;
- const $=id=>document.getElementById(id),cfg=window.CFG||{url:'https://fxxtyfurdzpfzfvweoppo.supabase.co',key:'sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7'};
+ const $=id=>document.getElementById(id),cfg=window.CFG||{url:'https://fxxtyfurdzpzfvweoppo.supabase.co',key:'sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7'};
  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  async function liveIdentity(){try{const raw=localStorage.getItem('khadem_session')||'{}',s=JSON.parse(raw),token=s.access_token||s.session?.access_token;if(!token||!cfg?.url||!cfg?.key)return;const r=await fetch(cfg.url+'/auth/v1/user',{headers:{apikey:cfg.key,Authorization:'Bearer '+token}});if(!r.ok)return;const u=await r.json();if(!u?.id)return;s.user={...(s.user||{}),...u};localStorage.setItem('khadem_session',JSON.stringify(s));const badge=$('khademCurrentIdentity');if(badge){const email=u.email||u.phone||('شناسه '+String(u.id).slice(0,8));badge.innerHTML='<b>حساب واردشده:</b> '+esc(email)+' <span style="color:#18865b">● هویت تأییدشده</span>'}}catch(e){console.warn('identity refresh',e)}}
  async function adminCheck(){try{if(typeof window.admin==='function')return !!(await window.admin());const s=JSON.parse(localStorage.getItem('khadem_session')||'{}'),id=s.user?.id||s.user_id,token=s.access_token||s.session?.access_token;if(!id||!token)return false;const r=await fetch(cfg.url+'/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(id)+'&limit=1',{headers:{apikey:cfg.key,Authorization:'Bearer '+token}});const j=await r.json();return !!(r.ok&&j[0]?.role==='admin')}catch(_){return false}}
@@ -2242,7 +2242,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 <script id="khadem-v127-admin-recovery">
 (function(){
  'use strict';
- const cfg={url:'https://fxxtyfurdzpfzfvweoppo.supabase.co',key:'sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7'};
+ const cfg={url:'https://fxxtyfurdzpzfvweoppo.supabase.co',key:'sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7'};
  const $=id=>document.getElementById(id);
  function session(){try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}}
  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
