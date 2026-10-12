@@ -87,7 +87,11 @@ jobs:
 
           APP_DIR="android-app"
           JAVA_DIR="${APP_DIR}/app/src/main/java/ir/sayedazainab/khademjame"
-          mkdir -p "${JAVA_DIR}" "${APP_DIR}/app/src/main"
+          mkdir -p "${JAVA_DIR}" "${APP_DIR}/app/src/main" "${APP_DIR}/app/src/main/assets"
+
+          # Bundle the current web interface so the app shell opens without network access.
+          # Form data sync is not claimed until the application-level queue is implemented.
+          cp index.html service-worker.js manifest.webmanifest logo.png app.js styles.css "${APP_DIR}/app/src/main/assets/"
 
           cat > "${APP_DIR}/settings.gradle" <<'EOF'
           pluginManagement {
@@ -144,6 +148,10 @@ jobs:
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
               }
+
+              dependencies {
+                  implementation "androidx.webkit:webkit:1.12.1"
+              }
           }
           EOF
 
@@ -178,16 +186,22 @@ jobs:
           import android.webkit.WebChromeClient;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
-          import android.webkit.WebViewClient;
+          import androidx.webkit.WebViewAssetLoader;
+          import androidx.webkit.WebViewClientCompat;
 
           public class MainActivity extends Activity {
               private WebView webView;
+              private WebViewAssetLoader assetLoader;
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/";
+                  "https://appassets.androidplatform.net/assets/index.html";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+
+                  assetLoader = new WebViewAssetLoader.Builder()
+                      .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                      .build();
 
                   webView = new WebView(this);
                   setContentView(webView);
@@ -195,13 +209,20 @@ jobs:
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
                   webView.getSettings().setSupportZoom(true);
-                  webView.setWebViewClient(new WebViewClient() {
+                  webView.setWebViewClient(new WebViewClientCompat() {
+                      @Override
+                      public android.webkit.WebResourceResponse shouldInterceptRequest(
+                              WebView view, WebResourceRequest request) {
+                          return assetLoader.shouldInterceptRequest(request.getUrl());
+                      }
+
                       @Override
                       public boolean shouldOverrideUrlLoading(
                               WebView view, WebResourceRequest request) {
+                          String host = request.getUrl().getHost();
                           String scheme = request.getUrl().getScheme();
-                          return !("https".equalsIgnoreCase(scheme)
-                              || "http".equalsIgnoreCase(scheme));
+                          if ("appassets.androidplatform.net".equalsIgnoreCase(host)) return false;
+                          return !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme));
                       }
                   });
                   webView.setWebChromeClient(new WebChromeClient());
@@ -267,9 +288,10 @@ jobs:
           نسخه: 1.0.6 (کد نسخه 106)
           نوع ساخت: Debug APK
 
-          این برنامه یک پوسته WebView است و نسخه منتشرشده سامانه را از اینترنت باز می‌کند.
-          برای استفاده، اتصال اینترنت لازم است. تغییرات منتشرشده در GitHub Pages در اجرای برنامه
-          نمایش داده می‌شوند؛ فایل‌های سایت داخل APK به‌صورت آفلاین بسته‌بندی نشده‌اند.
+          این APK نسخه‌ای آزمایشی از پوسته WebView است. فایل‌های رابط کاربری فعلی (HTML، CSS، JS، لوگو و Service Worker)
+          داخل APK بسته‌بندی می‌شوند تا خود رابط در شروع برنامه به اینترنت وابسته نباشد.
+          ثبت/ویرایش داده‌ها و همگام‌سازی صف آفلاین با Supabase هنوز پیاده‌سازی نشده است و عملیات داده‌ای
+          در این نسخه برای ذخیره در پایگاه داده به اتصال اینترنت نیاز دارد. این APK امضای انتشار رسمی ندارد.
 
           نصب:
           1) فایل APK را به گوشی اندرویدی منتقل کنید.
