@@ -82,7 +82,7 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 .login-card-pro.is-signup #signupConfirmWrap{display:block}
 [data-navorder]{min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px}
 [data-subparent]{max-width:190px;min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px;background:var(--card,#fff);color:inherit}
-/* نسخه ۱۳۹: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
+/* نسخه ۱۴۰: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
 .nav-group[data-group="settings"] .settings-subgroup{margin:5px 0;border:1px solid #ffffff1a;border-radius:10px;overflow:hidden;background:#ffffff05}
 .nav-group[data-group="settings"] .settings-subgroup-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 9px;border:0;background:#ffffff0a;color:#e8d3b7;text-align:right;font-family:inherit;font-size:12px;font-weight:700;line-height:1.7;cursor:pointer}
 .nav-group[data-group="settings"] .settings-subgroup-toggle:focus-visible{outline:2px solid #d7ad6c;outline-offset:-2px}
@@ -467,28 +467,53 @@ async function saveFinanceTransaction(){const amount=Number($('f_amount').value)
 
 let shrineCache=[];async function loadShrines(){const box=$('shrinesTable');if(!box)return;try{const r=await api('/rest/v1/shrine_sites?select=id,name,city,is_active&order=name.asc');const j=await r.json();if(!r.ok)throw new Error(j.message||j.hint||'خطای دریافت محل‌ها');shrineCache=Array.isArray(j)?j:[];const role=await currentUserRole();const canManage=role==='admin';if($('addShrineBtn'))$('addShrineBtn').style.display=canManage?'inline-flex':'none';box.innerHTML=shrineCache.length?`<div style="overflow:auto"><table class="data-table"><thead><tr><th>نام حرم / محل</th><th>شهر</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${shrineCache.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.city||'—')}</td><td>${x.is_active===false?'غیرفعال':'فعال'}</td><td>${canManage?`<button class="mini-btn mini-toggle" onclick="removeShrine('${esc(x.id)}')">حذف</button>`:'فقط مشاهده'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">هنوز محل خدمتی ثبت نشده است.</div>'}catch(e){box.innerHTML='<div class="notice">فهرست حرم‌ها دریافت نشد: '+esc(e.message)+'؛ فایل مهاجرت نسخه ۷۴ را اجرا کنید.</div>'}}
 async function loadShrineOptions(){const sel=$('s_shrine');if(!sel)return;try{const r=await api('/rest/v1/shrine_sites?select=id,name,city&is_active=eq.true&order=name.asc');const j=await r.json();if(!r.ok)throw new Error('');sel.innerHTML='<option value="">انتخاب حرم / محل…</option>'+j.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.city?' — '+esc(x.city):''}</option>`).join('')}catch(e){sel.innerHTML='<option value="">محل‌ها پس از اجرای مهاجرت در دسترس‌اند</option>'}}
+async function refreshKhademSession(force=false){
+ const parse=()=>{try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}};
+ let sess=parse();
+ const access=String(sess.access_token||sess.session?.access_token||sess.currentSession?.access_token||'');
+ const refresh=String(sess.refresh_token||sess.session?.refresh_token||sess.currentSession?.refresh_token||'');
+ const authUrl=String(CFG.url||'').replace(/\/$/,'');
+ if(!authUrl||!CFG.key)throw new Error('پیکربندی احراز هویت در دسترس نیست.');
+ if(!access&&!refresh)throw new Error('نشست ورود یافت نشد؛ دوباره وارد شوید.');
+ const callUser=async token=>fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});
+ let user=null;
+ if(access&&!force){
+   const ur=await callUser(access);
+   if(ur.ok)user=await ur.json();
+   else if(ur.status!==401&&ur.status!==403)throw new Error('بررسی هویت با خطای HTTP '+ur.status);
+ }
+ if(!user){
+   if(!refresh)throw new Error('نشست منقضی شده و توکن تازه‌سازی موجود نیست؛ دوباره وارد شوید.');
+   const rr=await fetch(authUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({refresh_token:refresh}),cache:'no-store'});
+   const fresh=await rr.json().catch(()=>({}));
+   if(!rr.ok||!fresh.access_token)throw new Error('تازه‌سازی نشست ناموفق بود (HTTP '+rr.status+'). دوباره وارد شوید.');
+   sess={...sess,...fresh,user:fresh.user||sess.user};
+   localStorage.setItem('khadem_session',JSON.stringify(sess));
+   user=fresh.user||null;
+   if(!user){const ur=await callUser(fresh.access_token);if(!ur.ok)throw new Error('تأیید هویت پس از تازه‌سازی ناموفق بود (HTTP '+ur.status+').');user=await ur.json()}
+ }
+ if(!user?.id)throw new Error('شناسه حساب احراز هویت‌شده پیدا نشد.');
+ sess.user={...(sess.user||{}),...user};
+ localStorage.setItem('khadem_session',JSON.stringify(sess));
+ return {session:sess,user,accessToken:String(sess.access_token||sess.session?.access_token||sess.currentSession?.access_token||'')};
+}
 async function currentUserRole(){
  try{
-  const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
-  const token=String(sess.access_token||sess.session?.access_token||'');
-  if(!token)return '';
-  const authUrl=String(CFG.url||'').replace(/\/$/,'');
-  if(!authUrl||!CFG.key)return '';
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),12000);
-  try{
-   const ur=await fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',signal:controller.signal});
-   if(!ur.ok)return '';
-   const user=await ur.json();
-   const id=String(user?.id||'');
-   if(!id)return '';
-   const pr=await fetch(authUrl+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',signal:controller.signal});
-   if(!pr.ok)return '';
-   const rows=await pr.json();
-   if(!Array.isArray(rows)||!rows.length||rows[0].is_active===false)return '';
-   return String(rows[0].role||'').trim().toLowerCase();
-  }finally{clearTimeout(timer)}
- }catch(e){console.warn('بررسی نقش حساب کامل نشد:',e?.message||e);return ''}
+  const auth=await refreshKhademSession(false);
+  const id=String(auth.user.id);
+  const base=String(CFG.url||'').replace(/\/$/,'');
+  const query=()=>fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+auth.accessToken,Accept:'application/json'},cache:'no-store'});
+  let pr=await query();
+  if(pr.status===401){
+    const refreshed=await refreshKhademSession(true);
+    pr=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+refreshed.accessToken,Accept:'application/json'},cache:'no-store'});
+  }
+  const payload=await pr.json().catch(()=>({}));
+  if(!pr.ok){console.error('بررسی نقش در profiles ناموفق بود',{status:pr.status,details:payload.message||payload.details||payload.hint||payload.code||''});return ''}
+  if(!Array.isArray(payload)||!payload.length){console.error('پروفایل حساب احراز هویت‌شده پیدا نشد.');return ''}
+  if(payload[0].is_active===false){console.error('پروفایل حساب غیرفعال است.');return ''}
+  return String(payload[0].role||'').trim().toLowerCase();
+ }catch(e){console.error('بررسی نقش حساب کامل نشد:',e?.message||e);return ''}
 }
 async function addShrine(){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم اضافه کند.');return}const name=$('shrineName').value.trim(),city=$('shrineCity').value.trim();if(!name){toast('نام حرم الزامی است.');return}try{const r=await api('/rest/v1/shrine_sites',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name,city:city||null,is_active:true})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.hint||'خطای ثبت')}toast('محل خدمت اضافه شد.');$('shrineName').value='';$('shrineCity').value='';await loadShrines()}catch(e){toast('افزودن حرم: '+e.message)}}
 async function removeShrine(id){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم حذف کند.');return}if(!confirm('این محل از فهرست فعال حذف شود؟ سوابق قبلی خدمت حفظ می‌شوند.'))return;try{const r=await api('/rest/v1/shrine_sites?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_active:false})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||'خطا')}toast('محل از فهرست فعال خارج شد؛ سوابق قدیمی حذف نشدند.');await loadShrines()}catch(e){toast('حذف محل: '+e.message)}}
