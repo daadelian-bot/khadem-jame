@@ -1,6 +1,6 @@
-/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۴۲ */
-const CACHE_NAME = 'khadem-jame-shell-v142';
-const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
+/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۴۳ */
+const CACHE_NAME = 'khadem-jame-shell-v143';
+const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png', './offline-runtime.js', './app.js', './styles.css'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -35,7 +35,7 @@ self.addEventListener('fetch', event => {
   // Never cache Supabase authentication, database, storage, or Edge Function responses.
   if (/\/(rest|auth|storage)\/v1\//.test(url.pathname) || url.pathname.includes('/functions/v1/')) return;
 
-  // Network-first navigation guarantees users receive the deployed HTML whenever online.
+  // Network-first navigation updates the HTML while online and falls back to the last saved shell offline.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request, { cache: 'no-store' }).then(response => {
