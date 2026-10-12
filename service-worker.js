@@ -1,61 +1,33 @@
-/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۳۹
+/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۴۰
    فقط فایل‌های ثابت رابط در Cache Storage نگهداری می‌شوند.
    داده‌ها و درخواست‌های Supabase هرگز در این Service Worker ذخیره نمی‌شوند.
 */
 'use strict';
-
-const CACHE_NAME = 'khadem-jame-shell-v139';
+const CACHE_NAME = 'khadem-jame-shell-v140';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
-
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
-
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys
-        .filter(key => key.startsWith('khadem-jame-shell-') && key !== CACHE_NAME)
-        .map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('khadem-jame-shell-') && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
-
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // هرگز درخواست‌های Supabase (REST/Auth/Storage/Functions) را رهگیری یا کش نکن.
   if (/\/(rest|auth|storage)\/v1\//.test(url.pathname) || url.pathname.includes('/functions/v1/')) return;
-
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).then(response => {
-        if (response && response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
-        }
-        return response;
-      }).catch(() => caches.match('./index.html'))
-    );
+    event.respondWith(fetch(request).then(response => {
+      if (response && response.ok) { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy)); }
+      return response;
+    }).catch(() => caches.match('./index.html')));
     return;
   }
-
   if (APP_SHELL.some(path => new URL(path, self.location.href).pathname === url.pathname)) {
-    event.respondWith(
-      fetch(request).then(response => {
-        if (response && response.ok && response.type === 'basic') {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        }
-        return response;
-      }).catch(() => caches.match(request).then(cached => cached || Response.error()))
-    );
+    event.respondWith(fetch(request).then(response => {
+      if (response && response.ok && response.type === 'basic') { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)); }
+      return response;
+    }).catch(() => caches.match(request).then(cached => cached || Response.error())));
   }
 });
