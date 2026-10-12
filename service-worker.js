@@ -1,5 +1,5 @@
-/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۴۰ */
-const CACHE_NAME = 'khadem-jame-shell-v140';
+/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۴۱ */
+const CACHE_NAME = 'khadem-jame-shell-v141';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
 
 self.addEventListener('install', event => {
@@ -8,6 +8,10 @@ self.addEventListener('install', event => {
       .then(cache => cache.addAll(APP_SHELL))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
@@ -25,11 +29,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never cache Supabase auth, database, storage, or Edge Function responses.
+  // Never cache Supabase authentication, database, storage, or Edge Function responses.
   if (/\/(rest|auth|storage)\/v1\//.test(url.pathname) || url.pathname.includes('/functions/v1/')) return;
 
   if (request.mode === 'navigate') {
@@ -47,7 +50,6 @@ self.addEventListener('fetch', event => {
 
   const isAppShell = APP_SHELL.some(path => new URL(path, self.location.href).pathname === url.pathname);
   if (!isAppShell) return;
-
   event.respondWith(
     fetch(request, { cache: 'no-store' }).then(response => {
       if (response && response.ok && response.type === 'basic') {
