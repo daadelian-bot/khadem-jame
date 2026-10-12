@@ -438,20 +438,20 @@
       {key:"transaction_type",label:"نوع تراکنش"},
       {key:"khadem_code",label:"کد خادم"},
       {key:"category",label:"دسته‌بندی"},
-      {key:"amount",label:"مبلغ"},
-      {key:"paid_amount",label:"پرداخت‌شده"},
-      {key:"date",label:"تاریخ"},
-      {key:"notes",label:"توضیحات"}
+      {key:"title",label:"عنوان"},
+      {key:"amount",label:"مبلغ ثبت‌شده"},
+      {key:"transaction_date",label:"تاریخ تراکنش"},
+      {key:"description",label:"شرح"}
     ];
     const rows = state.finance.map(r => ({
       ...r,
       transaction_type: val(r,["transaction_type","type","kind"]),
       khadem_code: val(r,["khadem_code","personnel_code"]) || (r.khadem_id ? nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id)) || {}) : ""),
       category: val(r,["category","account_category"]),
+      title: val(r,["title","description"]),
       amount: val(r,["amount","total_amount"]),
-      paid_amount: val(r,["paid_amount","amount_paid"]),
-      date: val(r,["date","transaction_date","created_at"]),
-      notes: val(r,["notes","description","note"])
+      transaction_date: val(r,["transaction_date","date","created_at"]),
+      description: val(r,["description","notes","note"])
     }));
     return genericPage("finance","امور مالی",rows,columns);
   }
