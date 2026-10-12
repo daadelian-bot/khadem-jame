@@ -8,8 +8,8 @@
 (function () {
   "use strict";
 
-  const SUPABASE_URL = "https://fxxtyfurdzpzfvweoppo.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
+  const SUPABASE_URL = "https://ojmbhfubdpszxbqlbqqf.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_Sr5jaSNoTR9JfNcaOf7GYg_JOP3ESzO";
   const TOKEN_KEY = "kj_access_token";
   const USER_KEY = "kj_user";
   const TIMEOUT_MS = 20000;
@@ -92,7 +92,7 @@
     window.__kjToastTimer = setTimeout(() => el.remove(), 5000);
   }
   function token() {
-    return localStorage.getItem(TOKEN_KEY) || "";
+    return "";
   }
   function headers(extra = {}) {
     const h = { apikey: SUPABASE_KEY, Accept: "application/json", ...extra };
@@ -163,54 +163,6 @@
     if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطا در همان بخش نمایش داده شده است.", "error");
   }
 
-  async function login() {
-    const email = ($("#kj-email")?.value || "").trim();
-    const password = $("#kj-password")?.value || "";
-    if (!email || !password) {
-      toast("ایمیل و رمز عبور را وارد کنید.", "error");
-      return;
-    }
-    const button = $("#kj-login-btn");
-    if (button) { button.disabled = true; button.textContent = "در حال ورود…"; }
-    try {
-      const result = await request("/auth/v1/token?grant_type=password", {
-        method: "POST", body: { email, password }
-      });
-      if (!result || !result.access_token) throw new Error("توکن ورود از سرور دریافت نشد.");
-      localStorage.setItem(TOKEN_KEY, result.access_token);
-      localStorage.setItem(USER_KEY, JSON.stringify(result.user || { email }));
-      toast("ورود موفق بود.", "success");
-      await startApp();
-    } catch (e) {
-      toast("ورود ناموفق بود: " + (e.message || "خطای ناشناخته"), "error");
-      if (button) { button.disabled = false; button.textContent = "ورود به سامانه"; }
-    }
-  }
-  function signout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    state.selectedKhadem = null;
-    loginPage();
-  }
-  function loginPage(message = "") {
-    const app = ensureRoot();
-    app.innerHTML = `
-      <div class="kj-login-wrap" dir="rtl">
-        <form class="kj-login-card" id="kj-login-form">
-          <img src="logo.png" alt="لوگوی مجموعه" class="kj-logo" onerror="this.style.display='none'">
-          <h1>سامانه جامع مدیریت خادمین</h1>
-          <p class="kj-muted">مجموعه السیدة زینب سلام الله علیها</p>
-          ${message ? `<div class="kj-alert">${esc(message)}</div>` : ""}
-          <label for="kj-email">ایمیل</label>
-          <input id="kj-email" type="email" autocomplete="username" inputmode="email" required placeholder="ایمیل حساب کاربری">
-          <label for="kj-password">رمز عبور</label>
-          <input id="kj-password" type="password" autocomplete="current-password" required placeholder="رمز عبور">
-          <button id="kj-login-btn" class="kj-primary" type="submit">ورود به سامانه</button>
-          <p class="kj-small">برای ورود، حساب کاربری معتبر Supabase لازم است.</p>
-        </form>
-      </div>`;
-    $("#kj-login-form").addEventListener("submit", e => { e.preventDefault(); login(); });
-  }
   function ensureRoot() {
     let app = $("#app");
     if (!app) {
@@ -265,12 +217,11 @@
 
   function shell() {
     const app = ensureRoot();
-    const user = (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) { return null; } })();
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
           <div class="kj-brand">سامانه جامع مدیریت خادمین<small>مجموعه السیدة زینب سلام الله علیها</small></div>
-          <div class="kj-actions"><span class="kj-small" style="color:#fff">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی</button><button class="kj-secondary" id="kj-signout">خروج</button></div>
+          <div class="kj-actions"><span class="kj-small" style="color:#fff">حالت آزمایشی بدون ورود</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی</button></div>
         </header>
         <nav class="kj-nav" aria-label="منوی اصلی">${menu.map(([id,title]) => `<button data-tab="${id}" class="${state.tab === id ? "active" : ""}">${title}</button>`).join("")}</nav>
         <main id="kj-main" class="kj-main"></main>
@@ -280,7 +231,6 @@
       state.tab = b.dataset.tab; state.selectedKhadem = null; render();
     }));
     $("#kj-refresh").addEventListener("click", loadData);
-    $("#kj-signout").addEventListener("click", signout);
   }
 
   function val(obj, keys) {
@@ -483,7 +433,6 @@
   }
 
   function render() {
-    if (!token()) { loginPage(); return; }
     shell();
     const main = $("#kj-main");
     if (!main) return;
@@ -543,7 +492,6 @@
 
   async function startApp() {
     injectStyles();
-    if (!token()) { loginPage(); return; }
     try {
       const app = ensureRoot();
       app.innerHTML = `<div dir="rtl" style="padding:40px;text-align:center">در حال آماده‌سازی سامانه…</div>`;
@@ -560,7 +508,6 @@
     start: startApp,
     refresh: loadData,
     render,
-    signout,
     state
   };
   if (document.readyState === "loading") {
