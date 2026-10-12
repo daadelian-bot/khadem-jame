@@ -9,6 +9,7 @@ on:
       - "service-worker.js"
       - "manifest.webmanifest"
       - ".github/workflows/validate-inline-js.yml"
+      - ".github/workflows/build-android-apk.yml"
   pull_request:
     paths:
       - "index.html"
