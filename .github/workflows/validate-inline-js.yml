@@ -1,14 +1,20 @@
-name: Validate inline JavaScript
+name: Validate client-side JavaScript and app metadata
 
 on:
   push:
     branches: [main]
     paths:
       - "index.html"
+      - "app.js"
+      - "service-worker.js"
+      - "manifest.webmanifest"
       - ".github/workflows/validate-inline-js.yml"
   pull_request:
     paths:
       - "index.html"
+      - "app.js"
+      - "service-worker.js"
+      - "manifest.webmanifest"
       - ".github/workflows/validate-inline-js.yml"
   workflow_dispatch:
 
@@ -16,8 +22,8 @@ permissions:
   contents: read
 
 jobs:
-  inline-js-syntax:
-    name: Check inline JavaScript syntax
+  client-syntax:
+    name: Check client-side scripts and metadata
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,7 +32,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Parse every inline JavaScript block
+      - name: Parse every inline JavaScript block in index.html
         shell: bash
         run: |
           node <<'NODE'
@@ -36,7 +42,7 @@ jobs:
           const { spawnSync } = require('node:child_process');
 
           const html = fs.readFileSync('index.html', 'utf8');
-          const scriptTag = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+          const scriptTag = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
           const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'khadem-inline-js-'));
           let match;
           let checked = 0;
@@ -45,9 +51,9 @@ jobs:
           while ((match = scriptTag.exec(html)) !== null) {
             const attrs = match[1] || '';
             const source = (match[2] || '').trim();
-            if (!source || /\bsrc\s*=/i.test(attrs)) continue;
+            if (!source || /\\bsrc\\s*=/i.test(attrs)) continue;
 
-            const typeMatch = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i);
+            const typeMatch = attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
             const type = typeMatch ? typeMatch[1].toLowerCase() : 'text/javascript';
             if (type.includes('json') || type === 'importmap') continue;
             if (!type.includes('javascript') && type !== 'module' && type !== 'text/ecmascript') continue;
@@ -72,3 +78,9 @@ jobs:
             process.exitCode = 1;
           }
           NODE
+      - name: Check standalone JavaScript files
+        run: |
+          node --check app.js
+          node --check service-worker.js
+      - name: Validate web app manifest JSON
+        run: node -e "JSON.parse(require('node:fs').readFileSync('manifest.webmanifest', 'utf8')); console.log('manifest.webmanifest is valid JSON.');"
