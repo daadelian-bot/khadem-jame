@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="138">
+<meta name="app-release" content="139">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۳۸</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۳۹</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -82,7 +82,7 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 .login-card-pro.is-signup #signupConfirmWrap{display:block}
 [data-navorder]{min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px}
 [data-subparent]{max-width:190px;min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px;background:var(--card,#fff);color:inherit}
-/* نسخه ۱۳۸: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
+/* نسخه ۱۳۹: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
 .nav-group[data-group="settings"] .settings-subgroup{margin:5px 0;border:1px solid #ffffff1a;border-radius:10px;overflow:hidden;background:#ffffff05}
 .nav-group[data-group="settings"] .settings-subgroup-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 9px;border:0;background:#ffffff0a;color:#e8d3b7;text-align:right;font-family:inherit;font-size:12px;font-weight:700;line-height:1.7;cursor:pointer}
 .nav-group[data-group="settings"] .settings-subgroup-toggle:focus-visible{outline:2px solid #d7ad6c;outline-offset:-2px}
@@ -247,7 +247,7 @@ else if(page==="finance:tuition"){body=`<div class="page-title"><h2>🎓 مدی�
 else if(page==="docs:attachments"){body=`<div class="page-title"><h2>📎 پیوست‌ها و رسیدهای همه بخش‌ها</h2></div><div class="card"><div class="notice">از این فرم می‌توانید به هر رکورد موجود در سامانه، از جمله خادم، خدمت، جلسه، مأموریت، تراکنش مالی یا صندوق، رسید یا سند وصل کنید. نام جدول و شناسه رکورد باید دقیق باشد. برای مشاهده/بارگذاری، مجوز مدیر یا مدیر مجاز لازم است.</div><div class="form-grid"><div class="field"><label>بخش / نام جدول *</label><select id="att_table"><option value="finance_transactions">تراکنش‌های مالی</option><option value="fund_transactions">گردش صندوق</option><option value="khadems">پرونده خادم</option><option value="service_records">سوابق خدمت</option><option value="meetings">جلسات</option><option value="meeting_attendance">حضور و غیاب جلسات</option><option value="deployments">مأموریت‌ها</option><option value="deployment_costs">هزینه مأموریت</option><option value="donors">نیکوکاران</option><option value="vehicles">خودروها</option><option value="drivers">رانندگان</option><option value="shrine_sites">محل‌های خدمت</option></select></div><div class="field"><label>شناسه رکورد *</label><input id="att_record" placeholder="شناسه رکورد موجود در جدول"></div><div class="field"><label>نوع رسید / سند</label><select id="att_type"><option value="other">سند عمومی</option><option value="payment">رسید پرداخت</option><option value="receipt">رسید دریافت</option><option value="transfer">فیش واریز / انتقال</option><option value="invoice">فاکتور / سند هزینه</option></select></div><div class="field"><label>نام ارسال‌کننده / تحویل‌دهنده</label><input id="att_sender"></div><div class="field full"><label>فایل پیوست (تصویر یا PDF)</label><input id="att_file" type="file" accept="image/*,application/pdf"><small class="muted">حداکثر ۸ مگابایت؛ در فضای خصوصی ذخیره می‌شود.</small></div><div class="field full"><label>یادداشت</label><textarea id="att_notes"></textarea></div></div><button class="btn primary" onclick="saveGenericAttachment()">بارگذاری و اتصال پیوست</button><button class="btn secondary" onclick="loadGenericAttachments()">مشاهده پیوست‌های این رکورد</button><div id="attachmentsResult" class="section"></div></div>`}
 else if(page==="help"){body=`<div class="page-title"><h2>❔ راهنمای جامع سامانه</h2><span class="muted">راهنمای کاربردی منوها، مراحل انجام کار و نکات امنیتی</span></div>
 <div class="card"><div class="actions" style="flex-wrap:wrap;margin-bottom:12px"><button class="btn primary" onclick="render('khadems:list')">رفتن به بانک خدام</button><button class="btn secondary" onclick="render('fileimport:hub')">مرکز ورود فایل</button><button class="btn secondary" onclick="render('reports:builder')">گزارش‌ساز</button><button class="btn secondary" onclick="render('settings:users')">مدیریت کاربران</button></div><div class="field"><label for="helpSearch">جستجو در راهنما</label><input id="helpSearch" type="search" placeholder="مثلاً کد خادم، ورود اکسل، مالی، خطا…" oninput="filterHelpGuide(this.value)"></div><div id="helpSearchStatus" class="muted" style="margin:6px 0 12px">برای یافتن سریع توضیح یک قابلیت، کلمه‌ای وارد کنید.</div><div class="notice">این راهنما کاربرد هر بخش و مسیر معمول کار را توضیح می‌دهد. قابلیت‌های بعضی زیرمنوها ممکن است هنوز کامل پیاده‌سازی نشده باشند؛ در چنین مواردی، پیام همان صفحه و وضعیت واقعی پایگاه داده ملاک است.</div>
-<h3>🚀 شروع سریع</h3><ol><li>با حساب خود وارد شوید. اگر حساب تازه است، ممکن است مدیر اصلی باید درخواست عضویت را تأیید کند.</li><li>ابتدا در «بانک خادمین ← ثبت خادم» پرونده افراد را ایجاد کنید و تا حد امکان کد ملی/شماره تماس را بررسی کنید تا رکورد تکراری ساخته نشود.</li><li>پس از ثبت خادم، از «پرونده ۳۶۰ درجه» اطلاعات، وضعیت و سوابق او را بررسی کنید.</li><li>برای ثبت خدمت یا حضور در جلسه، ابتدا خادم و تاریخ درست را انتخاب کنید و سپس اطلاعات را ذخیره کنید.</li><li>در پایان هر عملیات، پیام موفقیت/خطا را بخوانید و با دکمه «به‌روزرسانی» مطمئن شوید اطلاعات ذخیره شده است.</li></ol>
+<h3>🚀 شروع سریع</h3><ol><li>با حساب خود وارد شوید. اگر حساب تازه است، ممکن است مدیر اصلی باید درخواست عضویت را تأیید کند.</li><li>ابتدا در «بانک خادمین ← ثبت خادم» پرونده افراد را ایجاد کنید و تا حد امکان کد ملی/شماره تماس را بررسی کنید تا رکورد تکراری ساخته نشود.</li><li>پس از ثبت خادم، از صفحهٔ پروفایل خادم، اطلاعات، وضعیت و سوابق او را بررسی کنید.</li><li>برای ثبت خدمت یا حضور در جلسه، ابتدا خادم و تاریخ درست را انتخاب کنید و سپس اطلاعات را ذخیره کنید.</li><li>در پایان هر عملیات، پیام موفقیت/خطا را بخوانید و با دکمه «به‌روزرسانی» مطمئن شوید اطلاعات ذخیره شده است.</li></ol>
 <h3>🏠 داشبورد</h3><p>نمای کلی و میانبرهای سامانه را برای شروع کار استفاده کنید. اگر عددی نمایش داده نمی‌شود، ابتدا اتصال، مجوز دسترسی و کامل بودن داده‌های مربوط را بررسی کنید.</p>
 <h3>🎯 مرکز عملیات</h3><ul><li><b>امروز و فردا:</b> برای مرور کارها و برنامه‌های نزدیک.</li><li><b>هشدارها:</b> برای دیدن مواردی که نیاز به پیگیری دارند؛ هشدار را پیش از اقدام با پرونده اصلی تطبیق دهید.</li><li><b>در انتظار تأیید:</b> برای بررسی مواردی که تأیید مدیر یا مسئول لازم دارند.</li></ul>
 <h3>👤 بانک خادمین</h3><ul><li><b>فهرست خادمین:</b> جست‌وجو و مرور پرونده‌ها؛ برای ویرایش، رکورد صحیح را باز کنید.</li><li><b>ثبت خادم:</b> اطلاعات هویتی و تماس را تا حد امکان کامل و دقیق وارد کنید.</li><li><b>سوابق خادم:</b> اطلاعات و سوابق را از بخش‌های مربوط به خادم، خدمت و امور مالی بررسی کنید.</li><li><b>اطلاعات تماس اضطراری:</b> در فرم مشخصات خادم، اطلاعات تماس ضروری را با رعایت محرمانگی ثبت کنید.</li><li><b>انضباط و وضعیت:</b> بررسی وضعیت پرونده؛ اطلاعات حساس را فقط برای افراد مجاز ثبت کنید.</li><li><b>کد خادم:</b> کدها باید یکتا باشند و از ۱۰۰۰ به بعد شماره‌گذاری شوند. تغییر دستی کد فقط برای مدیر اصلی مجاز است؛ اگر دکمه دیده نمی‌شود، حساب/نقش کاربر را بررسی کنید و محدودیت امنیتی پایگاه داده را حذف نکنید.</li></ul>
@@ -1154,7 +1154,7 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
  box.innerHTML=out;box.querySelectorAll('[data-col]').forEach(x=>x.onchange=()=>{const i=+x.dataset.col;if(x.checked&&!selected[i].includes(x.value))selected[i].push(x.value);if(!x.checked)selected[i]=selected[i].filter(c=>c!==x.value)});box.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{const i=+b.dataset.all;selected[i]=[...new Set(sections[i].rows.flatMap(r=>Object.keys(r)))];box.querySelectorAll('[data-col="'+i+'"]').forEach(x=>x.checked=true)});box.querySelectorAll('[data-none]').forEach(b=>b.onclick=()=>{const i=+b.dataset.none;selected[i]=[];box.querySelectorAll('[data-col="'+i+'"]').forEach(x=>x.checked=false)});status.textContent='گزارش آماده است؛ ستون‌های لازم را انتخاب و خروجی بگیرید.';
  };
  $('v65-csv').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let chunks=[];sections.forEach((s,i)=>{const cols=selected[i]||[];if(cols.length){chunks.push(csvCell('بخش: '+s.title));chunks.push([cols.map(c=>csvCell(label(c))).join(','),...s.rows.map(r=>cols.map(c=>csvCell(value(c,r[c]))).join(','))].join('\r\n'))}});if(chunks.length)download('گزارش-۳۶۰-درجه-خادم.csv',chunks.join('\r\n\r\n'));else status.textContent='هیچ ستونی انتخاب نشده است.'};
- $('v65-print').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let content='';sections.forEach((s,i)=>{const cols=selected[i]||[];if(cols.length)content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+cols.map(c=>'<th>'+esc(label(c))+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(value(c,r[c]))+'</td>').join('')+'</tr>').join('')+'</tbody></table>'});const w=window.open('','_blank');if(!w){status.textContent='مرورگر پنجره چاپ را مسدود کرده است.';return}w.document.write('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><title>پرونده ۳۶۰ درجه</title><style>body{font-family:Tahoma,Arial;padding:18px;direction:rtl}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}h3{page-break-after:avoid}</style><h2>گزارش یکپارچه خادم</h2>'+content+'<script>window.onload=()=>window.print()<\/script></html>');w.document.close()};
+ $('v65-print').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let content='';sections.forEach((s,i)=>{const cols=selected[i]||[];if(cols.length)content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+cols.map(c=>'<th>'+esc(label(c))+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(value(c,r[c]))+'</td>').join('')+'</tr>').join('')+'</tbody></table>'});const w=window.open('','_blank');if(!w){status.textContent='مرورگر پنجره چاپ را مسدود کرده است.';return}w.document.write('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><title>گزارش یکپارچه خادم</title><style>body{font-family:Tahoma,Arial;padding:18px;direction:rtl}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;word-break:break-word}th{background:#eee}h3{page-break-after:avoid}</style><h2>گزارش یکپارچه خادم</h2>'+content+'<script>window.onload=()=>window.print()<\/script></html>');w.document.close()};
  wireImport();wireAi();
  }
  function importUi(){return '<div class="card"><h3>ورود فایل صفحه‌گسترده یا فایل جدولی</h3><p>فایل ابتدا پیش‌نمایش می‌شود. ستون‌ها باید به فیلدهای مقصد نگاشت شوند؛ سپس فقط مدیر اصلی می‌تواند ورود را تأیید کند. از فایل و پایگاه داده پشتیبان بگیرید.</p><div class="form-grid"><div class="field"><label>جدول مقصد</label><select id="v65-target"><option value="khadems">بانک خادمین</option><option value="service_records">سوابق خدمت</option><option value="meetings">جلسات</option><option value="finance_transactions">تراکنش‌های مالی</option></select></div><div class="field"><label>فایل .xlsx / .xls / .csv</label><input id="v65-file" type="file" accept=".xlsx,.xls,.csv"></div></div><div class="actions"><button class="btn secondary" id="v65-preview-btn">خواندن و پیش‌نمایش</button><button class="btn primary" id="v65-import-btn" disabled>تأیید ورود داده‌ها</button><button class="btn secondary" id="v65-template">دانلود الگوی CSV خادمین</button></div><div id="v65-import-status" class="notice"></div><div id="v65-import-map"></div><div id="v65-import-preview" style="overflow:auto"></div></div>'}
@@ -2230,29 +2230,54 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  const $=id=>document.getElementById(id);
  let lastRole='', checking=false;
  async function verifiedRole(){
+   // A non-admin/empty answer from the first helper is not final: try independent
+   // authenticated checks before denying access. Never trust a locally stored role.
    let primaryRole='';
-   try{if(typeof window.currentUserRole==='function')primaryRole=String(await window.currentUserRole()||'').trim().toLowerCase()}catch(e){console.warn('بررسی اولیه نقش ناموفق بود:',e?.message||e)}
+   try{
+     if(typeof window.currentUserRole==='function')
+       primaryRole=String(await window.currentUserRole()||'').trim().toLowerCase();
+   }catch(e){console.warn('بررسی اولیه نقش ناموفق بود:',e?.message||e)}
    if(primaryRole==='admin')return 'admin';
-   if(primaryRole)return primaryRole;
-   // Fallback: ask the existing authenticated, RLS-protected admin check rather than trusting a role stored in localStorage.
-   try{if(typeof window.admin==='function'&&await window.admin())return 'admin'}catch(e){console.warn('بررسی جایگزین مدیر ناموفق بود:',e?.message||e)}
+
+   try{
+     if(typeof window.admin==='function' && await window.admin())return 'admin';
+   }catch(e){console.warn('بررسی جایگزین مدیر ناموفق بود:',e?.message||e)}
+
    try{
      const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
-     const token=sess.access_token||sess.session?.access_token;
-     const cfg=window.CFG||{};let id=sess.user?.id||sess.user?.sub||sess.user_id||sess.session?.user?.id;
-     if(!token||!cfg.url||!cfg.key)return '';
-     if(!id){const ur=await fetch(cfg.url+'/auth/v1/user',{headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});if(!ur.ok)return '';const u=await ur.json();id=u?.id||''}
-     if(!id)return '';
-     const r=await fetch(cfg.url+'/rest/v1/profiles?select=role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});
-     const rows=await r.json().catch(()=>[]);
-     return r.ok&&rows[0]?.is_active!==false?String(rows[0]?.role||'').trim().toLowerCase():'';
-   }catch(e){console.warn('بررسی نهایی نقش ناموفق بود:',e?.message||e);return ''}
+     const token=String(sess.access_token||sess.session?.access_token||sess.currentSession?.access_token||'');
+     const cfg=(typeof CFG!=='undefined'&&CFG)?CFG:(window.CFG||window.config||{});
+     const base=String(cfg.url||cfg.supabaseUrl||'').replace(/\/$/,'');
+     const key=String(cfg.key||cfg.anonKey||cfg.publishableKey||'');
+     if(!token||!base||!key){
+       console.warn('بررسی دسترسی مدیر: نشست یا تنظیمات احراز هویت کامل نیست.');
+       return primaryRole;
+     }
+     let id=String(sess.user?.id||sess.user?.sub||sess.user_id||sess.session?.user?.id||sess.currentSession?.user?.id||'');
+     if(!id){
+       const ur=await fetch(base+'/auth/v1/user',{
+         headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
+         cache:'no-store'
+       });
+       if(!ur.ok){console.warn('بررسی هویت مدیر با خطای HTTP',ur.status);return primaryRole}
+       const user=await ur.json();id=String(user?.id||'');
+     }
+     if(!id)return primaryRole;
+     const r=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{
+       headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
+       cache:'no-store'
+     });
+     if(!r.ok){console.warn('بررسی نقش مدیر از profiles با خطای HTTP',r.status);return primaryRole}
+     const rows=await r.json();
+     if(Array.isArray(rows)&&rows[0]?.is_active!==false&&String(rows[0]?.role||'').trim().toLowerCase()==='admin')return 'admin';
+     return primaryRole || String(rows?.[0]?.role||'').trim().toLowerCase();
+   }catch(e){console.warn('بررسی نهایی نقش ناموفق بود:',e?.message||e);return primaryRole}
  }
  function setSettingsVisibility(role){
    const allowed=role==='admin';
    document.querySelectorAll('#sidebar .nav-group[data-group="settings"]').forEach(el=>{el.style.display=allowed?'':'none';el.setAttribute('aria-hidden',String(!allowed));});
    if(!allowed&&String(window.khademCurrentPage||'').split(':')[0]==='settings'){
-     const content=$('content');if(content)content.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">بخش «مدیریت سامانه» فقط برای مدیر اصلی قابل مشاهده است.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
+     const content=$('content');if(content)content.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">سامانه نتوانست نقش «مدیر اصلی» را از نشست و پروفایل تأیید کند. از حساب مدیر اصلی خارج شوید و دوباره وارد شوید؛ اگر خطا باقی ماند، پاسخ احراز هویت یا مجوز خواندن پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
    }
  }
  async function refresh(){if(checking)return;checking=true;try{const role=await verifiedRole();lastRole=role;setSettingsVisibility(role)}finally{checking=false}}
@@ -2263,7 +2288,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
    const target=String(page||'dashboard');
    if(target.split(':')[0]==='settings'){
      const content=$('content');if(content)content.innerHTML='<div class="card"><h2>بررسی دسترسی…</h2><div class="notice">در حال بررسی مجوز مدیر اصلی.</div></div>';
-     verifiedRole().then(role=>{setSettingsVisibility(role);if(role==='admin'){oldRender.call(this,target)}else{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">بخش «مدیریت سامانه» فقط برای مدیر اصلی قابل مشاهده است.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>'}}).catch(()=>{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">برای مشاهده این بخش، حساب مدیر اصلی لازم است.</div></div>'});
+     verifiedRole().then(role=>{setSettingsVisibility(role);if(role==='admin'){oldRender.call(this,target)}else{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">سامانه نتوانست نقش «مدیر اصلی» را از نشست و پروفایل تأیید کند. از حساب مدیر اصلی خارج شوید و دوباره وارد شوید؛ اگر خطا باقی ماند، پاسخ احراز هویت یا مجوز خواندن پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>'}}).catch(()=>{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">تأیید نقش مدیر اصلی ناموفق بود. نشست ورود و پاسخ احراز هویت/پروفایل بررسی شود.</div></div>'});
      return;
    }
    return oldRender.apply(this,arguments);
@@ -2276,6 +2301,6 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 })();
 </script>
 
-<!-- نسخه ۱۳۸: رفع مسیر جایگزین تشخیص مدیر و گروه‌بندی تو‌در‌توی زیرمنوها -->
+<!-- نسخه ۱۳۹: رفع مسیر جایگزین تشخیص مدیر و گروه‌بندی تو‌در‌توی زیرمنوها -->
 </body>
 </html>
