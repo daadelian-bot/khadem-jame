@@ -428,7 +428,7 @@
         api('khadem_service_nonattendance', 'GET', 'select=*&service_kind=eq.' + kind + '&order=planned_service_date.desc,created_at.desc&limit=1000'),
         api('khadems', 'GET', 'select=id,khadem_code,full_name,is_active&order=khadem_code.asc&limit=3000')
       ]);
-      if (window.khademCurrentPage !== page || !$('content')) return;
+      if ((window.khademCurrentPage !== page && !(window.KJ && window.KJ.state && window.KJ.state.tab === page)) || !($('content') || $('#kj-main'))) return;
       const activeKhadems = khadems.filter(k => k.is_active !== false);
       const options = activeKhadems.map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '—') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
       const names = new Map(khadems.map(k => [k.id, k]));
@@ -502,7 +502,7 @@
         } catch (err) { toast('ذخیره پیگیری ناموفق بود: ' + err.message); }
       }));
     } catch (err) {
-      if (window.khademCurrentPage !== page || !$('content')) return;
+      if ((window.khademCurrentPage !== page && !(window.KJ && window.KJ.state && window.KJ.state.tab === page)) || !($('content') || $('#kj-main'))) return;
       const panel = document.createElement('section');
       panel.id = 'eqServiceAbsenceHistory';
       panel.className = 'card section';
