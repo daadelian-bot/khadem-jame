@@ -209,11 +209,14 @@
       e.preventDefault();
       const msg = 'eqAbsMsg';
       const total = num($('eqAbsTotal').value), paid = num($('eqAbsPaid').value), date = dateVal('eqAbsDate');
-      if (!$('eqAbsKhadem').value || !date || total < 0 || paid < 0 || paid > total) { setMsg(msg, 'خادم و تاریخ معتبر لازم است؛ هزینه پرداخت‌شده باید بین صفر و کل هزینه باشد.', true); return; }
+      const khademId = $('eqAbsKhadem').value, serviceKind = $('eqAbsKind').value;
+      if (!khademId || !date || !Number.isInteger(total) || !Number.isInteger(paid) || total < 0 || paid < 0 || paid > total) { setMsg(msg, 'خادم و تاریخ معتبر لازم است؛ مبالغ باید عدد صحیح تومان باشند و هزینه پرداخت‌شده از کل هزینه بیشتر نباشد.', true); return; }
+      const duplicate = cache.nonattendance.some(r => r.khadem_id === khademId && r.service_kind === serviceKind && String(r.planned_service_date).slice(0,10) === date);
+      if (duplicate) { setMsg(msg, 'برای همین خادم، همین نوع خدمت و همین تاریخ، پرونده عدم حضور ثبت شده است؛ برای جلوگیری از ثبت تکراری، پرونده قبلی را پیگیری کنید.', true); return; }
       setMsg(msg, 'در حال ثبت پرونده…');
       try {
         await api('khadem_service_nonattendance', 'POST', '', {
-          khadem_id: $('eqAbsKhadem').value, service_kind: $('eqAbsKind').value, planned_service_date: date,
+          khadem_id: khademId, service_kind: serviceKind, planned_service_date: date,
           preparation_completed: $('eqAbsPreparation').value === 'true', cost_total_toman: total, cost_paid_toman: paid,
           reason_code: $('eqAbsReason').value, reason_details: $('eqAbsDetails').value.trim() || null,
           notes: $('eqAbsNotes').value.trim() || null, resolution_status: 'pending', refund_amount_toman: 0
