@@ -78,12 +78,15 @@
     if (!finance[3].some(s => s[0] === 'equipment')) finance[3].push(['equipment', '👕 وسایل خدمت و بدهی خدام']);
     try { if (typeof window.buildNav === 'function') window.buildNav(); } catch (_) {}
   }
+  let activeSection = 'equipment';
   function mountPage(html) {
     const content = $('content');
-    if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">حساب هیئت، موجودی مجموعه و پرونده مالی خادم</span></div>' + html;
+    if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">حساب هیئت، موجودی مجموعه و پرونده مالی خادم</span></div>' +
+      '<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button type="button" class="btn ' + (activeSection === 'equipment' ? 'primary' : 'secondary') + '" data-eq-tab="equipment">وسایل خدمت و بدهی خدام</button><button type="button" class="btn ' + (activeSection === 'nonattendance' ? 'primary' : 'secondary') + '" data-eq-tab="nonattendance">عدم حضور در خدمت</button></div>' + html;
+    if (content) content.querySelectorAll('[data-eq-tab]').forEach(button => button.addEventListener('click', () => { activeSection = button.dataset.eqTab; renderPage(); }));
     try { if (typeof initOfflineJalaliCalendars === 'function') initOfflineJalaliCalendars(); } catch (_) {}
   }
-  let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [] };
+  let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [], nonattendance: [] };
   async function loadData() {
     const tables = [
       ['khadems', 'khadems', 'select=id,khadem_code,full_name,is_active&order=khadem_code.asc&limit=3000'],
@@ -91,7 +94,8 @@
       ['items', 'equipment_committee_receipt_items', 'select=*&limit=5000'],
       ['committeePayments', 'equipment_committee_payments', 'select=*&order=paid_date.desc&limit=5000'],
       ['issues', 'khadem_equipment_issues', 'select=*&order=issue_date.desc&limit=5000'],
-      ['khademPayments', 'khadem_equipment_payments', 'select=*&order=paid_date.desc&limit=5000']
+      ['khademPayments', 'khadem_equipment_payments', 'select=*&order=paid_date.desc&limit=5000'],
+      ['nonattendance', 'khadem_service_nonattendance', 'select=*&order=planned_service_date.desc,created_at.desc&limit=3000']
     ];
     const loaded = await Promise.all(tables.map(async ([key, table, query]) => [key, await api(table, 'GET', query)]));
     loaded.forEach(([key, value]) => { cache[key] = value; });
@@ -112,6 +116,7 @@
     return Math.max(0, num(item.quantity) - issued);
   }
   function renderPage() {
+    if (activeSection === 'nonattendance') { renderNonattendancePage(); return; }
     const khademOptions = cache.khadems.filter(k => k.is_active !== false).map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
     const stockOptions = cache.items.filter(i => remainingStock(i) > 0).map(i => {
       const r = cache.receipts.find(x => x.id === i.receipt_id) || {};
@@ -167,6 +172,70 @@
       '<div class="card section"><h3>خلاصه پرداخت خدام</h3><p>هزینه ثبت‌شده اقلام: <b>' + esc(money(issueCost)) + '</b> · پرداخت‌های ثبت‌شده: <b>' + esc(money(khademPaid)) + '</b></p><p class="muted">بدهی فقط برای اقلامی محاسبه می‌شود که وضعیت آن‌ها «تحویل خادم شده» باشد.</p></div>'
     );
     bindForms();
+  }
+  function renderNonattendancePage() {
+    const khademOptions = cache.khadems.map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
+    const kindLabel = v => v === 'friday_night' ? 'خدمت شب جمعه' : 'خدمت رسمی';
+    const reasonLabel = v => ({border_exit_issue:'مشکل خروج از مرز',illness:'بیماری',family_emergency:'اتفاق یا ضرورت خانوادگی',other:'سایر موارد'})[v] || v || '—';
+    const resolutionLabel = v => ({pending:'در انتظار پیگیری',rescheduled:'تغییر تاریخ خدمت',refunded:'هزینه بازپرداخت شد',not_refundable:'هزینه قابل بازپرداخت نیست',closed:'مختومه'})[v] || v || '—';
+    const rows = cache.nonattendance.map(r => {
+      const k = cache.khadems.find(x => x.id === r.khadem_id) || {};
+      return '<tr><td>' + esc(k.khadem_code || '—') + ' — ' + esc(k.full_name || 'خادم حذف‌نشده/نامشخص') + '</td><td>' + esc(kindLabel(r.service_kind)) + '</td><td>' + esc(jdate(r.planned_service_date)) + '</td><td>' + (r.preparation_completed ? 'کامل' : 'ناقص') + '</td><td>' + esc(money(r.cost_paid_toman)) + ' از ' + esc(money(r.cost_total_toman)) + '</td><td>' + esc(reasonLabel(r.reason_code)) + (r.reason_details ? '<br><small>' + esc(r.reason_details) + '</small>' : '') + '</td><td><select class="eq-absence-resolution" data-id="' + esc(r.id) + '">' +
+        ['pending','rescheduled','refunded','not_refundable','closed'].map(s => '<option value="' + s + '"' + (r.resolution_status === s ? ' selected' : '') + '>' + esc(resolutionLabel(s)) + '</option>').join('') +
+        '</select><input class="eq-absence-refund" data-id="' + esc(r.id) + '" type="number" min="0" step="1" value="' + esc(r.refund_amount_toman || 0) + '" aria-label="مبلغ بازپرداخت تومان" placeholder="مبلغ بازپرداخت" style="max-width:130px;margin-top:5px"><button type="button" class="btn secondary eq-save-absence" data-id="' + esc(r.id) + '" style="margin-top:5px">ثبت پیگیری</button></td></tr>';
+    }).join('');
+    const paidTotal = cache.nonattendance.reduce((s,r) => s + num(r.cost_paid_toman), 0);
+    const refundTotal = cache.nonattendance.reduce((s,r) => s + num(r.refund_amount_toman), 0);
+    mountPage(
+      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">' +
+      '<div class="card"><span class="muted">پرونده‌های عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(cache.nonattendance.length)) + '</b></div>' +
+      '<div class="card"><span class="muted">هزینه پرداخت‌شده ثبت‌شده</span><b style="display:block;font-size:20px">' + esc(money(paidTotal)) + '</b></div>' +
+      '<div class="card"><span class="muted">مبلغ بازپرداخت ثبت‌شده</span><b style="display:block;font-size:20px">' + esc(money(refundTotal)) + '</b></div></div>' +
+      '<div class="card section"><h3>ثبت عدم امکان حضور در خدمت</h3><p class="muted">برای خادمی که مراحل پیش از خدمت را طی کرده اما به دلیل مشکل مرزی، بیماری یا اتفاق دیگری نمی‌تواند حاضر شود. این ثبت، سابقه خدمت انجام‌شده ایجاد نمی‌کند و پرداخت‌ها را خودکار تغییر نمی‌دهد.</p>' +
+      '<form id="eqAbsenceForm"><div class="form-grid">' +
+      '<div class="field"><label>خادم</label><select id="eqAbsKhadem" required><option value="">انتخاب خادم…</option>' + khademOptions + '</select></div>' +
+      '<div class="field"><label>نوع خدمت</label><select id="eqAbsKind" required><option value="official">خدمت رسمی</option><option value="friday_night">خدمت شب جمعه</option></select></div>' +
+      '<div class="field"><label>تاریخ برنامه‌ریزی‌شده خدمت (شمسی)</label><input id="eqAbsDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱" required></div>' +
+      '<div class="field"><label>مراحل پیش از خدمت</label><select id="eqAbsPreparation"><option value="true">کامل شده</option><option value="false">کامل نشده</option></select></div>' +
+      '<div class="field"><label>علت عدم حضور</label><select id="eqAbsReason" required><option value="border_exit_issue">مشکل خروج از مرز</option><option value="illness">بیماری</option><option value="family_emergency">اتفاق یا ضرورت خانوادگی</option><option value="other">سایر موارد</option></select></div>' +
+      '<div class="field"><label>کل هزینه خدمت (تومان)</label><input id="eqAbsTotal" type="number" min="0" step="1" value="0" required></div>' +
+      '<div class="field"><label>هزینه پرداخت‌شده (تومان)</label><input id="eqAbsPaid" type="number" min="0" step="1" value="0" required></div>' +
+      '<div class="field full"><label>شرح علت / توضیحات</label><textarea id="eqAbsDetails" placeholder="اختیاری"></textarea></div>' +
+      '<div class="field full"><label>یادداشت داخلی</label><textarea id="eqAbsNotes" placeholder="اختیاری"></textarea></div></div>' +
+      '<button class="btn primary" type="submit">ثبت پرونده عدم حضور</button> <span id="eqAbsMsg" class="muted"></span></form></div>' +
+      '<div class="card section"><h3>پیگیری پرونده‌های عدم حضور</h3><p class="muted">وضعیت پیگیری یا بازپرداخت را می‌توان تغییر داد. برای جلوگیری از دوباره‌شماری، مبلغ این قسمت به‌صورت خودکار تراکنش جدیدی در دفتر مالی عمومی ایجاد نمی‌کند.</p><div style="overflow:auto"><table class="data-table"><thead><tr><th>خادم</th><th>خدمت</th><th>تاریخ</th><th>آمادگی</th><th>هزینه پرداخت‌شده</th><th>علت</th><th>پیگیری / بازپرداخت</th></tr></thead><tbody>' + (rows || '<tr><td colspan="7">هنوز پرونده عدم حضوری ثبت نشده است.</td></tr>') + '</tbody></table></div></div>'
+    );
+    $('eqAbsenceForm')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = 'eqAbsMsg';
+      const total = num($('eqAbsTotal').value), paid = num($('eqAbsPaid').value), date = dateVal('eqAbsDate');
+      if (!$('eqAbsKhadem').value || !date || total < 0 || paid < 0 || paid > total) { setMsg(msg, 'خادم و تاریخ معتبر لازم است؛ هزینه پرداخت‌شده باید بین صفر و کل هزینه باشد.', true); return; }
+      setMsg(msg, 'در حال ثبت پرونده…');
+      try {
+        await api('khadem_service_nonattendance', 'POST', '', {
+          khadem_id: $('eqAbsKhadem').value, service_kind: $('eqAbsKind').value, planned_service_date: date,
+          preparation_completed: $('eqAbsPreparation').value === 'true', cost_total_toman: total, cost_paid_toman: paid,
+          reason_code: $('eqAbsReason').value, reason_details: $('eqAbsDetails').value.trim() || null,
+          notes: $('eqAbsNotes').value.trim() || null, resolution_status: 'pending', refund_amount_toman: 0
+        });
+        toast('پرونده عدم حضور ثبت شد؛ سابقه خدمت انجام‌شده به‌صورت خودکار ثبت نشده است.');
+        $('eqAbsenceForm').reset(); $('eqAbsTotal').value = '0'; $('eqAbsPaid').value = '0';
+        await loadData(); renderPage();
+      } catch (err) { setMsg(msg, 'ثبت پرونده ناموفق بود: ' + err.message, true); }
+    });
+    document.querySelectorAll('.eq-save-absence').forEach(button => button.addEventListener('click', async () => {
+      const id = button.dataset.id;
+      const status = document.querySelector('.eq-absence-resolution[data-id="' + id + '"]')?.value;
+      const refund = num(document.querySelector('.eq-absence-refund[data-id="' + id + '"]')?.value);
+      const record = cache.nonattendance.find(x => x.id === id);
+      if (!record) return;
+      if (refund < 0 || refund > num(record.cost_paid_toman)) { toast('مبلغ بازپرداخت نمی‌تواند از مبلغ پرداخت‌شده بیشتر باشد.'); return; }
+      if (status === 'refunded' && refund <= 0) { toast('برای وضعیت بازپرداخت‌شده، مبلغ بازپرداخت را وارد کنید.'); return; }
+      try {
+        await api('khadem_service_nonattendance', 'PATCH', 'id=eq.' + encodeURIComponent(id), {resolution_status:status, refund_amount_toman:refund});
+        toast('وضعیت پیگیری ذخیره شد.'); await loadData(); renderPage();
+      } catch (err) { toast('ذخیره پیگیری ناموفق بود: ' + err.message); }
+    }));
   }
   function setMsg(id, text, bad) {
     const el = $(id); if (!el) return;
