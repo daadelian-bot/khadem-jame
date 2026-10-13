@@ -153,7 +153,15 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
 
 <style>html.__khadem-auth-pending body{visibility:hidden}</style>
 <script>document.documentElement.classList.add('__khadem-auth-pending');</script>
-</head>
+<style id="meeting-attendance-radio-styles">
+.mi-attendance-table{min-width:1120px}.mi-attendance-table th,.mi-attendance-table td{vertical-align:middle}.mi-radio-cell{text-align:center;min-width:76px}
+.mi-radio-cell input[type="radio"]{appearance:none;-webkit-appearance:none;width:23px;height:23px;border:2px solid var(--border,#b8c2cf);border-radius:50%;background:var(--surface,#fff);display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle;margin:0}
+.mi-radio-cell input[type="radio"]::before{content:"";width:11px;height:11px;border-radius:50%;transform:scale(0);transition:transform .12s ease;background:currentColor}
+.mi-radio-cell input.mi-status[value="present"]:checked{border-color:#138a53;color:#138a53;background:#e5f8ee}.mi-radio-cell input.mi-status[value="absent"]:checked{border-color:#c24141;color:#c24141;background:#fdeaea}
+.mi-radio-cell input.mi-absence-type[value="excused"]:checked{border-color:#1676b8;color:#1676b8;background:#e7f3ff}.mi-radio-cell input.mi-absence-type[value="unexcused"]:checked{border-color:#b45309;color:#b45309;background:#fff0d8}
+.mi-radio-cell input[type="radio"]:checked::before{transform:scale(1)}.mi-radio-cell input[type="radio"]:disabled{opacity:.25;cursor:not-allowed}
+.mi-detail-cell input,.mi-detail-cell textarea{min-width:150px;width:100%;box-sizing:border-box}.mi-detail-cell.mi-detail-muted,.mi-row-present .mi-detail-cell{opacity:.38}.mi-row-absent .mi-detail-cell{opacity:1}
+</style></head>
 <body>
 
 
@@ -304,64 +312,64 @@ async function openMeetingAttendance(id){window._meetingToOpen=id;render('meetin
 async function loadMeetingInvitees(){const id=$('ma_meeting')?.value;if(!id){meetingInviteesCache=[];drawMeetingInvitees();return}try{const r=await api('/rest/v1/meeting_invitees?select=*&meeting_id=eq.'+encodeURIComponent(id)+'&order=khadem_code.asc&limit=5000'),j=await r.json();if(!r.ok)throw new Error(j.message||j.details||'دریافت مدعوین ناموفق بود');meetingInviteesCache=Array.isArray(j)?j:[];meetingAttendanceDirty=false;drawMeetingInvitees()}catch(e){$('ma_rows').innerHTML='<div class="notice">فهرست مدعوین دریافت نشد: '+esc(e.message)+'<br>فایل مهاجرت v80 را در Supabase اجرا کنید. این صفحه عمداً کل خدام را غایب فرض نمی‌کند.</div>';meetingInviteesCache=[]}}
 function syncMeetingAttendanceRow(tr, reset=false){
  if(!tr)return;
- const status=tr.querySelector('.mi-status')?.value||'absent';
- const absence=tr.querySelector('.mi-absence-type');
- const reason=tr.querySelector('.mi-reason');
- const arrivalMode=tr.querySelector('.mi-arrival-mode');
- const arrivalTime=tr.querySelector('.mi-time');
- const departureMode=tr.querySelector('.mi-departure-mode');
- const departureTime=tr.querySelector('.mi-departure-time');
- if(status==='present'){
-  if(absence)absence.value='';if(reason)reason.value='';
-  if(absence)absence.disabled=true;if(reason)reason.disabled=true;
- }else{
-  if(absence)absence.disabled=false;
-  const excused=absence?.value==='excused';
-  if(reason)reason.disabled=!excused;
-  if(!excused&&reason)reason.value='';
- }
- if(arrivalTime){arrivalTime.disabled=arrivalMode?.value==='session_start';if(arrivalTime.disabled)arrivalTime.value='';}
- if(departureTime){departureTime.disabled=departureMode?.value==='session_end';if(departureTime.disabled)departureTime.value='';}
+ const status=tr.querySelector('.mi-status:checked')?.value||'absent';
+ const absence=tr.querySelector('.mi-absence-type:checked')?.value||'';
+ const absent=status==='absent';
+ tr.querySelectorAll('.mi-absence-type').forEach(el=>el.disabled=!absent);
+ const details=absent&&!!absence;
+ const reason=tr.querySelector('.mi-reason'),notes=tr.querySelector('.mi-notes');
+ if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details)}
+ if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details)}
+ const am=tr.querySelector('.mi-arrival-mode'),at=tr.querySelector('.mi-time');
+ const dm=tr.querySelector('.mi-departure-mode'),dt=tr.querySelector('.mi-departure-time');
+ if(at){at.disabled=am?.value==='session_start';if(at.disabled)at.value=''}
+ if(dt){dt.disabled=dm?.value==='session_end';if(dt.disabled)dt.value=''}
+ tr.classList.toggle('mi-row-present',status==='present');tr.classList.toggle('mi-row-absent',status==='absent');
 }
 function drawMeetingInvitees(){
  const box=$('ma_rows');if(!box)return;
  const active=meetingInviteesCache.filter(x=>x.invite_status!=='cancelled');
  const statusOf=x=>(x.attendance_status==='present'||x.attendance_status==='late')?'present':'absent';
- const present=active.filter(x=>statusOf(x)==='present').length;
- const absent=active.filter(x=>statusOf(x)==='absent').length;
+ const present=active.filter(x=>statusOf(x)==='present').length,absent=active.length-present;
  const percent=active.length?Math.round(present/active.length*100):0;
- if($('ma_stats'))$('ma_stats').innerHTML=[['مدعوین',active.length],['حاضر',present],['غایب',absent],['درصد حضور',percent+'٪']].map(x=>`<div class="card"><span class="muted">${x[0]}</span><b style="display:block;font-size:23px">${typeof x[1]==='number'?faNum(x[1]):x[1]}</b></div>`).join('');
+ if($('ma_stats'))$('ma_stats').innerHTML=[['مدعوین',active.length],['حاضر',present],['غایب',absent],['درصد حضور',percent+'٪']].map(x=>'<div class="card"><span class="muted">'+x[0]+'</span><b style="display:block;font-size:23px">'+(typeof x[1]==='number'?faNum(x[1]):x[1])+'</b></div>').join('');
  let rows=active;const f=$('ma_filter')?.value||'all',q=($('ma_search')?.value||'').toLowerCase();
  if(f!=='all')rows=rows.filter(x=>statusOf(x)===f);
  if(q)rows=rows.filter(x=>[x.khadem_name,x.khadem_code].some(v=>String(v||'').toLowerCase().includes(q)));
- const reasons=['بیماری','مشکل خانوادگی','مأموریت','مشکل رفت‌وآمد','اطلاع قبلی','سایر'];
- box.innerHTML=rows.length?`<div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>وضعیت</th><th>نوع غیبت</th><th>ساعت ورود</th><th>ساعت خروج</th><th>توضیحات غیبت</th></tr></thead><tbody>${rows.map(x=>{
-  const status=statusOf(x);const absence=x.absence_type||(x.attendance_status==='excused'?'excused':x.attendance_status==='unexcused'?'unexcused':'');
-  const arrivalMode=x.arrival_session_start?'session_start':'time';const departureMode=x.departure_session_end?'session_end':'time';
-  return `<tr data-mi-id="${esc(x.id)}"><td>${esc(x.khadem_code||'—')}</td><td>${esc(x.khadem_name||'—')}</td><td><select class="mi-status" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest('tr'),true)"><option value="present" ${status==='present'?'selected':''}>حاضر</option><option value="absent" ${status==='absent'?'selected':''}>غایب</option></select></td><td><select class="mi-absence-type" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest('tr'))"><option value="">انتخاب نوع غیبت…</option><option value="excused" ${absence==='excused'?'selected':''}>غیبت موجه</option><option value="unexcused" ${absence==='unexcused'?'selected':''}>غیبت غیرموجه</option></select></td><td><div style="display:grid;gap:5px;min-width:135px"><select class="mi-arrival-mode" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest('tr'))"><option value="time" ${arrivalMode==='time'?'selected':''}>انتخاب ساعت</option><option value="session_start" ${arrivalMode==='session_start'?'selected':''}>شروع جلسه</option></select><input class="mi-time" type="time" value="${attr(x.arrival_time||'')}" onchange="meetingAttendanceDirty=true"></div></td><td><div style="display:grid;gap:5px;min-width:135px"><select class="mi-departure-mode" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest('tr'))"><option value="time" ${departureMode==='time'?'selected':''}>انتخاب ساعت</option><option value="session_end" ${departureMode==='session_end'?'selected':''}>پایان جلسه</option></select><input class="mi-departure-time" type="time" value="${attr(x.departure_time||'')}" onchange="meetingAttendanceDirty=true"></div></td><td><select class="mi-reason" onchange="meetingAttendanceDirty=true"><option value="">انتخاب مورد…</option>${reasons.map(v=>`<option value="${attr(v)}" ${x.excuse_reason===v?'selected':''}>${esc(v)}</option>`).join('')}</select></td></tr>`;
- }).join('')}</tbody></table></div>`:'<div class="notice">برای این جلسه مدعوی فعالی ثبت نشده است.</div>';
+ box.innerHTML=rows.length?'<div class="notice">تمام '+faNum(active.length)+' خادم دعوت‌شده در همین فهرست نمایش داده می‌شوند. برای هر خادم وضعیت را با دایره‌های حاضر/غایب مشخص کنید.</div><div style="overflow:auto"><table class="data-table mi-attendance-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>حاضر</th><th>غایب</th><th>غیبت موجه</th><th>غیبت غیرموجه</th><th>دلیل غیبت</th><th>توضیحات</th><th>ساعت ورود</th><th>ساعت خروج</th></tr></thead><tbody>'+rows.map(x=>{
+  const st=statusOf(x),absence=x.absence_type||(x.attendance_status==='excused'?'excused':x.attendance_status==='unexcused'?'unexcused':'');
+  const id=String(x.id),sn='mi-status-'+id,an='mi-absence-'+id;
+  const am=x.arrival_session_start?'session_start':'time',dm=x.departure_session_end?'session_end':'time';
+  const radio=(name,value,checked,title,cls)=>'<input type="radio" class="'+cls+'" name="'+attr(name)+'" value="'+value+'" '+(checked?'checked':'')+' aria-label="'+attr(title)+'" title="'+attr(title)+'" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest(\'tr\'))">';
+  return '<tr data-mi-id="'+attr(id)+'"><td>'+esc(x.khadem_code||'—')+'</td><td>'+esc(x.khadem_name||'—')+'</td>'+
+   '<td class="mi-radio-cell">'+radio(sn,'present',st==='present','حاضر','mi-status')+'</td><td class="mi-radio-cell">'+radio(sn,'absent',st==='absent','غایب','mi-status')+'</td>'+
+   '<td class="mi-radio-cell">'+radio(an,'excused',absence==='excused','غیبت موجه','mi-absence-type')+'</td><td class="mi-radio-cell">'+radio(an,'unexcused',absence==='unexcused','غیبت غیرموجه','mi-absence-type')+'</td>'+
+   '<td class="mi-detail-cell"><input class="mi-reason" type="text" maxlength="500" placeholder="دلیل غیبت" value="'+attr(x.excuse_reason||'')+'" onchange="meetingAttendanceDirty=true"></td>'+
+   '<td class="mi-detail-cell"><textarea class="mi-notes" rows="2" maxlength="2000" placeholder="توضیحات غیبت" onchange="meetingAttendanceDirty=true">'+esc(x.notes||'')+'</textarea></td>'+
+   '<td><div style="display:grid;gap:5px;min-width:130px"><select class="mi-arrival-mode" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest(\'tr\'))"><option value="time" '+(am==='time'?'selected':'')+'>انتخاب ساعت</option><option value="session_start" '+(am==='session_start'?'selected':'')+'>شروع جلسه</option></select><input class="mi-time" type="time" value="'+attr(x.arrival_time||'')+'" onchange="meetingAttendanceDirty=true"></div></td>'+
+   '<td><div style="display:grid;gap:5px;min-width:130px"><select class="mi-departure-mode" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest(\'tr\'))"><option value="time" '+(dm==='time'?'selected':'')+'>انتخاب ساعت</option><option value="session_end" '+(dm==='session_end'?'selected':'')+'>پایان جلسه</option></select><input class="mi-departure-time" type="time" value="'+attr(x.departure_time||'')+'" onchange="meetingAttendanceDirty=true"></div></td></tr>';
+ }).join('')+'</tbody></table></div>':'<div class="notice">برای این جلسه مدعوی فعالی ثبت نشده است. هنگام ساخت جلسه، گزینه «همه خادمین فعال» را انتخاب کنید یا فهرست مدعوین را بررسی کنید.</div>';
  box.querySelectorAll('tr[data-mi-id]').forEach(tr=>syncMeetingAttendanceRow(tr));
 }
 async function saveMeetingAttendance(){
  const rows=Array.from(document.querySelectorAll('#ma_rows tr[data-mi-id]'));if(!rows.length){toast('ردیفی برای ذخیره وجود ندارد.');return}
  try{
   for(const tr of rows){
-   const id=tr.dataset.miId,st=tr.querySelector('.mi-status').value;
-   const absence=st==='absent'?(tr.querySelector('.mi-absence-type').value||null):null;
-   const reason=st==='absent'&&absence==='excused'?(tr.querySelector('.mi-reason').value||null):null;
+   const id=tr.dataset.miId,st=tr.querySelector('.mi-status:checked')?.value||'absent';
+   const absence=st==='absent'?(tr.querySelector('.mi-absence-type:checked')?.value||null):null;
+   const reason=st==='absent'&&absence?(tr.querySelector('.mi-reason').value.trim()||null):null;
+   const notes=st==='absent'&&absence?(tr.querySelector('.mi-notes').value.trim()||null):null;
    if(st==='absent'&&!absence){toast('برای هر خادم غایب، غیبت موجه یا غیبت غیرموجه را انتخاب کنید.');return}
-   if(st==='absent'&&absence==='excused'&&!reason){toast('برای غیبت موجه، توضیح غیبت را انتخاب کنید.');return}
-   const arrivalMode=tr.querySelector('.mi-arrival-mode').value,departureMode=tr.querySelector('.mi-departure-mode').value;
-   const arrival=arrivalMode==='session_start'?null:(tr.querySelector('.mi-time').value||null);
-   const departure=departureMode==='session_end'?null:(tr.querySelector('.mi-departure-time').value||null);
-   const arrivalStart=arrivalMode==='session_start',departureEnd=departureMode==='session_end';
-   const old=meetingInviteesCache.find(x=>String(x.id)===String(id));
+   const am=tr.querySelector('.mi-arrival-mode').value,dm=tr.querySelector('.mi-departure-mode').value;
+   const arrival=am==='session_start'?null:(tr.querySelector('.mi-time').value||null),departure=dm==='session_end'?null:(tr.querySelector('.mi-departure-time').value||null);
+   const arrivalStart=am==='session_start',departureEnd=dm==='session_end',old=meetingInviteesCache.find(x=>String(x.id)===String(id));
    const oldStatus=old&&(old.attendance_status==='present'||old.attendance_status==='late')?'present':'absent';
-   if(old&&oldStatus===st&&(old.absence_type||((old.attendance_status==='excused')?'excused':old.attendance_status==='unexcused'?'unexcused':null))===absence&&(old.excuse_reason||null)===reason&&(old.arrival_time||null)===arrival&&(old.departure_time||null)===departure&&(old.arrival_session_start===true)===arrivalStart&&(old.departure_session_end===true)===departureEnd)continue;
-   const r=await api('/rest/v1/meeting_invitees?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({attendance_status:st,absence_type:absence,excuse_reason:reason,arrival_time:arrival,arrival_session_start:arrivalStart,departure_time:departure,departure_session_end:departureEnd,attendance_recorded_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+   const oldAbsence=old&&(old.absence_type||(old.attendance_status==='excused'?'excused':old.attendance_status==='unexcused'?'unexcused':null));
+   if(old&&oldStatus===st&&oldAbsence===absence&&(old.excuse_reason||null)===reason&&(old.notes||null)===notes&&(old.arrival_time||null)===arrival&&(old.departure_time||null)===departure&&(old.arrival_session_start===true)===arrivalStart&&(old.departure_session_end===true)===departureEnd)continue;
+   const r=await api('/rest/v1/meeting_invitees?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({attendance_status:st,absence_type:absence,excuse_reason:reason,notes:notes,arrival_time:arrival,arrival_session_start:arrivalStart,departure_time:departure,departure_session_end:departureEnd,attendance_recorded_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.details||j.hint||'ذخیره وضعیت یکی از خادمین ناموفق بود')}
   }
-  toast('حضور و غیاب جلسه ذخیره شد.');await loadMeetingInvitees();
+  meetingAttendanceDirty=false;toast('حضور و غیاب جلسه ذخیره شد.');await loadMeetingInvitees();
  }catch(e){toast('ذخیره حضور و غیاب: '+e.message)}
 }
 function exportMeetingAttendance(){const data=meetingInviteesCache.filter(x=>x.invite_status!=='cancelled').map(x=>({کد_خادم:x.khadem_code,نام:x.khadem_name,وضعیت:x.attendance_status==='present'?'حاضر':x.attendance_status==='late'?'تأخیردار':(x.attendance_status==='excused'||x.absence_type==='excused')?'غیبت موجه':(x.attendance_status==='unexcused'||x.absence_type==='unexcused')?'غیبت غیرموجه':x.attendance_status==='absent'?'غایب':(x.attendance_status||'در انتظار'),نوع_غیبت:x.absence_type==='excused'?'غیبت موجه':x.absence_type==='unexcused'?'غیبت غیرموجه':'',توضیحات_غیبت:x.excuse_reason||'',ساعت_ورود:x.arrival_session_start?'شروع جلسه':x.arrival_time||'',ساعت_خروج:x.departure_session_end?'پایان جلسه':x.departure_time||''}));download('گزارش-حضور-و-غیاب.csv','\ufeff'+csv(data))}
