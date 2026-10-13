@@ -2175,6 +2175,64 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  start();
 })();
 </script>
+
+<!-- v150: restore collapsible navigation and prevent silent blank pages -->
+<script id="khadem-v150-navigation-repair">
+(function(){
+ 'use strict';
+ function repairNavigation(){
+  var side=document.getElementById('sidebar');
+  if(!side)return;
+  try{
+   if(typeof window.buildNav==='function') window.buildNav();
+   else {
+    var data=window.menus;
+    if(Array.isArray(data)) side.innerHTML=data.map(function(m){
+     var subs=Array.isArray(m[3])?m[3]:[];
+     return '<div class="nav-group" data-group="'+String(m[0])+'"><button type="button" class="nav-main" data-nav="'+String(m[0])+'"><span>'+String(m[1]||'')+' '+String(m[2]||'')+'</span></button>'+
+      (subs.length?'<div class="submenu">'+subs.map(function(x){return '<button type="button" class="sub" data-page="'+String(m[0])+':'+String(x[0])+'">'+String(x[1]||x[0])+'</button>';}).join('')+'</div>':'')+'</div>';
+    }).join('');
+   }
+   side.querySelectorAll('.submenu').forEach(function(el){el.style.removeProperty('display');el.style.removeProperty('visibility');});
+   side.querySelectorAll('.nav-group').forEach(function(el){
+    el.classList.remove('open');
+    var b=el.querySelector('.nav-main');if(b)b.setAttribute('aria-expanded','false');
+   });
+   side.style.removeProperty('visibility');
+   side.style.removeProperty('opacity');
+  }catch(e){console.error('v150 navigation repair:',e);}
+ }
+ function showPageError(page,error){
+  var c=document.getElementById('content');if(!c)return;
+  console.error('Khadem page render failed:',page,error);
+  c.innerHTML='<div class="page-title"><h2>نمایش بخش با خطا روبه‌رو شد</h2></div><div class="card"><div class="notice">بخش انتخاب‌شده باز نشد. صفحه را تازه‌سازی کنید. اگر مشکل تکرار شد، نام بخش و پیام خطا باید بررسی شود؛ هیچ داده‌ای در این مرحله حذف نشده است.</div><button type="button" class="btn secondary" onclick="window.render && window.render(\'dashboard\')">بازگشت به داشبورد</button></div>';
+ }
+ function protectRender(){
+  if(typeof window.render!=='function'||window.__khademV150RenderGuard)return;
+  window.__khademV150RenderGuard=true;
+  var prior=window.render;
+  window.render=function(page){
+   var result;
+   try{result=prior.apply(this,arguments);}
+   catch(e){showPageError(page,e);return;}
+   if(result&&typeof result.then==='function'){
+    return result.then(function(value){
+     var c=document.getElementById('content');
+     if(c&&!c.innerHTML.trim())showPageError(page,new Error('render returned an empty page'));
+     return value;
+    }).catch(function(e){showPageError(page,e);});
+   }
+   var c=document.getElementById('content');
+   if(c&&!c.innerHTML.trim())showPageError(page,new Error('render returned an empty page'));
+   return result;
+  };
+ }
+ function start(){repairNavigation();protectRender();}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+ else start();
+})();
+</script>
+
 <script src="./equipment-finance.js?v=154"></script>
 </body>
 </html>
