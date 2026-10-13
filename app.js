@@ -512,8 +512,21 @@
       settings: settingsPage
     };
     main.innerHTML = (views[state.tab] || dashboard)();
-    if ((state.tab === "services" || state.tab === "friday") && window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
-      window.setTimeout(() => { if (state.tab === "services" || state.tab === "friday") window.KhademEquipmentFinance.appendNonattendanceToServicePage(state.tab); }, 0);
+    if (state.tab === "services" || state.tab === "friday") {
+      const mountAbsencePanel = () => {
+        if ((state.tab === "services" || state.tab === "friday") && window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
+          window.KhademEquipmentFinance.appendNonattendanceToServicePage(state.tab);
+        }
+      };
+      if (window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
+        window.setTimeout(mountAbsencePanel, 0);
+      } else if (!document.querySelector("script[data-kj-absence-loader]")) {
+        const script = document.createElement("script");
+        script.src = "./equipment-finance.js?v=155";
+        script.dataset.kjAbsenceLoader = "1";
+        script.onload = () => window.setTimeout(mountAbsencePanel, 0);
+        document.head.appendChild(script);
+      }
     }
     if (state.tab === "khadems") {
       $("#kj-khadem-search")?.addEventListener("input", e => {
