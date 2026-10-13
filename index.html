@@ -318,8 +318,8 @@ function syncMeetingAttendanceRow(tr, reset=false){
  tr.querySelectorAll('.mi-absence-type').forEach(el=>{el.disabled=!absent;if(!absent)el.checked=false;});
  const details=absent&&!!absence;
  const reason=tr.querySelector('.mi-reason'),notes=tr.querySelector('.mi-notes');
- if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(!details)reason.value=''}
- if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(!details)notes.value=''}
+ if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(status==='present')reason.value=''}
+ if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(status==='present')notes.value=''}
  const am=tr.querySelector('.mi-arrival-mode'),at=tr.querySelector('.mi-time');
  const dm=tr.querySelector('.mi-departure-mode'),dt=tr.querySelector('.mi-departure-time');
  if(at){at.disabled=am?.value==='session_start';if(at.disabled)at.value=''}
