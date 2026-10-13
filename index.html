@@ -1,6 +1,100 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
+<!-- KJ_AUTH_GATE_V1: redesigned login, auth-only access gate -->
+<style id="kj-auth-gate-style">
+html.kj-auth-pending #app{display:none!important}
+#kj-auth-gate{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:auto;padding:20px;background:radial-gradient(circle at 12% 8%,#dce9dd,transparent 42%),linear-gradient(145deg,#f8f6ef,#e8eee8);font-family:"Vazirmatn",Tahoma,sans-serif;color:#18332e}
+#kj-auth-gate *{box-sizing:border-box}
+#kj-auth-gate .kj-auth-wrap{width:min(100%,440px);margin:auto}
+#kj-auth-gate .kj-auth-brand{text-align:center;margin:0 auto 18px}
+#kj-auth-gate .kj-auth-seal{width:68px;height:68px;border-radius:22px;margin:0 auto 12px;display:grid;place-items:center;background:linear-gradient(145deg,#286052,#10372f);color:#fff;border:1px solid #c6a45c;font-size:28px;box-shadow:0 10px 28px #123c3420}
+#kj-auth-gate .kj-auth-brand h1{font-size:21px;line-height:1.8;margin:0;font-weight:900}
+#kj-auth-gate .kj-auth-brand p{font-size:12px;color:#63756f;margin:4px 0}
+#kj-auth-gate .kj-auth-card{padding:27px 24px;border-radius:25px;background:#ffffffed;border:1px solid #fff;box-shadow:0 22px 60px #183c2b16}
+#kj-auth-gate .kj-auth-eyebrow{font-size:12px;font-weight:800;color:#8b6c30}
+#kj-auth-gate .kj-auth-card h2{font-size:23px;margin:8px 0}
+#kj-auth-gate .kj-auth-intro{font-size:13px;line-height:2;color:#64756f;margin:0 0 18px}
+#kj-auth-gate .kj-auth-field{display:block;margin:14px 0}
+#kj-auth-gate .kj-auth-field span{display:block;font-size:13px;font-weight:800;margin-bottom:7px}
+#kj-auth-gate .kj-auth-field input{width:100%;height:49px;border:1px solid #dce4de;border-radius:13px;padding:12px 14px;font:inherit;font-size:14px;background:#fbfcfa;outline:none}
+#kj-auth-gate .kj-auth-field input:focus{border-color:#347568;box-shadow:0 0 0 3px #34756819}
+#kj-auth-gate .kj-auth-primary{width:100%;min-height:50px;border:0;border-radius:14px;background:linear-gradient(100deg,#1c554a,#10372f);color:white;font:inherit;font-size:15px;font-weight:800;margin-top:8px;cursor:pointer}
+#kj-auth-gate .kj-auth-primary:disabled{opacity:.65;cursor:wait}
+#kj-auth-gate .kj-auth-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:15px}
+#kj-auth-gate .kj-auth-link{border:0;background:transparent;padding:6px 0;color:#174b43;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+#kj-auth-gate .kj-auth-status{display:none;margin:13px 0 0;padding:11px 12px;border-radius:12px;font-size:12px;line-height:1.9;overflow-wrap:anywhere}
+#kj-auth-gate .kj-auth-status.show{display:block}
+#kj-auth-gate .kj-auth-status.error{background:#fff0ef;color:#a83232}
+#kj-auth-gate .kj-auth-status.ok{background:#edf7ef;color:#20643c}
+#kj-auth-gate .kj-auth-note{margin-top:17px;padding:12px;border-radius:13px;background:#f0f5f0;color:#52665e;font-size:11px;line-height:2}
+#kj-auth-gate .kj-auth-foot{text-align:center;color:#75827d;font-size:11px;line-height:2;margin:15px 8px 0}
+@media(max-width:390px){#kj-auth-gate{padding:14px}#kj-auth-gate .kj-auth-card{padding:22px 18px}#kj-auth-gate .kj-auth-brand h1{font-size:19px}}
+</style>
+<script id="kj-auth-gate-script">
+(function(){
+'use strict';
+var AUTH_URL='https://fxxtyfurdzpzfvweoppo.supabase.co';
+var AUTH_KEY='sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
+var SESSION_KEY='khadem_session';
+document.documentElement.classList.add('kj-auth-pending');
+function readSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'{}')}catch(e){return {}}}
+function saveSession(s){localStorage.setItem(SESSION_KEY,JSON.stringify(s));if(s.user&&s.user.email)localStorage.setItem('khadem_last_email',s.user.email)}
+function clearSession(){localStorage.removeItem(SESSION_KEY)}
+async function authRequest(path,body,token){
+ var headers={'apikey':AUTH_KEY,'Content-Type':'application/json','Accept':'application/json'};
+ if(token)headers.Authorization='Bearer '+token;
+ var response=await fetch(AUTH_URL+path,{method:'POST',headers:headers,body:JSON.stringify(body||{}),cache:'no-store',credentials:'omit'});
+ var data={};try{data=await response.json()}catch(e){}
+ if(!response.ok)throw new Error(data.msg||data.message||data.error_description||data.error||('HTTP '+response.status));
+ return data;
+}
+function showGate(){
+ if(document.getElementById('kj-auth-gate'))return;
+ var gate=document.createElement('div');gate.id='kj-auth-gate';
+ gate.innerHTML='<main class="kj-auth-wrap"><header class="kj-auth-brand"><div class="kj-auth-seal" aria-hidden="true">✦</div><h1>سامانه جامع خادمین</h1><p>مجموعة السیدة زینب سلام الله علیها</p></header><section class="kj-auth-card"><div class="kj-auth-eyebrow">دسترسی امن و مدیریت‌شده</div><h2 id="kj-auth-title">ورود به سامانه</h2><p class="kj-auth-intro">برای حفاظت از پرونده‌ها و سوابق مالی، با حساب کاربری تأییدشده خود وارد شوید.</p><form id="kj-auth-form" autocomplete="on"><label class="kj-auth-field"><span>ایمیل حساب کاربری</span><input id="kj-auth-email" type="email" inputmode="email" autocomplete="username" placeholder="ایمیل ثبت‌شده" required></label><label class="kj-auth-field"><span>رمز عبور</span><input id="kj-auth-password" type="password" autocomplete="current-password" placeholder="رمز عبور حساب" required></label><button id="kj-auth-submit" class="kj-auth-primary" type="submit">ورود امن به سامانه</button></form><div class="kj-auth-links"><button id="kj-auth-recover" class="kj-auth-link" type="button">فراموشی رمز عبور</button><button id="kj-auth-clear" class="kj-auth-link" type="button">پاک‌کردن فرم</button></div><div id="kj-auth-status" class="kj-auth-status" role="status" aria-live="polite"></div><div class="kj-auth-note"><b>حفاظت از اطلاعات:</b> ورود بدون احراز هویت فعال نیست. دسترسی به اطلاعات خادمین و امور مالی باید پس از تأیید حساب و مجوزهای سمت سرور انجام شود.</div></section><p class="kj-auth-foot">اگر حساب ندارید یا دسترسی شما غیرفعال شده است، با مدیر سامانه تماس بگیرید.</p></main>';
+ document.body.appendChild(gate);
+ var form=document.getElementById('kj-auth-form'),email=document.getElementById('kj-auth-email'),password=document.getElementById('kj-auth-password'),submit=document.getElementById('kj-auth-submit'),status=document.getElementById('kj-auth-status');
+ function message(t,type){status.textContent=t;status.className='kj-auth-status show '+(type||'')}
+ form.addEventListener('submit',async function(e){
+  e.preventDefault();if(!email.value.trim()||!password.value){message('ایمیل و رمز عبور را وارد کنید.','error');return}
+  submit.disabled=true;submit.textContent='در حال بررسی اطلاعات…';message('','');
+  try{
+   var result=await authRequest('/auth/v1/token?grant_type=password',{email:email.value.trim(),password:password.value});
+   if(!result.access_token||!result.user)throw new Error('سرور نشست معتبر ورود را برنگرداند.');
+   saveSession({access_token:result.access_token,refresh_token:result.refresh_token||null,token_type:result.token_type||'bearer',expires_at:result.expires_at||Math.floor(Date.now()/1000)+(result.expires_in||3600),user:result.user});
+   localStorage.setItem('kj_access_token',result.access_token);localStorage.setItem('kj_user',JSON.stringify(result.user));
+   message('ورود موفق بود؛ در حال بازکردن سامانه…','ok');location.reload();
+  }catch(err){message('ورود انجام نشد. ایمیل و رمز را بررسی کنید؛ اگر حساب تأیید نشده یا غیرفعال است با مدیر سامانه تماس بگیرید. '+err.message,'error')}
+  finally{submit.disabled=false;submit.textContent='ورود امن به سامانه'}
+ });
+ document.getElementById('kj-auth-clear').addEventListener('click',function(){form.reset();message('','')});
+ document.getElementById('kj-auth-recover').addEventListener('click',async function(){
+  var address=email.value.trim();if(!address){message('ابتدا ایمیل حساب خود را وارد کنید.','error');email.focus();return}
+  var btn=this;btn.disabled=true;btn.textContent='در حال ارسال…';
+  try{await authRequest('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{email:address});message('اگر این ایمیل به حسابی تعلق داشته باشد، دستور بازیابی ارسال می‌شود. پوشه هرزنامه را هم بررسی کنید.','ok')}
+  catch(err){message('درخواست بازیابی ارسال نشد: '+err.message,'error')}
+  finally{btn.disabled=false;btn.textContent='فراموشی رمز عبور'}
+ });
+}
+async function init(){
+ var session=readSession();
+ if(session.access_token){
+  try{
+   var response=await fetch(AUTH_URL+'/auth/v1/user',{headers:{apikey:AUTH_KEY,Authorization:'Bearer '+session.access_token},cache:'no-store'});
+   if(response.ok){var user=await response.json();session.user=user;saveSession(session);localStorage.setItem('kj_access_token',session.access_token);localStorage.setItem('kj_user',JSON.stringify(user));document.documentElement.classList.remove('kj-auth-pending');return}
+  }catch(e){}
+  if(session.refresh_token){
+   try{var refreshed=await authRequest('/auth/v1/token?grant_type=refresh_token',{refresh_token:session.refresh_token});if(refreshed.access_token&&refreshed.user){saveSession({access_token:refreshed.access_token,refresh_token:refreshed.refresh_token||session.refresh_token,token_type:refreshed.token_type||'bearer',expires_at:refreshed.expires_at||Math.floor(Date.now()/1000)+(refreshed.expires_in||3600),user:refreshed.user});localStorage.setItem('kj_access_token',refreshed.access_token);localStorage.setItem('kj_user',JSON.stringify(refreshed.user));location.reload();return}}catch(e){}
+  }
+  clearSession();localStorage.removeItem('kj_access_token');localStorage.removeItem('kj_user');
+ }
+ showGate();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
 <meta name="app-release" content="148">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
