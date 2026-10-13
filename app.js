@@ -512,6 +512,9 @@
       settings: settingsPage
     };
     main.innerHTML = (views[state.tab] || dashboard)();
+    if ((state.tab === "services" || state.tab === "friday") && window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
+      window.setTimeout(() => { if (state.tab === "services" || state.tab === "friday") window.KhademEquipmentFinance.appendNonattendanceToServicePage(state.tab); }, 0);
+    }
     if (state.tab === "khadems") {
       $("#kj-khadem-search")?.addEventListener("input", e => {
         const pos = e.target.selectionStart;
