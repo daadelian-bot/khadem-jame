@@ -415,7 +415,7 @@
     catch (e) { mountPage(notice('دریافت اطلاعات ناموفق بود: ' + e.message + ' — مجوز finance.manage و اتصال شبکه را بررسی کنید.', true)); }
   }
   async function appendNonattendanceToServicePage(page) {
-    const content = $('content');
+    const content = $('content') || $('#kj-main');
     if (!content) return;
     const existing = $('eqServiceAbsenceHistory');
     if (existing) existing.remove();
@@ -510,6 +510,7 @@
       content.appendChild(panel);
     }
   }
+  window.KhademEquipmentFinance = { appendNonattendanceToServicePage };
   addMenu();
   const oldRender = window.render;
   if (typeof oldRender === 'function') {
