@@ -120,34 +120,9 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
 <script>
 (function(){
  'use strict';
- var authUrl='https://fxxtyfurdzpzfvweoppo.supabase.co';
- var authKey='sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
- document.documentElement.style.visibility='hidden';
- function readSession(){try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}}
- function clearSession(){['khadem_session','kj_access_token','kj_user'].forEach(function(k){try{localStorage.removeItem(k)}catch(_){}})}
- function goLogin(){location.replace('./login.html?reason=session');}
- function networkError(){
-  document.documentElement.style.visibility='visible';
-  var show=function(){
-   document.body.innerHTML='<main style="max-width:560px;margin:12vh auto;padding:28px;font:16px/1.9 sans-serif;text-align:center;direction:rtl"><h2>بررسی اتصال و نشست انجام نشد</h2><p>برای حفاظت از اطلاعات، سامانه تا تأیید نشست باز نمی‌شود. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.</p><button id="authRetry" style="padding:12px 24px;border-radius:12px;background:#17365d;color:#fff">تلاش دوباره</button></main>';
-   document.getElementById('authRetry').onclick=function(){location.reload()};
-  };
-  if(document.body)show();else document.addEventListener('DOMContentLoaded',show,{once:true});
- }
- var session=readSession();
- if(!session.access_token){goLogin();return;}
- fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:authKey,Authorization:'Bearer '+session.access_token,Accept:'application/json'},cache:'no-store',credentials:'omit'})
- .then(function(response){
-  if(response.status===401||response.status===403){clearSession();goLogin();return null;}
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  return response.json();
- }).then(function(user){
-  if(!user)return;
-  if(!user.id){clearSession();goLogin();return;}
-  session.user=user;session.user_id=user.id;
-  try{localStorage.setItem('khadem_session',JSON.stringify(session));localStorage.setItem('kj_access_token',session.access_token);localStorage.setItem('kj_user',JSON.stringify(user));}catch(_){}
-  document.documentElement.style.visibility='visible';
- }).catch(networkError);
+ var session={};
+ try{session=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){}
+ if(!session.access_token) location.replace('./login.html?reason=session');
 })();
 </script>
 
@@ -2120,7 +2095,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
   var s=read(),token=s.access_token;
   if(!token||!(s.user&&s.user.id)){clear();location.replace('./login.html');return}
   try{
-   var r=await fetch(cfg.url+'/auth/v1/user',{method:'GET',headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',credentials:'omit'});
+   var controller=new AbortController();var timeoutId=setTimeout(function(){controller.abort();},15000);var r;try{r=await fetch(cfg.url+'/auth/v1/user',{method:'GET',headers:{apikey:cfg.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',credentials:'omit',signal:controller.signal});}finally{clearTimeout(timeoutId);}
    if(r.status===401||r.status===403){clear();location.replace('./login.html');return}
    if(!r.ok)throw new Error('HTTP '+r.status);
    var user=await r.json();
@@ -2129,7 +2104,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
    try{localStorage.setItem('khadem_session',JSON.stringify(s));localStorage.setItem('kj_user',JSON.stringify(user));localStorage.setItem('kj_access_token',token)}catch(_){}
    var app=$('app');if(app)app.style.display='block';
    document.documentElement.classList.remove('__khadem-auth-pending');
-  }catch(e){showError('اعتبار نشست بررسی نشد؛ اتصال شبکه را بررسی کنید و دوباره تلاش کنید. '+(e&&e.message?e.message:''))}
+  }catch(e){showError(e&&e.name==='AbortError'?'پاسخ سرویس احراز هویت در ۱۵ ثانیه دریافت نشد؛ اتصال شبکه را بررسی کنید و دوباره تلاش کنید.':'اعتبار نشست بررسی نشد؛ اتصال شبکه را بررسی کنید و دوباره تلاش کنید. '+(e&&e.message?e.message:''))}
  }
  start();
 })();
