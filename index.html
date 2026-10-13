@@ -1927,5 +1927,43 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 // v143: ورود موقت بدون صفحه احراز هویت؛ احراز هویت از نو طراحی خواهد شد.
 (function(){function start(){const app=document.getElementById('app');if(app)app.style.display='block';if(typeof window.render==='function'){try{window.render('dashboard')}catch(e){console.error('نمایش داشبورد:',e)}}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();})();
 </script>
+
+<!-- v144: بازیابی قطعی نمایش منو و داشبورد پس از حذف صفحه ورود -->
+<script>
+(function(){
+  function restoreApp(){
+    var app=document.getElementById('app');
+    var side=document.getElementById('sidebar');
+    var content=document.getElementById('content');
+    if(app) app.style.setProperty('display','block','important');
+    try {
+      if(typeof window.buildNav==='function') window.buildNav();
+    } catch(err) { console.error('بازیابی منو:',err); }
+    try {
+      if(typeof window.render==='function') window.render('dashboard');
+    } catch(err) { console.error('بازیابی داشبورد:',err); }
+    if(side && !side.querySelector('.nav-group') && Array.isArray(window.menus)) {
+      side.innerHTML=window.menus.map(function(m){
+        var children=Array.isArray(m[3])?m[3]:[];
+        return '<div class="nav-group"><button type="button" class="nav-main" data-nav="'+m[0]+'"><span>'+m[1]+' '+m[2]+'</span></button>' +
+          (children.length?'<div class="submenu">'+children.map(function(s){return '<button type="button" class="sub" data-page="'+m[0]+':'+s[0]+'">'+s[1]+'</button>';}).join('')+'</div>':'')+'</div>';
+      }).join('');
+      side.querySelectorAll('[data-nav]').forEach(function(b){b.addEventListener('click',function(){if(typeof window.render==='function')window.render(b.dataset.nav);});});
+      side.querySelectorAll('[data-page]').forEach(function(b){b.addEventListener('click',function(){if(typeof window.render==='function')window.render(b.dataset.page);});});
+    }
+    if(content && !content.children.length) {
+      content.innerHTML='<div class="page-title"><h2>🏠 داشبورد مدیریتی</h2><p>سامانه جامع خادمین مجموعة السیدة زینب سلام الله علیها</p></div><div class="grid">'+
+        [['👤','بانک خادمین','khadem:list'],['📋','خدمت','service:mainservice'],['💰','امور مالی','finance:dashboard'],['👥','جلسات','meetings:list'],['⚙️','تنظیمات','settings:users']].map(function(x){return '<button class="card stat" type="button" onclick="window.render && window.render(\''+x[2]+'\')"><div class="icon">'+x[0]+'</div><span>'+x[1]+'</span></button>';}).join('')+'</div>';
+    }
+    if(side) {
+      side.style.removeProperty('visibility');
+      side.style.removeProperty('opacity');
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',restoreApp,{once:true});
+  else restoreApp();
+})();
+</script>
+
 </body>
 </html>
