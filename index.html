@@ -72,7 +72,7 @@ function showGate(){
  document.getElementById('kj-auth-recover').addEventListener('click',async function(){
   var address=email.value.trim();if(!address){message('ابتدا ایمیل حساب خود را وارد کنید.','error');email.focus();return}
   var btn=this;btn.disabled=true;btn.textContent='در حال ارسال…';
-  try{await authRequest('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{email:address});message('اگر این ایمیل به حسابی تعلق داشته باشد، دستور بازیابی ارسال می‌شود. پوشه هرزنامه را هم بررسی کنید.','ok')}
+  try{await authRequest('/auth/v1/recover?redirect_to='+encodeURIComponent(new URL('reset-password.html',location.href).href),{email:address});message('اگر این ایمیل به حسابی تعلق داشته باشد، دستور بازیابی ارسال می‌شود. پوشه هرزنامه را هم بررسی کنید.','ok')}
   catch(err){message('درخواست بازیابی ارسال نشد: '+err.message,'error')}
   finally{btn.disabled=false;btn.textContent='فراموشی رمز عبور'}
  });
