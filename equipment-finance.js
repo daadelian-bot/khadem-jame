@@ -86,7 +86,8 @@
     ['stock', 'موجودی وسایل مجموعه'],
     ['khadem-ledger', 'پرونده تحویل و بدهی خدام'],
     ['committee-ledger', 'دفتر حساب مجموعه با هیئت'],
-    ['khadem-summary', 'خلاصه پرداخت خدام']
+    ['khadem-summary', 'خلاصه پرداخت خدام'],
+    ['nonattendance', 'ثبت و پیگیری عدم حضور در خدمت']
   ];
   function mountPage(html) {
     const content = $('content');
