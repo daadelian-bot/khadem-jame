@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication is retained; the session is validated before app data is shown. -->
 
-<meta name="app-release" content="154">
+<meta name="app-release" content="155">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۵۴</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۵۵</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -2192,5 +2192,133 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 </script>
 
 <script src="./equipment-finance.js?v=157"></script>
+
+<script id="khadem-v155-menu-structure-delete">
+(function(){
+  if(window.__khademV155MenuStructureDelete)return;
+  window.__khademV155MenuStructureDelete=true;
+  const oldRender=window.render;
+  if(typeof oldRender!=='function')return;
+  const escHtml=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+  const session=function(){try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}};
+  const request=async function(path,options){
+    const s=session();
+    if(!s.access_token)throw new Error('نشست ورود معتبر نیست؛ دوباره وارد شوید.');
+    const headers=Object.assign({'apikey':CFG.key,'Authorization':'Bearer '+s.access_token,'Accept':'application/json'},(options&&options.headers)||{});
+    return fetch(CFG.url+path,Object.assign({cache:'no-store'},options||{},{headers:headers}));
+  };
+  async function checkAdmin(){
+    if(typeof window.admin==='function')return !!(await window.admin());
+    const s=session(),id=s.user&&s.user.id||s.user_id;
+    if(!id)return false;
+    const r=await request('/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(id)+'&limit=1');
+    const j=await r.json().catch(function(){return []});
+    return r.ok&&Array.isArray(j)&&j[0]&&j[0].role==='admin';
+  }
+  async function readConfig(){
+    const r=await request('/rest/v1/app_settings?select=value&setting_key=eq.ui_config&limit=1');
+    const rows=await r.json().catch(function(){return []});
+    if(!r.ok)throw new Error('خواندن تنظیمات منوها ناموفق بود: '+r.status);
+    if(!Array.isArray(rows)||!rows.length||!rows[0].value)throw new Error('تنظیمات رابط کاربری در پایگاه داده پیدا نشد.');
+    return JSON.parse(JSON.stringify(rows[0].value));
+  }
+  async function persistConfig(cfg,description){
+    const s=session(),uid=s.user&&s.user.id||s.user_id||null;
+    const r=await request('/rest/v1/app_settings?setting_key=eq.ui_config',{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({value:cfg,updated_at:new Date().toISOString(),updated_by:uid})});
+    if(!r.ok)throw new Error('ذخیره در پایگاه داده انجام نشد: '+(await r.text()).slice(0,300));
+    const check=await readConfig();
+    if(JSON.stringify(check)!==JSON.stringify(cfg))throw new Error('تغییر برای تأیید دوباره از پایگاه داده خوانده نشد؛ دوباره تلاش کنید.');
+    try{
+      const log=await request('/rest/v1/audit_logs',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({actor_user_id:uid,action:'menu_structure_delete',module_key:'settings:delete',old_data:{description:description},new_data:{deleted_at:new Date().toISOString(),config_key:'ui_config'}})});
+      if(!log.ok)console.warn('Menu deletion saved but audit log insert failed:',await log.text());
+    }catch(e){console.warn('Menu deletion saved but audit log insert failed:',e)}
+  }
+  function menuRecords(cfg){
+    const out=[];
+    (window.menus||[]).forEach(function(m){
+      out.push({kind:'menu',id:String(m[0]),parent:'',label:String(m[2]||m[0]),custom:false});
+      (m[3]||[]).forEach(function(sub){out.push({kind:'submenu',id:String(sub[0]),parent:String(m[0]),label:String(sub[1]||sub[0]),custom:false})});
+    });
+    (Array.isArray(cfg.extraSubmenus)?cfg.extraSubmenus:[]).forEach(function(x){
+      if(x&&x.id&&x.parentId)out.push({kind:'submenu',id:String(x.id),parent:String(x.parentId),label:String(x.label||x.id),custom:true});
+    });
+    (Array.isArray(cfg.customMenus)?cfg.customMenus:[]).forEach(function(m){
+      if(!m||!m.id)return;
+      out.push({kind:'menu',id:String(m.id),parent:'',label:String(m.label||m.title||m.id),custom:true});
+      (m.submenus||[]).forEach(function(sub){out.push({kind:'submenu',id:String(sub.id),parent:String(m.id),label:String(sub.label||sub.title||sub.id),custom:true})});
+    });
+    return out;
+  }
+  async function mount(){
+    const root=document.getElementById('content');
+    if(!root||document.getElementById('kj-v155-menu-delete-card'))return;
+    const card=document.createElement('section');
+    card.id='kj-v155-menu-delete-card';
+    card.className='card';
+    card.style.marginTop='16px';
+    card.innerHTML='<div class="page-title"><h2>🧭 مدیریت حذف منوها، زیرمنوها و بخش‌ها</h2><span class="status-pill status-on">ویژه مدیر اصلی</span></div><p class="muted">این قسمت فقط ساختار نمایشی سامانه را تغییر می‌دهد. حذف منو یا زیرمنو آن را از منوی همه کاربران پنهان می‌کند و داده‌های خادمین، خدمت و مالی را حذف نمی‌کند. تغییرات در تنظیمات پایگاه داده ذخیره می‌شود.</p><div id="kj-v155-menu-delete-status" class="notice">در حال بررسی دسترسی مدیر اصلی و دریافت ساختار منوها…</div><div id="kj-v155-menu-delete-list"></div><div class="actions"><button type="button" class="btn secondary" id="kj-v155-menu-restore">بازگردانی منوها و زیرمنوهای پنهان‌شده</button><button type="button" class="btn secondary" id="kj-v155-menu-refresh">تازه‌سازی فهرست</button></div>';
+    root.appendChild(card);
+    const status=document.getElementById('kj-v155-menu-delete-status'),list=document.getElementById('kj-v155-menu-delete-list');
+    async function draw(){
+      list.innerHTML='';
+      if(!await checkAdmin()){status.textContent='دسترسی رد شد: این عملیات فقط برای مدیر اصلی است.';return}
+      const cfg=await readConfig(),hiddenMenus=new Set(cfg.deletedMenus||[]),hiddenSubs=new Set(cfg.deletedSubmenus||[]);
+      const records=menuRecords(cfg);
+      status.textContent='ساختار منوها از پایگاه داده خوانده شد. برای هر مورد فقط همان ساختار منو تغییر می‌کند.';
+      let html='<h3 class="section">منوها و زیرمنوهای سامانه</h3><div class="form-grid">';
+      records.filter(function(x){return x.kind==='menu'}).forEach(function(m){
+        const hidden=hiddenMenus.has(m.id);
+        html+='<div class="card" style="margin:6px 0"><strong>'+escHtml(m.label)+'</strong><div class="muted">'+(m.custom?'منوی سفارشی':'منوی اصلی')+'</div><button type="button" class="btn '+(hidden?'secondary':'danger')+'" data-kj-v155-menu="'+escHtml(m.id)+'" data-hidden="'+(hidden?'1':'0')+'">'+(hidden?'در حال حاضر پنهان است':'حذف منو از نمایش')+'</button>';
+        const subs=records.filter(function(x){return x.kind==='submenu'&&x.parent===m.id});
+        if(subs.length){html+='<div style="padding-top:8px;border-top:1px solid var(--line,#ddd);margin-top:8px"><b>زیرمنوها</b>';subs.forEach(function(s){
+          const key=s.parent+':'+s.id,sh=hiddenSubs.has(key);
+          html+='<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:6px 0"><span>'+escHtml(s.label)+'</span><button type="button" class="btn '+(sh?'secondary':'danger')+'" data-kj-v155-sub="'+escHtml(key)+'" data-hidden="'+(sh?'1':'0')+'">'+(sh?'پنهان شده':'حذف زیرمنو')+'</button></div>';
+        });html+='</div>'}
+        html+='</div>';
+      });
+      html+='</div><h3 class="section">بخش‌های سفارشی داخل ساختار منو</h3><p class="muted">حذف این بخش‌ها، تعریف آن‌ها و پیوندهای منویی مربوط به آن‌ها را از تنظیمات رابط پاک می‌کند؛ سوابق عملیاتی پایگاه داده دست‌نخورده می‌مانند.</p><div id="kj-v155-custom-sections">';
+      const sections=Array.isArray(cfg.customSections)?cfg.customSections:[];
+      if(!sections.length)html+='<div class="notice">بخش سفارشی قابل حذفی در حال حاضر ثبت نشده است.</div>';
+      sections.forEach(function(x,i){html+='<div class="card" style="margin:8px 0"><strong>'+escHtml(x.title||x.id||'بخش بدون عنوان')+'</strong><p class="muted">'+escHtml(x.description||'بدون توضیح')+'</p><button type="button" class="btn danger" data-kj-v155-section="'+i+'">حذف این بخش</button></div>'});
+      html+='</div>';
+      list.innerHTML=html;
+      list.querySelectorAll('[data-kj-v155-menu]').forEach(function(b){b.onclick=async function(){
+        if(!await checkAdmin()){status.textContent='دسترسی مدیر اصلی تأیید نشد.';return}
+        const id=b.dataset.kjV155Menu,hidden=b.dataset.hidden==='1';
+        if(!confirm(hidden?'این منو از حالت پنهان خارج و دوباره نمایش داده شود؟':'این منو از منوی همه کاربران پنهان شود؟ اطلاعات پایگاه داده حذف نخواهد شد.'))return;
+        status.textContent='در حال ذخیره تغییر…';
+        try{const next=await readConfig();next.deletedMenus=Array.isArray(next.deletedMenus)?next.deletedMenus:[];next.deletedMenus=hidden?next.deletedMenus.filter(function(x){return x!==id}):Array.from(new Set(next.deletedMenus.concat([id])));await persistConfig(next,(hidden?'restore menu ':'hide menu ')+id);status.textContent='تغییر در پایگاه داده تأیید شد؛ سامانه برای بارگذاری ساختار تازه بازخوانی می‌شود.';window.location.reload()}catch(e){status.textContent='تغییر ذخیره نشد: '+e.message}
+      }});
+      list.querySelectorAll('[data-kj-v155-sub]').forEach(function(b){b.onclick=async function(){
+        if(!await checkAdmin()){status.textContent='دسترسی مدیر اصلی تأیید نشد.';return}
+        const key=b.dataset.kjV155Sub,hidden=b.dataset.hidden==='1';
+        if(!confirm(hidden?'این زیرمنو دوباره نمایش داده شود؟':'این زیرمنو از منوی همه کاربران پنهان شود؟ داده‌های پایگاه داده حذف نمی‌شوند.'))return;
+        status.textContent='در حال ذخیره تغییر…';
+        try{const next=await readConfig();next.deletedSubmenus=Array.isArray(next.deletedSubmenus)?next.deletedSubmenus:[];next.deletedSubmenus=hidden?next.deletedSubmenus.filter(function(x){return x!==key}):Array.from(new Set(next.deletedSubmenus.concat([key])));await persistConfig(next,(hidden?'restore submenu ':'hide submenu ')+key);status.textContent='تغییر در پایگاه داده تأیید شد؛ سامانه برای بارگذاری ساختار تازه بازخوانی می‌شود.';window.location.reload()}catch(e){status.textContent='تغییر ذخیره نشد: '+e.message}
+      }});
+      list.querySelectorAll('[data-kj-v155-section]').forEach(function(b){b.onclick=async function(){
+        if(!await checkAdmin()){status.textContent='دسترسی مدیر اصلی تأیید نشد.';return}
+        const index=Number(b.dataset.kjV155Section),section=sections[index];if(!section)return;
+        if(!confirm('بخش «'+String(section.title||section.id)+'» و پیوندهای منویی وابسته به آن حذف شود؟ این کار داده‌های خادمین و امور مالی را حذف نمی‌کند.'))return;
+        status.textContent='در حال حذف بخش و ذخیره تنظیمات…';
+        try{const next=await readConfig();next.customSections=(next.customSections||[]).filter(function(x){return String(x.id)!==String(section.id)});next.extraSubmenus=(next.extraSubmenus||[]).filter(function(x){return x.target!=='custom-section:'+section.id});(next.customMenus||[]).forEach(function(m){m.submenus=(m.submenus||[]).filter(function(x){return x.target!=='custom-section:'+section.id})});await persistConfig(next,'delete custom section '+String(section.id));status.textContent='بخش حذف و در پایگاه داده ذخیره شد؛ سامانه برای بارگذاری ساختار تازه بازخوانی می‌شود.';window.location.reload()}catch(e){status.textContent='حذف بخش ذخیره نشد: '+e.message}
+      }});
+    }
+    document.getElementById('kj-v155-menu-restore').onclick=async function(){
+      if(!await checkAdmin()){status.textContent='دسترسی مدیر اصلی تأیید نشد.';return}
+      if(!confirm('تمام منوها و زیرمنوهای پنهان‌شده دوباره نمایش داده شوند؟'))return;
+      status.textContent='در حال بازگردانی…';
+      try{const next=await readConfig();next.deletedMenus=[];next.deletedSubmenus=[];await persistConfig(next,'restore all hidden menus and submenus');window.location.reload()}catch(e){status.textContent='بازگردانی ذخیره نشد: '+e.message}
+    };
+    document.getElementById('kj-v155-menu-refresh').onclick=function(){draw().catch(function(e){status.textContent='بارگذاری ناموفق: '+e.message})};
+    draw().catch(function(e){status.textContent='بارگذاری ناموفق: '+e.message});
+  }
+  window.render=function(page){
+    const result=oldRender.apply(this,arguments);
+    if(String(page||'')==='settings:delete')setTimeout(function(){mount().catch(function(e){console.error(e)})},0);
+    return result;
+  };
+})();
+</script>
 </body>
 </html>
