@@ -33,7 +33,7 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   // Never cache Supabase authentication, database, storage, or Edge Function responses.
-  if (/\\/(rest|auth|storage)\\/v1\\//.test(url.pathname) || url.pathname.includes('/functions/v1/')) return;
+  if (url.pathname.includes('/rest/v1/') || url.pathname.includes('/auth/v1/') || url.pathname.includes('/storage/v1/') || url.pathname.includes('/functions/v1/')) return;
 
   // Network-first navigation guarantees users receive the deployed HTML whenever online.
   if (request.mode === 'navigate') {
