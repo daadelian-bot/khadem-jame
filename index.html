@@ -791,7 +791,7 @@ window.addEventListener("online",()=>toast("🟢 اینترنت برقرار ش�
    if(rows.length===0)break;offset+=rows.length;
   }
   if(reportedTotal!==null&&all.length<reportedTotal)throw Error('پشتیبان ناقص: '+all.length+' از '+reportedTotal+' رکورد دریافت شد؛ سقف صفحه‌بندی تمام شد.');if(all.length>=maxRows&&reportedTotal===null)throw Error('تعداد کل از سرور دریافت نشد و سقف ۱۰۰۰۰۰ رکورد رسید؛ کامل‌بودن پشتیبان قابل تأیید نیست.');
-  return {rows:all,total:reportedTotal===null?all.length:reportedTotal};
+  return {rows:all,total:reportedTotal};
  }
  for(const [t,label] of tables){
   try{const got=await readBackupTable(t);result[t]=got.rows;meta[t]={received:got.rows.length,reported_total:got.total,complete:got.rows.length===got.total};}
@@ -1313,7 +1313,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
    existingRows.push(...batch);if(batch.length<pageSize||(total!==null&&existingRows.length>=total))break;
    if(!batch.length)break;offset+=batch.length;
   }
-  if(rules.length&&total!==null&&existingRows.length<total)throw Error('فهرست مقصد برای کنترل تکرار کامل دریافت نشد؛ ورود لغو شد.');if(rules.length&&existingRows.length>=maxRows&&(total===null||existingRows.length<total))throw Error('فهرست مقصد به سقف ۱۰۰۰۰۰ رکورد رسید و کامل‌بودن کنترل تکرار قابل تأیید نیست؛ ورود لغو شد.');
+  if(rules.length&&total===null)throw Error('سرور تعداد کل رکوردهای مقصد را اعلام نکرد؛ کنترل کامل تکرار ممکن نیست و ورود لغو شد.');if(rules.length&&existingRows.length<total)throw Error('فهرست مقصد برای کنترل تکرار کامل دریافت نشد؛ ورود لغو شد.');if(rules.length&&existingRows.length>=maxRows&&(total===null||existingRows.length<total))throw Error('فهرست مقصد به سقف ۱۰۰۰۰۰ رکورد رسید و کامل‌بودن کنترل تکرار قابل تأیید نیست؛ ورود لغو شد.');
   const existingKeys=new Set(existingRows.map(identity).filter(Boolean)),fileKeys=new Set(),fresh=[];
   for(const row of output){const key=identity(row);if(!key){suspiciousRows++;fresh.push(row);continue;}if(fileKeys.has(key)){duplicateInFile++;continue;}fileKeys.add(key);if(existingKeys.has(key)){duplicateExisting++;continue;}existingKeys.add(key);fresh.push(row);}
   output=fresh;
