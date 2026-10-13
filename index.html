@@ -221,7 +221,7 @@ function buildNav(){
  document.querySelectorAll('.settings-subgroup-toggle').forEach(btn=>btn.addEventListener('click',()=>{const group=btn.closest('.settings-subgroup');const items=group?.querySelector('.settings-subgroup-items');if(!group||!items)return;const open=!group.classList.contains('open');group.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));items.hidden=!open;}));
 }
 function render(page="dashboard"){window.khademCurrentPage=page;const base=page.split(":")[0], sub=page.split(":")[1]||"";const m=menus.find(x=>x[0]===base);const title=m?.[2]||"سامانه";let body="";
-if(page==="dashboard"){body=`<div class="page-title"><h2>🏠 داشبورد مدیریتی</h2><span class="muted">مرکز فرماندهی سامانه</span></div><div class="grid">${[["👤","خادمین","—","khadem:list"],["📋","خدمت امروز","—","service:mainservice"],["🌙","شب‌های جمعه","—","service:friday"],["🚐","مأموریت‌ها","—","mission:list"],["💰","گردش مالی","—","finance:dashboard"],["🏦","موجودی خزانه","—","fund:balance"],["🤲","نیکوکاران","—","donors:list"],["⚠️","هشدارها","—","ops:alerts"]].map(x=>`<button class="card stat" onclick="render('${x[3]}')"><div class="icon">${x[0]}</div><span>${x[1]}</span><b>${x[2]}</b></button>`).join("")}</div><div class="section card"><h3>🎯 مرکز فرماندهی</h3><p class="muted">نمای یکپارچه برای پیگیری خادمین، خدمت، مأموریت، امور مالی و موارد نیازمند رسیدگی. شاخص‌هایی که هنوز به داده زنده متصل نشده‌اند با خط تیره مشخص می‌شوند.</p><div class="actions"><button class="btn primary" onclick="render('service:history')">سوابق خدمت</button><button class="btn secondary" onclick="render('meetings:list')">جلسات</button><button class="btn secondary" onclick="render('mission:vehicles')">خودروها</button><button class="btn secondary" onclick="render('finance:dashboard')">دفتر مالی</button></div></div><div id="serviceDelayDashboard" class="section card" style="margin-top:12px">در حال بررسی پیگیری آخرین خدمت‌ها…</div>`}
+if(page==="dashboard"){body=`<div class="page-title"><h2>🏠 داشبورد مدیریتی</h2><span class="muted">مرکز فرماندهی سامانه</span></div><div class="grid">${[["👤","خادمین","—","khadem:list"],["📋","خدمت امروز","—","service:mainservice"],["🌙","شب‌های جمعه","—","service:friday"],["🚐","مأموریت‌ها","—","mission:list"],["💰","گردش مالی","—","finance:dashboard"],["🏦","موجودی خزانه","—","fund:balance"],["🤲","نیکوکاران","—","donors:list"],["⚠️","هشدارها","—","ops:alerts"]].map(x=>`<button class="card stat" onclick="render('${x[3]}')"><div class="icon">${x[0]}</div><span>${x[1]}</span><b>${x[2]}</b></button>`).join("")}</div><div class="section card"><h3>🎯 مرکز فرماندهی</h3><p class="muted">نمای یکپارچه برای پیگیری خادمین، خدمت، مأموریت، امور مالی و موارد نیازمند رسیدگی. شاخص‌هایی که هنوز به داده زنده متصل نشده‌اند با خط تیره مشخص می‌شوند.</p><div class="actions"><button class="btn primary" onclick="render('service:history')">سوابق خدمت</button><button class="btn secondary" onclick="render('meetings:list')">جلسات</button><button class="btn secondary" onclick="render('mission:vehicles')">خودروها</button><button class="btn secondary" onclick="render('finance:dashboard')">دفتر مالی</button></div></div><div id="serviceDelayDashboard" class="section card" style="margin-top:12px"><h3 style="margin-top:0">⏳ پیگیری آخرین خدمت‌ها</h3><p class="muted">برای بارگذاری این گزارش، که سوابق خدمت را از پایگاه داده می‌خواند، دکمه زیر را بزنید. داشبورد بدون این درخواست سنگین باز می‌شود.</p><button type="button" class="btn secondary" onclick="window.loadServiceDelayDashboard && window.loadServiceDelayDashboard()">بارگذاری شاخص‌های خدمت</button></div>`}
 else if(page==="khadem:list"){body=`<div class="page-title"><h2>👤 بانک خادمین</h2><button class="btn primary" onclick="render('khadem:add')">➕ ثبت خادم جدید</button></div><div class="grid" style="margin-bottom:16px;grid-template-columns:repeat(3,minmax(0,1fr))"><div class="card"><span class="muted">کل خادمین</span><b id="khTotal" style="display:block;font-size:25px">—</b></div></div><div class="card"><div class="toolbar"><input id="khSearch" style="flex:1;min-width:180px" placeholder="جستجو در نام، کد، کد ملی، تلفن..." oninput="filterKhadem()"><button class="btn secondary" onclick="loadKhadems()">↻ به‌روزرسانی</button></div><div id="khTable">در حال دریافت اطلاعات...</div></div>`;setTimeout(loadKhadems,0)}
 else if(page==="khadem:add"||page==="khadem:edit"){const editing=page.endsWith('edit');const k=editing?khademCache.find(x=>String(x.id)===String(selectedKhademId)):null;body=`<div class="page-title"><h2>${editing?'✏️ ویرایش پرونده خادم':'➕ ثبت خادم جدید'}</h2><div class="actions"><button class="btn secondary" onclick="exportKhademRegistrationImage()">📷 تصویر گزارش خام</button><button class="btn secondary" onclick="render('khadem:list')">بازگشت به فهرست</button></div></div><div class="card" id="khademRegistrationCard"><div class="notice">کد خادم باید یکتا باشد و از ۱۰۰۰ شروع شود. تاریخ عضویت را شمسی وارد کنید.</div><div class="form-grid"><div class="field"><label>کد خادم *</label><input id="k_code" type="number" min="1000" ${editing?'':'placeholder="۱۰۰۰ به بعد"'} value="${k?.khadem_code??''}" ${editing?'readonly':''}></div><div class="field"><label>نام و نام خانوادگی *</label><input id="k_name" value="${attr(k?.full_name)}"></div><div class="field"><label>نام ثلاثی</label><input id="k_tri" value="${attr(k?.tri_name)}"></div><div class="field"><label>نام پدر</label><input id="k_father" value="${attr(k?.father_name)}"></div><div class="field"><label>کد ملی</label><input id="k_nid" inputmode="numeric" value="${attr(k?.national_id)}"></div><div class="field"><label>شماره تلفن</label><input id="k_phone" inputmode="tel" value="${attr(k?.phone)}"></div><div class="field"><label>تاریخ عضویت (شمسی)</label><input id="k_date" class="jalali-input" type="text" inputmode="numeric" data-jalali-date placeholder="۱۴۰۵/۰۷/۱۷" value="${attr(k?.membership_date?isoToJalali(k.membership_date):'')}"></div><div class="field"><label>مسئولیت</label><input id="k_resp" value="${attr(k?.responsibility)}"></div><div class="field"><label>تاریخ تولد (شمسی)</label><input id="k_birth" class="jalali-input" type="text" inputmode="numeric" data-jalali-date placeholder="۱۳۷۰/۰۱/۰۱" value="${attr(k?.birth_date?isoToJalali(k.birth_date):'')}"></div><div class="field"><label>شغل</label><input id="k_job" value="${attr(k?.occupation)}"></div><div class="field"><label>محل سکونت</label><input id="k_residence" value="${attr(k?.residence)}"></div><div class="field"><label>گروه خونی</label><select id="k_blood"><option value="">انتخاب کنید</option>${['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(x=>`<option ${k?.blood_type===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>نام تماس اضطراری</label><input id="k_emergency_name" value="${attr(k?.emergency_contact_name)}"></div><div class="field"><label>تلفن تماس اضطراری</label><input id="k_emergency_phone" inputmode="tel" value="${attr(k?.emergency_contact_phone)}"></div><div class="field"><label>نام تماس اضطراری دوم</label><input id="k_emergency_name_2" value="${attr(k?.extra_data?.emergency_contact_name_2||'')}"></div><div class="field"><label>تلفن تماس اضطراری دوم</label><input id="k_emergency_phone_2" type="tel" inputmode="tel" value="${attr(k?.extra_data?.emergency_contact_phone_2||'')}"></div><div class="field"><label>نام تماس اضطراری سوم</label><input id="k_emergency_name_3" value="${attr(k?.extra_data?.emergency_contact_name_3||'')}"></div><div class="field"><label>تلفن تماس اضطراری سوم</label><input id="k_emergency_phone_3" type="tel" inputmode="tel" value="${attr(k?.extra_data?.emergency_contact_phone_3||'')}"></div><div class="field"><label>سطح تحصیلات</label><select id="k_education"><option value="">انتخاب کنید</option>${['زیر دیپلم','دیپلم','فوق دیپلم / کاردانی','لیسانس / کارشناسی','فوق لیسانس / کارشناسی ارشد','دکترا','فوق دکترا'].map(x=>`<option value="${attr(x)}" ${(k?.extra_data?.education_level||'')===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field full"><label>مهارت‌ها (امکان انتخاب چند مورد)</label><div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px;border:1px solid var(--line);border-radius:10px">${['برق‌کاری','لوله‌کشی','نجاری','جوشکاری','تعمیرات عمومی','تعمیرات خودرو','رایانه و فناوری اطلاعات','شبکه و اینترنت','عکاسی و فیلم‌برداری','طراحی گرافیک','حسابداری','امور اداری','کمک‌های اولیه','امداد و نجات','آشپزی','خیاطی','رانندگی','ترجمه','تدریس','مدیریت و سرپرستی','صوت و تصویر','تأسیسات و تهویه','ساختمان و بنایی','امنیت و حفاظت','سایر'].map(x=>`<label style="display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-k-skill value="${attr(x)}" ${(Array.isArray(k?.extra_data?.skills)&&k.extra_data.skills.includes(x))?'checked':''}>${x}</label>`).join('')}</div><div class="field" style="margin-top:8px"><label>توانایی یا فن دیگر</label><input id="k_skill_other" value="${attr((k?.extra_data?.skills||[]).filter(x=>!['برق‌کاری','لوله‌کشی','نجاری','جوشکاری','تعمیرات عمومی','تعمیرات خودرو','رایانه و فناوری اطلاعات','شبکه و اینترنت','عکاسی و فیلم‌برداری','طراحی گرافیک','حسابداری','امور اداری','کمک‌های اولیه','امداد و نجات','آشپزی','خیاطی','رانندگی','ترجمه','تدریس','مدیریت و سرپرستی','صوت و تصویر','تأسیسات و تهویه','ساختمان و بنایی','امنیت و حفاظت','سایر'].includes(x)).join('، '))}" placeholder="چند مورد را با ویرگول جدا کنید"></div></div><div class="field full"><label>سابقه پزشکی / ملاحظات ضروری</label><textarea id="k_medical">${esc(k?.medical_history||'')}</textarea></div><div class="field full"><label>اطلاعات تکمیلی قابل تغییر (هر خط به شکل عنوان=مقدار)</label><textarea id="k_extra">${esc(Object.entries(k?.extra_data||{}).map(([a,b])=>a+'='+b).join('\n'))}</textarea></div><div class="field full"><label>توضیحات</label><textarea id="k_notes">${esc(k?.notes||'')}</textarea></div>${editing?`<div class="field"><label>وضعیت</label><select id="k_active"><option value="true" ${k?.is_active!==false?'selected':''}>فعال</option><option value="false" ${k?.is_active===false?'selected':''}>غیرفعال</option></select></div>`:''}</div><div class="actions"><button class="btn primary" onclick="${editing?'updateKhadem()':'addKhadem()'}">${editing?'ذخیره تغییرات':'ثبت خادم'}</button><button class="btn secondary" onclick="render('khadem:list')">انصراف</button></div></div>`;if(!editing)setTimeout(suggestKhademCode,0)}
 else if(page==="khadem:profile"){const k=khademCache.find(x=>String(x.id)===String(selectedKhademId));body=k?`<div class="page-title"><h2>📂 پرونده خادم</h2><div class="actions"><button class="btn primary" onclick="render('khadem:edit')">✏️ ویرایش اطلاعات</button><button class="btn secondary" id="changeKhademCodeBtn" onclick="changeKhademCode()" style="display:none">🔢 تغییر کد خادم (مدیر اصلی)</button><button class="btn secondary" onclick="render('khadem:list')">فهرست</button></div></div><div class="card"><div class="profile-head"><div class="profile-avatar">👤</div><div><h2 style="margin:0">${esc(k.full_name||'بدون نام')}</h2><div class="muted">کد خادم: ${esc(faNum(k.khadem_code))}</div></div></div><div class="detail-grid">${detail('نام کامل',k.full_name)}${detail('نام ثلاثی',k.tri_name)}${detail('نام پدر',k.father_name)}${detail('کد ملی',k.national_id)}${detail('تلفن',k.phone)}${detail('تاریخ عضویت',k.membership_date?isoToJalali(k.membership_date):'—')}${detail('مسئولیت',k.responsibility)}${detail('تاریخ تولد',k.birth_date?isoToJalali(k.birth_date):'—')}${detail('شغل',k.occupation)}${detail('محل سکونت',k.residence)}${detail('گروه خونی',k.blood_type)}${detail('سطح تحصیلات',k.extra_data?.education_level)}${detail('مهارت‌ها',Array.isArray(k.extra_data?.skills)?k.extra_data.skills.join('، '):k.extra_data?.skills)}${detail('تماس اضطراری',k.emergency_contact_name)}${detail('تلفن اضطراری',k.emergency_contact_phone)}${detail('نام تماس اضطراری دوم',k.extra_data?.emergency_contact_name_2)}${detail('تلفن اضطراری دوم',k.extra_data?.emergency_contact_phone_2)}${detail('نام تماس اضطراری سوم',k.extra_data?.emergency_contact_name_3)}${detail('تلفن اضطراری سوم',k.extra_data?.emergency_contact_phone_3)}${detail('سابقه پزشکی',k.medical_history)}${Object.entries(k.extra_data||{}).filter(([a])=>!['skills','education_level','emergency_contact_name_2','emergency_contact_name_3','emergency_contact_phone_2','emergency_contact_phone_3'].includes(a)).map(([a,b])=>detail(persianFieldLabel(a),Array.isArray(b)?b.join('، '):(typeof b==='object'&&b!==null?JSON.stringify(b):b))).join('')}${detail('توضیحات',k.notes)}</div></div><div class="card section"><div class="page-title"><h3>📋 سوابق خدمت این خادم</h3><button class="btn secondary" onclick="loadKhademServiceHistory(selectedKhademId, khademCache.find(x=>String(x.id)===String(selectedKhademId))?.khadem_code)">به‌روزرسانی</button></div><div id="khademServiceHistory" class="section">در حال دریافت سوابق خدمت…</div></div><div class="card section"><div class="page-title"><h3>💰 سوابق مالی مرتبط با این خادم</h3><button class="btn secondary" onclick="loadKhademFinanceHistory(selectedKhademId, khademCache.find(x=>String(x.id)===String(selectedKhademId))?.khadem_code)">به‌روزرسانی</button></div><div class="muted">تراکنش‌هایی که با شناسه یا کد این خادم مرتبط باشند نمایش داده می‌شوند؛ رکوردهای عمومی در این بخش نمی‌آیند.</div><div id="khademFinanceHistory" class="section">در حال دریافت سوابق مالی…</div></div>`:`<div class="notice">پرونده انتخاب نشده است. ابتدا فهرست خادمین را باز کنید.</div>`}
@@ -1858,7 +1858,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  const origApi=window.api;
  if(typeof origApi==='function')window.api=async function(path,opt={}){const r=await origApi.apply(this,arguments);const method=String(opt?.method||'GET').toUpperCase();if(r.ok&&savePending&&['POST','PATCH','PUT','DELETE'].includes(method))markClean();return r};
  const origRender=window.render;
- if(typeof origRender==='function')window.render=function(page='dashboard'){const next=String(page||'dashboard');if(dirty&&next!==currentPage)markClean();currentPage=next;const result=origRender.apply(this,arguments);if(!historyReady){history.replaceState({khademApp:true,page:next},'','#'+encodeURIComponent(next));historyReady=true}else history.pushState({khademApp:true,page:next},'','#'+encodeURIComponent(next));setTimeout(renderIdentityBadge,0);if(next==='dashboard')setTimeout(loadServiceDelayDashboard,0);if(next==='khadem:list')setTimeout(decorateKhademServiceSignals,150);return result};
+ if(typeof origRender==='function')window.render=function(page='dashboard'){const next=String(page||'dashboard');if(dirty&&next!==currentPage)markClean();currentPage=next;const result=origRender.apply(this,arguments);if(!historyReady){history.replaceState({khademApp:true,page:next},'','#'+encodeURIComponent(next));historyReady=true}else history.pushState({khademApp:true,page:next},'','#'+encodeURIComponent(next));setTimeout(renderIdentityBadge,0);if(next==='khadem:list')setTimeout(decorateKhademServiceSignals,150);return result};
  // عمداً beforeunload نداریم؛ برگشت و خروج بدون پنجره مزاحم انجام می‌شود.
  window.addEventListener('popstate',e=>{markClean();const page=e.state?.khademApp&&e.state.page?e.state.page:'dashboard';currentPage=page;if(typeof origRender==='function')origRender(page);setTimeout(renderIdentityBadge,0)});
  async function renderIdentityBadge(){
@@ -1921,6 +1921,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
   }catch(e){box.innerHTML='<h3 style="margin-top:0">⏳ پیگیری آخرین خدمت‌ها</h3><div class="notice">شاخص‌ها فعلاً محاسبه نشدند: '+String(e.message||e).replace(/[&<>"']/g,'')+'</div>'}
  }
 
+ window.loadServiceDelayDashboard=loadServiceDelayDashboard;
  const tableObserver=new MutationObserver(()=>{if($('khTable'))setTimeout(decorateKhademServiceSignals,80)});if($('content'))tableObserver.observe($('content'),{childList:true,subtree:true});
  const logout=$('logoutBtn');if(logout){logout.addEventListener('click',e=>{if(dirty&&!confirm('تغییراتی ذخیره‌نشده دارید. آیا مطمئن هستید که می‌خواهید خارج شوید؟')){e.stopImmediatePropagation();e.preventDefault();return}markClean()},true)}
  document.addEventListener('change',e=>{if(e.target?.id==='chatMode'){if(typeof window.loadChatRecipients==='function')window.loadChatRecipients();if(typeof window.loadChatMessages==='function')window.loadChatMessages()}},true);
@@ -2091,53 +2092,8 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 </script>
 
 
-<!-- v148: بازیابی مستقل منو و داشبورد در صورت شکست راه‌اندازی قبلی -->
-<script>
-(function(){
-  function mountVisibleNavigation(){
-    var app=document.getElementById('app');
-    var side=document.getElementById('sidebar');
-    var content=document.getElementById('content');
-    if(!app||!side||!content) return;
-    app.style.setProperty('display','block','important');
-    side.style.setProperty('display','block','important');
-    side.style.setProperty('visibility','visible','important');
-    side.style.setProperty('opacity','1','important');
-    var menuData=[];
-    try { if(typeof menus!=='undefined' && Array.isArray(menus)) menuData=menus; } catch(e){}
-    if(!menuData.length && Array.isArray(window.menus)) menuData=window.menus;
-    if(menuData.length){
-      side.innerHTML=menuData.map(function(m){
-        var subs=Array.isArray(m[3])?m[3]:[];
-        return '<section class="nav-group" data-group="'+String(m[0]).replace(/[^a-z0-9_-]/gi,'')+'">'+
-          '<button class="nav-main" type="button" data-v148-nav="'+String(m[0])+'"><span>'+String(m[1]||'')+' '+String(m[2]||'')+'</span></button>'+
-          (subs.length?'<div class="submenu" style="display:grid!important;visibility:visible!important">'+subs.map(function(s){
-            return '<button class="sub" type="button" data-v148-page="'+String(m[0])+':'+String(s[0])+'">'+String(s[1]||s[0])+'</button>';
-          }).join('')+'</div>':'')+'</section>';
-      }).join('');
-    } else if(!side.children.length){
-      side.innerHTML='<section class="nav-group"><button class="nav-main" type="button" data-v148-page="dashboard">🏠 داشبورد مدیریتی</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="khadem:list">👤 بانک خادمین</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="service:mainservice">📋 خدمت</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="finance:dashboard">💰 امور مالی</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="meetings:list">👥 جلسات</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="settings:users">⚙️ تنظیمات</button></section>';
-    }
-    side.querySelectorAll('[data-v148-nav]').forEach(function(b){b.addEventListener('click',function(){
-      var group=b.closest('.nav-group'); if(group) group.classList.toggle('open');
-      try { if(typeof window.render==='function') window.render(b.getAttribute('data-v148-nav')); } catch(e){ console.error(e); }
-    });});
-    side.querySelectorAll('[data-v148-page]').forEach(function(b){b.addEventListener('click',function(){
-      var page=b.getAttribute('data-v148-page');
-      try { if(typeof window.render==='function') window.render(page); else content.innerHTML='<div class="page-title"><h2>'+b.textContent+'</h2><p>بخش انتخاب‌شده: '+page+'</p></div>'; } catch(e){content.innerHTML='<div class="page-title"><h2>'+b.textContent+'</h2><p>نمایش این بخش با خطا مواجه شد. صفحه را تازه‌سازی کنید.</p></div>'; console.error(e);}
-    });});
-    if(!content.innerHTML.trim() || content.innerHTML.trim()==='در حال بارگذاری...'){
-      content.innerHTML='<div class="page-title"><h2>🏠 داشبورد مدیریتی</h2><p>سامانه جامع خادمین مجموعة السیدة زینب سلام الله علیها</p></div><div class="grid">'+
-        [['👤','بانک خادمین','khadem:list'],['📋','خدمت','service:mainservice'],['💰','امور مالی','finance:dashboard'],['👥','جلسات','meetings:list'],['⚙️','تنظیمات','settings:users']].map(function(x){return '<button class="card stat" type="button" data-v148-page="'+x[2]+'"><div class="icon">'+x[0]+'</div><span>'+x[1]+'</span></button>';}).join('')+'</div>';
-      content.querySelectorAll('[data-v148-page]').forEach(function(b){b.addEventListener('click',function(){try{if(typeof window.render==='function')window.render(b.getAttribute('data-v148-page'));}catch(e){console.error(e);}});});
-    } else {
-      try { if(typeof window.render==='function' && (!window.khademCurrentPage || window.khademCurrentPage==='login')) window.render('dashboard'); } catch(e){console.error(e);}
-    }
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mountVisibleNavigation,{once:true});
-  else mountVisibleNavigation();
-})();
-</script>
+<!-- v148 legacy fallback neutralized: keep the original collapsible navigation controller. -->
+<script>(function(){try{if(typeof window.buildNav==="function"&&!document.querySelector("#sidebar .nav-group"))window.buildNav();}catch(e){console.error("بازیابی منو:",e);}})();</script>
 
 
 <script>
@@ -2230,6 +2186,31 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  function start(){repairNavigation();protectRender();}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
  else start();
+})();
+</script>
+
+
+<!-- v153: restore collapsible navigation and avoid heavy automatic dashboard reads -->
+<script id="khadem-v153-navigation-performance-fix">
+(function(){
+ 'use strict';
+ function normalize(){
+  var side=document.getElementById('sidebar');
+  if(!side)return;
+  side.querySelectorAll('.submenu').forEach(function(el){
+   el.style.removeProperty('display');
+   el.style.removeProperty('visibility');
+   el.style.removeProperty('opacity');
+  });
+  side.querySelectorAll('.nav-group').forEach(function(g){
+   g.classList.remove('open');
+   var b=g.querySelector('.nav-main');
+   if(b)b.setAttribute('aria-expanded','false');
+  });
+  if(typeof window.buildNav==='function')window.buildNav();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',normalize,{once:true});
+ else normalize();
 })();
 </script>
 
