@@ -37,18 +37,23 @@ self.addEventListener('fetch', event => {
 
   // Network-first navigation guarantees users receive the deployed HTML whenever online.
   if (request.mode === 'navigate') {
+    const scopePath = new URL(self.registration.scope).pathname;
+    const isAppEntry = (url.pathname === scopePath || url.pathname === scopePath + 'index.html') && !url.search;
     event.respondWith(
       fetch(request, { cache: 'no-store' }).then(response => {
-        if (response && response.ok) {
+        // Cache only the main app entry. Never store recovery/invitation URLs or other pages as index.html.
+        if (isAppEntry && response && response.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
         }
         return response;
-      }).catch(() => caches.match('./index.html'))
+      }).catch(() => {
+        if (isAppEntry) return caches.match('./index.html');
+        return Response.error();
+      })
     );
     return;
   }
-
   const isAppShell = APP_SHELL.some(path => new URL(path, self.location.href).pathname === url.pathname);
   if (!isAppShell) return;
   event.respondWith(
