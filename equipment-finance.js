@@ -78,12 +78,43 @@
     if (!finance[3].some(s => s[0] === 'equipment')) finance[3].push(['equipment', '👕 وسایل خدمت و بدهی خدام']);
     try { if (typeof window.buildNav === 'function') window.buildNav(); } catch (_) {}
   }
-  let activeSection = 'equipment';
+  let activeSection = 'receipt';
+  const EQUIPMENT_SECTIONS = [
+    ['receipt', 'ثبت دریافت وسایل از هیئت'],
+    ['issue', 'ثبت تحویل وسیله به خادم'],
+    ['payment', 'ثبت پرداخت خادم یا مجموعه به هیئت'],
+    ['stock', 'موجودی وسایل مجموعه'],
+    ['khadem-ledger', 'پرونده تحویل و بدهی خدام'],
+    ['committee-ledger', 'دفتر حساب مجموعه با هیئت'],
+    ['khadem-summary', 'خلاصه پرداخت خدام'],
+    ['nonattendance', 'عدم حضور در خدمت']
+  ];
   function mountPage(html) {
     const content = $('content');
+    const tabs = EQUIPMENT_SECTIONS.map(([id, title]) =>
+      '<button type="button" class="btn ' + (activeSection === id ? 'primary' : 'secondary') + '" data-eq-tab="' + id + '">' + esc(title) + '</button>'
+    ).join('');
     if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">حساب هیئت، موجودی مجموعه و پرونده مالی خادم</span></div>' +
-      '<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button type="button" class="btn ' + (activeSection === 'equipment' ? 'primary' : 'secondary') + '" data-eq-tab="equipment">وسایل خدمت و بدهی خدام</button><button type="button" class="btn ' + (activeSection === 'nonattendance' ? 'primary' : 'secondary') + '" data-eq-tab="nonattendance">عدم حضور در خدمت</button></div>' + html;
+      '<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + tabs + '</div>' + html;
     if (content) content.querySelectorAll('[data-eq-tab]').forEach(button => button.addEventListener('click', () => { activeSection = button.dataset.eqTab; renderPage(); }));
+    if (content && activeSection !== 'nonattendance') {
+      const selectors = {
+        receipt: ['۱. ثبت دریافت وسایل از هیئت'],
+        issue: ['۲. ثبت تحویل وسیله به خادم'],
+        payment: ['۳. ثبت پرداخت خادم یا پرداخت مجموعه به هیئت'],
+        stock: ['موجودی وسایل مجموعه'],
+        'khadem-ledger': ['پرونده تحویل و بدهی خدام'],
+        'committee-ledger': ['دفتر حساب مجموعه با هیئت'],
+        'khadem-summary': ['خلاصه پرداخت خدام']
+      };
+      const allowed = selectors[activeSection] || [];
+      content.querySelectorAll('.card.section').forEach(card => {
+        const heading = card.querySelector('h3')?.textContent?.trim() || '';
+        card.style.display = allowed.some(title => heading.startsWith(title)) ? '' : 'none';
+      });
+      const stats = content.querySelector('.grid');
+      if (stats) stats.style.display = 'none';
+    }
     try { if (typeof initOfflineJalaliCalendars === 'function') initOfflineJalaliCalendars(); } catch (_) {}
   }
   let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [], nonattendance: [] };
@@ -384,12 +415,56 @@
     try { await loadData(); renderPage(); }
     catch (e) { mountPage(notice('دریافت اطلاعات ناموفق بود: ' + e.message + ' — مجوز finance.manage و اتصال شبکه را بررسی کنید.', true)); }
   }
+  async function appendNonattendanceToServicePage(page) {
+    const content = $('content');
+    if (!content) return;
+    const existing = $('eqServiceAbsenceHistory');
+    if (existing) existing.remove();
+    const kind = page === 'friday' ? 'friday_night' : 'official';
+    try {
+      const [rows, khadems] = await Promise.all([
+        api('khadem_service_nonattendance', 'GET', 'select=*&service_kind=eq.' + kind + '&order=planned_service_date.desc,created_at.desc&limit=100'),
+        api('khadems', 'GET', 'select=id,khadem_code,full_name&limit=3000')
+      ]);
+      const names = new Map(khadems.map(k => [k.id, k]));
+      const paid = rows.reduce((sum, r) => sum + num(r.cost_paid_toman), 0);
+      const list = rows.map(r => {
+        const k = names.get(r.khadem_id) || {};
+        const reason = ({border_exit_issue:'مشکل خروج از مرز',illness:'بیماری',family_emergency:'اتفاق یا ضرورت خانوادگی',other:'سایر موارد'})[r.reason_code] || 'سایر موارد';
+        const state = ({pending:'در انتظار پیگیری',rescheduled:'تغییر تاریخ خدمت',refunded:'هزینه بازپرداخت شد',not_refundable:'هزینه قابل بازپرداخت نیست',closed:'مختومه'})[r.resolution_status] || r.resolution_status;
+        return '<tr><td>' + esc(k.khadem_code || '—') + '</td><td>' + esc(k.full_name || '—') + '</td><td>' + esc(jdate(r.planned_service_date)) + '</td><td>' + esc(reason) + '</td><td>' + esc(money(r.cost_paid_toman)) + '</td><td>' + esc(state) + '</td></tr>';
+      }).join('');
+      const panel = document.createElement('section');
+      panel.id = 'eqServiceAbsenceHistory';
+      panel.className = 'card section';
+      panel.innerHTML = '<h3>عدم حضور در ' + (kind === 'friday_night' ? 'خدمت شب‌های جمعه' : 'خدمت رسمی') + '</h3>' +
+        '<p class="muted">این پرونده‌ها در سوابق برنامه خدمت و آمار عدم حضور نمایش داده می‌شوند، اما به‌عنوان خدمت انجام‌شده شمرده نمی‌شوند.</p>' +
+        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div class="card"><span class="muted">تعداد عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(rows.length)) + '</b></div><div class="card"><span class="muted">هزینه پرداخت‌شده مرتبط</span><b style="display:block;font-size:20px">' + esc(money(paid)) + '</b></div></div>' +
+        '<div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>تاریخ برنامه</th><th>علت</th><th>هزینه پرداخت‌شده</th><th>وضعیت پیگیری</th></tr></thead><tbody>' + (list || '<tr><td colspan="6">برای این نوع خدمت پرونده عدم حضوری ثبت نشده است.</td></tr>') + '</tbody></table></div>';
+      content.appendChild(panel);
+    } catch (err) {
+      const panel = document.createElement('section');
+      panel.id = 'eqServiceAbsenceHistory';
+      panel.className = 'card section';
+      panel.innerHTML = '<h3>سوابق عدم حضور</h3>' + notice('دریافت آمار عدم حضور ممکن نشد: ' + err.message, true);
+      content.appendChild(panel);
+    }
+  }
   addMenu();
   const oldRender = window.render;
   if (typeof oldRender === 'function') {
     window.render = function (page) {
-      if (page === 'finance:equipment') { window.khademCurrentPage = page; equipmentPage(); return; }
-      return oldRender.apply(this, arguments);
+      window.khademCurrentPage = page;
+      if (page === 'finance:equipment') { equipmentPage(); return; }
+      const result = oldRender.apply(this, arguments);
+      if (page === 'services' || page === 'friday') {
+        Promise.resolve(result).then(() => {
+          window.setTimeout(() => {
+            if (window.khademCurrentPage === page) appendNonattendanceToServicePage(page);
+          }, 450);
+        });
+      }
+      return result;
     };
   }
 })();
