@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<!-- Authentication gate removed; app shell starts directly. -->
+<!-- Authentication is retained; the session is validated before app data is shown. -->
 
 <meta name="app-release" content="153">
 <meta charset="utf-8">
@@ -116,7 +116,7 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
 </style>
 
 
-<!-- v149 security hotfix: validate the Supabase session before exposing app data. -->
+<!-- Early redirect when no session exists; the final gate validates the session once before exposing app data. -->
 <script>
 (function(){
  'use strict';
