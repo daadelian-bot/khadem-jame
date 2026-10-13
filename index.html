@@ -1960,11 +1960,11 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
         if(submenu){if(opening)submenu.style.setProperty('display','block','important');else submenu.style.removeProperty('display');}
       }else{
         closeGroups(null);document.querySelectorAll('#sidebar .nav-main').forEach(function(b){b.classList.toggle('active',b===target);});
-        go(target.dataset.nav||'dashboard',null);
+        go(target.dataset.nav||target.dataset.v148Nav||'dashboard',null);
       }
       return;
     }
-    if(target.matches('.sub'))go(target.dataset.customTarget||target.dataset.page,target);
+    if(target.matches('.sub'))go(target.dataset.customTarget||target.dataset.page||target.dataset.v148Page,target);
   },true);
 })();
 </script>
