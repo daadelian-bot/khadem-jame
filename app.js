@@ -419,11 +419,20 @@
       {key:"category",label:"دسته‌بندی"},
       {key:"title",label:"عنوان"},
       {key:"amount",label:"مبلغ ثبت‌شده"},
+      {key:"paid_amount",label:"مبلغ پرداخت‌شده"},
+      {key:"balance",label:"مانده / بدهی"},
       {key:"transaction_date",label:"تاریخ تراکنش"},
       {key:"description",label:"شرح"}
     ];
-    const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,[key, ...(key==="service_date"?["date","created_at"]:key==="description"?["notes","note"]:[])])]));
-    const financeRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","transaction_date","description"])}));
+    const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,
+      key==="service_date" ? [key,"date","created_at"] :
+      key==="description" ? [key,"notes","note"] :
+      key==="amount" ? [key,"total_amount","amount_toman","total_amount_toman"] :
+      key==="paid_amount" ? [key,"amount_paid","paid_toman","paid_amount_toman"] :
+      key==="balance" ? [key,"remaining_amount","remaining_toman","debt","balance_toman"] :
+      [key]
+    )]));
+    const financeRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","paid_amount","balance","transaction_date","description"])}));
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
       <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
