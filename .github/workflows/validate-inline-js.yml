@@ -6,6 +6,7 @@ on:
     paths:
       - "index.html"
       - "app.js"
+      - "equipment-finance.js"
       - "service-worker.js"
       - "manifest.webmanifest"
       - ".github/workflows/validate-inline-js.yml"
@@ -81,6 +82,7 @@ jobs:
       - name: Check standalone JavaScript files
         run: |
           node --check app.js
+          node --check equipment-finance.js
           node --check service-worker.js
       - name: Validate web app manifest JSON
         run: node -e "JSON.parse(require('node:fs').readFileSync('manifest.webmanifest', 'utf8')); console.log('manifest.webmanifest is valid JSON.');"
