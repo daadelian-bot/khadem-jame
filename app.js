@@ -377,13 +377,15 @@
     const columns = [
       {key:"khadem_code",label:"کد خادم"},
       {key:"full_name",label:"نام و نام خانوادگی"},
-      {key:"phone",label:"تلفن"}
+      {key:"phone",label:"تلفن"},
+      {key:"status",label:"وضعیت"}
     ];
     const htmlRows = rows.map(k => ({
       ...k,
       khadem_code: khademCode(k),
       full_name: nameOf(k),
-      phone: val(k,["phone","mobile","phone_number"])
+      phone: val(k,["phone","mobile","phone_number"]),
+      status: val(k,["status","active"]) || "—"
     }));
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
       <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span></div>
