@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS public.app_labels (id uuid DEFAULT gen_random_uuid() 
 
 CREATE TABLE IF NOT EXISTS public.app_roles (id uuid DEFAULT gen_random_uuid() NOT NULL, role_key text NOT NULL, title text NOT NULL, is_system boolean DEFAULT false NOT NULL, created_at timestamp with time zone DEFAULT now());
 
-CREATE TABLE IF NOT EXISTS public.app_settings (setting_key text NOT NULL, value jsonb DEFAULT '{}'::jsonb NOT NULL, updated_by uuid, updated_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.app_settings (setting_key text NOT NULL, value jsonb DEFAULT '{}'::jsonb NOT NULL, updated_by uuid, updated_at timestamp with time zone DEFAULT now() NOT NULL, id uuid DEFAULT gen_random_uuid());
 
-CREATE TABLE IF NOT EXISTS public.audit_logs (id uuid DEFAULT gen_random_uuid() NOT NULL, actor_user_id uuid, action text NOT NULL, module_key text, record_id text, old_data jsonb, new_data jsonb, created_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.audit_logs (id uuid DEFAULT gen_random_uuid() NOT NULL, actor_user_id uuid, action text NOT NULL, module_key text, record_id uuid, old_data jsonb, new_data jsonb, created_at timestamp with time zone DEFAULT now() NOT NULL);
 
-CREATE TABLE IF NOT EXISTS public.chat_messages (id uuid DEFAULT gen_random_uuid() NOT NULL, sender_user_id uuid, sender_name text, message text DEFAULT ''::text NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, sender_id uuid, body text DEFAULT ''::text NOT NULL, recipient_id uuid, conversation_type text DEFAULT 'public'::text NOT NULL, deleted_at timestamp with time zone);
+CREATE TABLE IF NOT EXISTS public.chat_messages (id uuid DEFAULT gen_random_uuid() NOT NULL, sender_user_id uuid, sender_name text, message text DEFAULT ''::text NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, sender_id uuid, body text DEFAULT ''::text NOT NULL, recipient_id uuid, conversation_type text DEFAULT 'public'::text NOT NULL, deleted_at timestamp with time zone, edited_at timestamp with time zone);
 
 CREATE TABLE IF NOT EXISTS public.chat_recipients (id uuid DEFAULT gen_random_uuid() NOT NULL, message_id uuid, user_id uuid, display_name text, role text, is_read boolean DEFAULT false NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL);
 
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.finance_accounts (id uuid DEFAULT gen_random_u
 
 CREATE TABLE IF NOT EXISTS public.finance_installments (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, finance_transaction_id uuid, title text, installment_number integer, amount numeric(14,2) DEFAULT 0 NOT NULL, due_date date, status text DEFAULT 'pending'::text NOT NULL, paid_amount numeric(14,2) DEFAULT 0 NOT NULL, paid_date date, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, transaction_id uuid, created_by uuid, updated_at timestamp with time zone DEFAULT now() NOT NULL);
 
-CREATE TABLE IF NOT EXISTS public.finance_transactions (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, khadem_code bigint, transaction_type text, category text, party text, amount numeric(14,2) DEFAULT 0 NOT NULL, paid_amount numeric(14,2), balance numeric(14,2), transaction_date date DEFAULT CURRENT_DATE NOT NULL, reference_no text, payment_method text DEFAULT 'cash'::text, account_id uuid, description text, notes text, created_by uuid, created_by_email text, created_at timestamp with time zone DEFAULT now() NOT NULL, khadem_name text, title text, status text DEFAULT 'posted'::text NOT NULL);
+CREATE TABLE IF NOT EXISTS public.finance_transactions (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, khadem_code bigint, transaction_type text, category text, party text, amount numeric(14,2) DEFAULT 0 NOT NULL, paid_amount numeric(14,2), balance numeric(14,2), transaction_date date DEFAULT CURRENT_DATE NOT NULL, reference_no text, payment_method text DEFAULT 'cash'::text, account_id uuid, description text, notes text, created_by uuid, created_by_email text, created_at timestamp with time zone DEFAULT now() NOT NULL, khadem_name text, title text, status text DEFAULT 'posted'::text NOT NULL, tracking_number text);
 
 CREATE TABLE IF NOT EXISTS public.fund_transactions (id uuid DEFAULT gen_random_uuid() NOT NULL, transaction_date date DEFAULT CURRENT_DATE NOT NULL, title text, transaction_type text NOT NULL, amount numeric DEFAULT 0 NOT NULL, notes text, status text DEFAULT 'posted'::text NOT NULL, created_at timestamp with time zone DEFAULT now());
 
@@ -59,33 +59,35 @@ CREATE TABLE IF NOT EXISTS public.password_reset_requests (id uuid DEFAULT gen_r
 
 CREATE TABLE IF NOT EXISTS public.permissions (id uuid DEFAULT gen_random_uuid() NOT NULL, permission_key text NOT NULL, title text NOT NULL, created_at timestamp with time zone DEFAULT now());
 
-CREATE TABLE IF NOT EXISTS public.profiles (id uuid NOT NULL, email text, username text, full_name text, display_name text, role text DEFAULT 'user'::text NOT NULL, is_active boolean DEFAULT true NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.profiles (id uuid NOT NULL, email text, username text, full_name text, display_name text, role text DEFAULT 'user'::text NOT NULL, is_active boolean DEFAULT true NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL, phone text);
 
-CREATE TABLE IF NOT EXISTS public.registration_requests (id uuid DEFAULT gen_random_uuid() NOT NULL, user_id uuid, email text, full_name text, phone text, status text DEFAULT 'pending'::text NOT NULL, requested_role text DEFAULT 'user'::text NOT NULL, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, reviewed_at timestamp with time zone, reviewed_by uuid, approved_by uuid, approved_at timestamp with time zone, updated_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.registration_requests (id uuid DEFAULT gen_random_uuid() NOT NULL, user_id uuid, email text, full_name text, phone text, status text DEFAULT 'pending'::text NOT NULL, requested_role text DEFAULT 'user'::text NOT NULL, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, reviewed_at timestamp with time zone, reviewed_by uuid, approved_by uuid, approved_at timestamp with time zone, updated_at timestamp with time zone DEFAULT now() NOT NULL, rejection_reason text);
 
 CREATE TABLE IF NOT EXISTS public.role_permissions (role_id uuid NOT NULL, permission_id uuid NOT NULL);
 
 CREATE TABLE IF NOT EXISTS public.service_records (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, khadem_code bigint, khadem_name text, service_type text, service_date date DEFAULT CURRENT_DATE NOT NULL, location text, responsibility text, notes text, created_by uuid, created_at timestamp with time zone DEFAULT now() NOT NULL, shrine_id uuid, service_days integer DEFAULT 1 NOT NULL, description text, start_time time without time zone, end_time time without time zone, duration_minutes integer, updated_at timestamp with time zone DEFAULT now() NOT NULL);
 
-CREATE TABLE IF NOT EXISTS public.shrine_sites (id uuid DEFAULT gen_random_uuid() NOT NULL, name text NOT NULL, city text, is_active boolean DEFAULT true NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.shrine_sites (id uuid DEFAULT gen_random_uuid() NOT NULL, name text NOT NULL, city text, is_active boolean DEFAULT true NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, address text, notes text);
 
 CREATE TABLE IF NOT EXISTS public.signup_rate_limits (ip_hash text NOT NULL, window_start timestamp with time zone NOT NULL, attempts integer DEFAULT 1 NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL);
 
 CREATE TABLE IF NOT EXISTS public.system_settings (key text NOT NULL, value_json jsonb DEFAULT '{}'::jsonb NOT NULL, updated_at timestamp with time zone DEFAULT now());
 
-CREATE TABLE IF NOT EXISTS public.tuition_dues (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, period_month date NOT NULL, amount_toman numeric(14,2) DEFAULT 0 NOT NULL, paid_toman numeric(14,2) DEFAULT 0 NOT NULL, status text DEFAULT 'pending'::text NOT NULL, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.tuition_dues (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, period_month date NOT NULL, amount_toman numeric(14,2) DEFAULT 0 NOT NULL, paid_toman numeric(14,2) DEFAULT 0 NOT NULL, status text DEFAULT 'pending'::text NOT NULL, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL, finance_transaction_id uuid, created_by uuid);
 
-CREATE TABLE IF NOT EXISTS public.tuition_payments (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, amount_toman numeric(14,2) DEFAULT 0 NOT NULL, paid_date date DEFAULT CURRENT_DATE NOT NULL, payment_method text DEFAULT 'cash'::text, reference_no text, notes text, finance_transaction_id uuid, created_at timestamp with time zone DEFAULT now() NOT NULL, tuition_due_id uuid);
+CREATE TABLE IF NOT EXISTS public.tuition_payments (id uuid DEFAULT gen_random_uuid() NOT NULL, khadem_id uuid, amount_toman numeric(14,2) DEFAULT 0 NOT NULL, paid_date date DEFAULT CURRENT_DATE NOT NULL, payment_method text DEFAULT 'cash'::text, reference_no text, notes text, finance_transaction_id uuid, created_at timestamp with time zone DEFAULT now() NOT NULL, tuition_due_id uuid, created_by uuid);
 
-CREATE TABLE IF NOT EXISTS public.tuition_settings (id uuid DEFAULT gen_random_uuid() NOT NULL, first_six_monthly_toman numeric(14,2) DEFAULT 0 NOT NULL, after_six_monthly_toman numeric(14,2) DEFAULT 0 NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL);
+CREATE TABLE IF NOT EXISTS public.tuition_settings (id uuid DEFAULT gen_random_uuid() NOT NULL, first_six_monthly_toman numeric(14,2) DEFAULT 0 NOT NULL, after_six_monthly_toman numeric(14,2) DEFAULT 0 NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, effective_from date, updated_by uuid);
 
 CREATE TABLE IF NOT EXISTS public.user_presence (user_id uuid NOT NULL, last_seen_at timestamp with time zone DEFAULT now() NOT NULL, updated_at timestamp with time zone DEFAULT now() NOT NULL, started_at timestamp with time zone, ended_at timestamp with time zone, duration_seconds bigint);
 
-CREATE TABLE IF NOT EXISTS public.vehicles (id uuid DEFAULT gen_random_uuid() NOT NULL, name text, plate_number text, vehicle_type text, driver_name text, driver_phone text, is_active boolean DEFAULT true NOT NULL, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, title text, capacity integer, status text DEFAULT 'available'::text NOT NULL);
+CREATE TABLE IF NOT EXISTS public.vehicles (id uuid DEFAULT gen_random_uuid() NOT NULL, name text, plate_number text, vehicle_type text, driver_name text, driver_phone text, is_active boolean DEFAULT true NOT NULL, notes text, created_at timestamp with time zone DEFAULT now() NOT NULL, title text, capacity integer, status text DEFAULT 'available'::text NOT NULL, model text, plate text, owner_name text, updated_at timestamp with time zone DEFAULT now() NOT NULL);
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='account_access_controls_granted_by_fkey' AND conrelid='public.account_access_controls'::regclass) THEN ALTER TABLE public.account_access_controls ADD CONSTRAINT account_access_controls_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='account_access_controls_pkey' AND conrelid='public.account_access_controls'::regclass) THEN ALTER TABLE public.account_access_controls ADD CONSTRAINT account_access_controls_pkey PRIMARY KEY (id); END IF; END $mig$;
+
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='account_access_controls_updated_by_fkey' AND conrelid='public.account_access_controls'::regclass) THEN ALTER TABLE public.account_access_controls ADD CONSTRAINT account_access_controls_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='account_access_controls_user_id_fkey' AND conrelid='public.account_access_controls'::regclass) THEN ALTER TABLE public.account_access_controls ADD CONSTRAINT account_access_controls_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE; END IF; END $mig$;
 
@@ -235,6 +237,8 @@ DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='profile
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='profiles_role_check' AND conrelid='public.profiles'::regclass) THEN ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'manager'::text, 'user'::text]))); END IF; END $mig$;
 
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='registration_requests_approved_by_fkey' AND conrelid='public.registration_requests'::regclass) THEN ALTER TABLE public.registration_requests ADD CONSTRAINT registration_requests_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
+
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='registration_requests_pkey' AND conrelid='public.registration_requests'::regclass) THEN ALTER TABLE public.registration_requests ADD CONSTRAINT registration_requests_pkey PRIMARY KEY (id); END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='registration_requests_reviewed_by_fkey' AND conrelid='public.registration_requests'::regclass) THEN ALTER TABLE public.registration_requests ADD CONSTRAINT registration_requests_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
@@ -263,11 +267,17 @@ DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='signup_
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='system_settings_pkey' AND conrelid='public.system_settings'::regclass) THEN ALTER TABLE public.system_settings ADD CONSTRAINT system_settings_pkey PRIMARY KEY (key); END IF; END $mig$;
 
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_dues_created_by_fkey' AND conrelid='public.tuition_dues'::regclass) THEN ALTER TABLE public.tuition_dues ADD CONSTRAINT tuition_dues_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
+
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_dues_finance_transaction_id_fkey' AND conrelid='public.tuition_dues'::regclass) THEN ALTER TABLE public.tuition_dues ADD CONSTRAINT tuition_dues_finance_transaction_id_fkey FOREIGN KEY (finance_transaction_id) REFERENCES finance_transactions(id) ON DELETE SET NULL; END IF; END $mig$;
+
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_dues_khadem_id_fkey' AND conrelid='public.tuition_dues'::regclass) THEN ALTER TABLE public.tuition_dues ADD CONSTRAINT tuition_dues_khadem_id_fkey FOREIGN KEY (khadem_id) REFERENCES khadems(id) ON DELETE CASCADE; END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_dues_khadem_id_period_month_key' AND conrelid='public.tuition_dues'::regclass) THEN ALTER TABLE public.tuition_dues ADD CONSTRAINT tuition_dues_khadem_id_period_month_key UNIQUE (khadem_id, period_month); END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_dues_pkey' AND conrelid='public.tuition_dues'::regclass) THEN ALTER TABLE public.tuition_dues ADD CONSTRAINT tuition_dues_pkey PRIMARY KEY (id); END IF; END $mig$;
+
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_payments_created_by_fkey' AND conrelid='public.tuition_payments'::regclass) THEN ALTER TABLE public.tuition_payments ADD CONSTRAINT tuition_payments_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_payments_finance_transaction_id_fkey' AND conrelid='public.tuition_payments'::regclass) THEN ALTER TABLE public.tuition_payments ADD CONSTRAINT tuition_payments_finance_transaction_id_fkey FOREIGN KEY (finance_transaction_id) REFERENCES finance_transactions(id) ON DELETE SET NULL; END IF; END $mig$;
 
@@ -278,6 +288,8 @@ DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_payments_tuition_due_id_fkey' AND conrelid='public.tuition_payments'::regclass) THEN ALTER TABLE public.tuition_payments ADD CONSTRAINT tuition_payments_tuition_due_id_fkey FOREIGN KEY (tuition_due_id) REFERENCES tuition_dues(id) ON DELETE SET NULL; END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_settings_pkey' AND conrelid='public.tuition_settings'::regclass) THEN ALTER TABLE public.tuition_settings ADD CONSTRAINT tuition_settings_pkey PRIMARY KEY (id); END IF; END $mig$;
+
+DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tuition_settings_updated_by_fkey' AND conrelid='public.tuition_settings'::regclass) THEN ALTER TABLE public.tuition_settings ADD CONSTRAINT tuition_settings_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL; END IF; END $mig$;
 
 DO $mig$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='user_presence_pkey' AND conrelid='public.user_presence'::regclass) THEN ALTER TABLE public.user_presence ADD CONSTRAINT user_presence_pkey PRIMARY KEY (user_id); END IF; END $mig$;
 
@@ -317,33 +329,28 @@ CREATE OR REPLACE FUNCTION private.sync_v141_compat_fields()
  SET search_path TO ''
 AS $function$
 BEGIN
-  IF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='khadems' THEN
-    IF TG_OP='INSERT' THEN
-      IF NEW.is_active IS DISTINCT FROM (NEW.status <> 'inactive') THEN
-        NEW.status := CASE WHEN NEW.is_active THEN 'active' ELSE 'inactive' END;
-      END IF;
-    ELSIF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
-      NEW.status := CASE WHEN NEW.is_active THEN 'active' ELSE 'inactive' END;
-    ELSIF NEW.status IS DISTINCT FROM OLD.status THEN
-      NEW.is_active := (NEW.status <> 'inactive');
-    END IF;
-  ELSIF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='vehicles' THEN
-    NEW.title := COALESCE(NULLIF(btrim(NEW.title),''),NULLIF(btrim(NEW.model),''),NULLIF(btrim(NEW.vehicle_type),''),'');
-    NEW.model := COALESCE(NULLIF(btrim(NEW.model),''),NEW.title,'');
-    NEW.status := COALESCE(NULLIF(NEW.status,''),'available');
-  ELSIF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='chat_messages' THEN
-    NEW.sender_id := COALESCE(NEW.sender_id,NEW.sender_user_id);
-    NEW.sender_user_id := COALESCE(NEW.sender_user_id,NEW.sender_id);
-    NEW.body := COALESCE(NEW.body,NEW.message,'');
-    NEW.message := COALESCE(NEW.message,NEW.body,'');
-    NEW.conversation_type := COALESCE(NULLIF(NEW.conversation_type,''),'public');
-  ELSIF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='finance_installments' THEN
-    NEW.transaction_id := COALESCE(NEW.transaction_id,NEW.finance_transaction_id);
-    NEW.finance_transaction_id := COALESCE(NEW.finance_transaction_id,NEW.transaction_id);
+ IF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='khadems' THEN
+  IF TG_OP='INSERT' THEN
+   IF NEW.is_active IS DISTINCT FROM (NEW.status <> 'inactive') THEN NEW.status := CASE WHEN NEW.is_active THEN 'active' ELSE 'inactive' END; END IF;
+  ELSIF NEW.is_active IS DISTINCT FROM OLD.is_active THEN NEW.status := CASE WHEN NEW.is_active THEN 'active' ELSE 'inactive' END;
+  ELSIF NEW.status IS DISTINCT FROM OLD.status THEN NEW.is_active := (NEW.status <> 'inactive');
   END IF;
-  RETURN NEW;
-END;
-$function$
+ ELSIF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='vehicles' THEN
+  NEW.title := COALESCE(NULLIF(btrim(NEW.title),''),NULLIF(btrim(NEW.model),''),NULLIF(btrim(NEW.vehicle_type),''),'');
+  NEW.model := COALESCE(NULLIF(btrim(NEW.model),''),NEW.title,'');
+  NEW.status := COALESCE(NULLIF(NEW.status,''),'available');
+ ELSIF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='chat_messages' THEN
+  NEW.sender_id := COALESCE(NEW.sender_id,NEW.sender_user_id);
+  NEW.sender_user_id := COALESCE(NEW.sender_user_id,NEW.sender_id);
+  NEW.body := COALESCE(NEW.body,NEW.message,'');
+  NEW.message := COALESCE(NEW.message,NEW.body,'');
+  NEW.conversation_type := COALESCE(NULLIF(NEW.conversation_type,''),'public');
+ ELSIF TG_TABLE_SCHEMA='public' AND TG_TABLE_NAME='finance_installments' THEN
+  NEW.transaction_id := COALESCE(NEW.transaction_id,NEW.finance_transaction_id);
+  NEW.finance_transaction_id := COALESCE(NEW.finance_transaction_id,NEW.transaction_id);
+ END IF;
+ RETURN NEW;
+END; $function$
 ;
 
 ALTER TABLE public.account_access_controls ENABLE ROW LEVEL SECURITY;
@@ -577,6 +584,8 @@ CREATE INDEX IF NOT EXISTS idx_tuition_payments_finance_transaction_id ON public
 CREATE INDEX IF NOT EXISTS idx_tuition_payments_khadem_id ON public.tuition_payments USING btree (khadem_id);
 
 CREATE INDEX IF NOT EXISTS meeting_attendance_v141_khadem_idx ON public.meeting_attendance USING btree (khadem_id, meeting_id);
+
+CREATE UNIQUE INDEX app_settings_v141_id_uidx ON public.app_settings USING btree (id);
 
 CREATE OR REPLACE VIEW public.finance_balance_summary WITH (security_invoker=true) AS  SELECT COALESCE(sum(
         CASE
