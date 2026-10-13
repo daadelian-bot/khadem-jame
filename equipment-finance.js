@@ -19,7 +19,7 @@
   const money = v => new Intl.NumberFormat('fa-IR').format(Math.round(num(v))) + ' تومان';
   const fa = v => new Intl.NumberFormat('fa-IR').format(num(v));
   const label = k => ITEMS[k] || k || '—';
-  function session() { try { return JSON.parse(localStorage.getItem('khadem_session') || '{}'); } catch (_) { return {}; } }
+  function session() { try { const s = JSON.parse(localStorage.getItem('khadem_session') || '{}'); if (s && s.access_token) return s; const token = localStorage.getItem('kj_access_token') || ''; return token ? { access_token: token } : {}; } catch (_) { const token = localStorage.getItem('kj_access_token') || ''; return token ? { access_token: token } : {}; } }
   async function api(table, method, query, body) {
     const s = session();
     if (!s.access_token) throw new Error('نشست معتبر پیدا نشد؛ دوباره وارد سامانه شوید.');
@@ -89,6 +89,7 @@
     ['khadem-summary', 'خلاصه پرداخت خدام']
   ];
   function mountPage(html) {
+    if (!EQUIPMENT_SECTIONS.some(([id]) => id === activeSection)) activeSection = 'receipt';
     const content = $('content');
     const tabs = EQUIPMENT_SECTIONS.map(([id, title]) =>
       '<button type="button" class="btn ' + (activeSection === id ? 'primary' : 'secondary') + '" data-eq-tab="' + id + '">' + esc(title) + '</button>'
@@ -96,7 +97,7 @@
     if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">حساب هیئت، موجودی مجموعه و پرونده مالی خادم</span></div>' +
       '<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + tabs + '</div>' + html;
     if (content) content.querySelectorAll('[data-eq-tab]').forEach(button => button.addEventListener('click', () => { activeSection = button.dataset.eqTab; renderPage(); }));
-    if (content && activeSection !== 'nonattendance') {
+    if (content) {
       const selectors = {
         receipt: ['۱. ثبت دریافت وسایل از هیئت'],
         issue: ['۲. ثبت تحویل وسیله به خادم'],
@@ -146,7 +147,7 @@
     return Math.max(0, num(item.quantity) - issued);
   }
   function renderPage() {
-    if (activeSection === 'nonattendance') { renderNonattendancePage(); return; }
+    if (!EQUIPMENT_SECTIONS.some(([id]) => id === activeSection)) activeSection = 'receipt';
     const khademOptions = cache.khadems.filter(k => k.is_active !== false).map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
     const stockOptions = cache.items.filter(i => remainingStock(i) > 0).map(i => {
       const r = cache.receipts.find(x => x.id === i.receipt_id) || {};
@@ -444,7 +445,7 @@
       const panel = document.createElement('section');
       panel.id = 'eqServiceAbsenceHistory';
       panel.className = 'card section';
-      panel.innerHTML = '<h3>عدم حضور در ' + kindTitle + '</h3>' +
+      panel.innerHTML = '<h3>ثبت و پیگیری عدم حضور در ' + kindTitle + '</h3>' +
         '<p class="muted">اگر خادم پس از طی مراحل اعزام و حتی پس از پرداخت هزینه نتوانست حاضر شود، پرونده را همین‌جا ثبت کنید. این سابقه به‌عنوان خدمت انجام‌شده محاسبه نمی‌شود و پرداخت‌ها را خودکار تغییر نمی‌دهد.</p>' +
         '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div class="card"><span class="muted">تعداد پرونده‌های عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(rows.length)) + '</b></div><div class="card"><span class="muted">هزینه پرداخت‌شده مرتبط</span><b style="display:block;font-size:20px">' + esc(money(paid)) + '</b></div></div>' +
         '<form id="eqAbsenceForm" class="card" style="margin:12px 0"><h4>ثبت عدم حضور در ' + kindTitle + '</h4><div class="form-grid">' +
@@ -506,8 +507,9 @@
       const panel = document.createElement('section');
       panel.id = 'eqServiceAbsenceHistory';
       panel.className = 'card section';
-      panel.innerHTML = '<h3>عدم حضور در ' + kindTitle + '</h3>' + notice('دریافت یا ثبت سوابق عدم حضور ممکن نشد: ' + err.message, true);
+      panel.innerHTML = '<h3>ثبت و پیگیری عدم حضور در ' + kindTitle + '</h3>' + notice('دریافت سوابق عدم حضور ناموفق بود: ' + err.message + '؛ اتصال و مجوز دسترسی را بررسی کنید و دوباره تلاش کنید.', true) + '<button type="button" class="btn secondary" id="eqAbsenceRetry">تلاش دوباره</button>';
       content.appendChild(panel);
+      $('eqAbsenceRetry')?.addEventListener('click', () => appendNonattendanceToServicePage(page));
     }
   }
   window.KhademEquipmentFinance = { appendNonattendanceToServicePage };
