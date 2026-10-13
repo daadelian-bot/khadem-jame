@@ -35,8 +35,8 @@
   const menu = [
     ["dashboard", "🏠 داشبورد"],
     ["khadems", "👤 بانک خادمین"],
-    ["services", "🕌 خدمات"],
-    ["friday", "🌙 پایش شب جمعه"],
+    ["services", "🕌 ثبت خدمت رسمی"],
+    ["friday", "🌙 ثبت خدمت شب‌های جمعه"],
     ["meetings", "📅 جلسات"],
     ["deployments", "🚐 مأموریت‌ها"],
     ["finance", "💰 امور مالی"],
@@ -504,7 +504,7 @@
         description: val(r, ["description", "notes", "note"])
       };
     });
-    return `<h1 class="kj-page-title">پایش خدمت شب جمعه</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
+    return `<h1 class="kj-page-title">ثبت خدمت شب‌های جمعه و پایش خدمت</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
   }
   function reportsPage() {
     return `<h1 class="kj-page-title">گزارش‌ها</h1><div class="kj-grid">${[
@@ -529,7 +529,7 @@
     const views = {
       dashboard,
       khadems: khademList,
-      services: () => genericPage("services","سوابق خدمت",state.services,[
+      services: () => genericPage("services","ثبت خدمت رسمی",state.services,[
         {key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},
         {key:"service_type",label:"نوع خدمت"},{key:"category",label:"دسته‌بندی"},{key:"notes",label:"توضیحات"}
       ]),
@@ -553,7 +553,7 @@
         window.setTimeout(mountAbsencePanel, 0);
       } else if (!document.querySelector("script[data-kj-absence-loader]")) {
         const script = document.createElement("script");
-        script.src = "./equipment-finance.js?v=156";
+        script.src = "./equipment-finance.js?v=157";
         script.dataset.kjAbsenceLoader = "1";
         script.onload = () => window.setTimeout(mountAbsencePanel, 0);
         document.head.appendChild(script);
