@@ -301,8 +301,10 @@
     const labels = {
       id:"شناسه", khadem_code:"کد خادم", code:"کد", full_name:"نام و نام خانوادگی", name:"نام",
       first_name:"نام", last_name:"نام خانوادگی", family:"نام خانوادگی", father_name:"نام پدر",
-      national_code:"کد ملی", phone:"تلفن همراه", mobile:"تلفن همراه", email:"ایمیل",
-      birth_date:"تاریخ تولد", address:"نشانی", status:"وضعیت", active:"فعال",
+      triple_name:"نام سه‌گانه", national_code:"کد ملی", phone:"تلفن همراه", mobile:"تلفن همراه", email:"ایمیل",
+      birth_date:"تاریخ تولد", membership_date:"تاریخ عضویت", address:"نشانی", residence:"محل سکونت",
+      status:"وضعیت", active:"فعال", is_active:"وضعیت فعالیت", primary_responsibility:"مسئولیت اصلی",
+      job:"شغل", blood_type:"گروه خونی", medical_history:"سوابق پزشکی",
       skills:"مهارت‌ها", education_level:"سطح تحصیلات", marital_status:"وضعیت تأهل",
       emergency_contact_name:"نام تماس اضطراری", emergency_contact_phone:"تلفن تماس اضطراری",
       emergency_contact_name_2:"نام تماس اضطراری دوم", emergency_contact_name_3:"نام تماس اضطراری سوم",
