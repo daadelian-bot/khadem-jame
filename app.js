@@ -124,7 +124,9 @@
     try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
     if (!response.ok) {
       const message = data && (data.message || data.msg || data.error_description || data.error) || raw || ("HTTP " + response.status);
-      throw new Error(String(message));
+      const error = new Error(String(message));
+      error.status = response.status;
+      throw error;
     }
     return data;
   }
@@ -545,14 +547,28 @@
   async function startApp() {
     injectStyles();
     if (!token()) { loginPage(); return; }
+    const app = ensureRoot();
+    app.innerHTML = `<div dir="rtl" style="padding:40px;text-align:center">در حال بررسی اعتبار ورود…</div>`;
     try {
-      const app = ensureRoot();
-      app.innerHTML = `<div dir="rtl" style="padding:40px;text-align:center">در حال آماده‌سازی سامانه…</div>`;
+      // قبل از دریافت یا نمایش داده‌های سامانه، اعتبار توکن را با Supabase بررسی کن.
+      const authUser = await request("/auth/v1/user");
+      if (!authUser || !authUser.id) {
+        const error = new Error("پاسخ معتبر از سرویس احراز هویت دریافت نشد.");
+        error.status = 401;
+        throw error;
+      }
+      localStorage.setItem(USER_KEY, JSON.stringify(authUser));
       await loadData();
     } catch (e) {
-      console.error(e);
-      toast(e.message || "خطا در راه‌اندازی سامانه", "error");
-      render();
+      console.error("KJ: startup/auth verification failed", e);
+      if (e && (e.status === 401 || e.status === 403)) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        loginPage("نشست ورود معتبر نیست یا منقضی شده است؛ لطفاً دوباره وارد شوید.");
+        return;
+      }
+      // در خطای شبکه/سرور توکن را پاک نکن؛ ولی داده‌های محافظت‌شده را هم بارگذاری نکن.
+      loginPage("اعتبار ورود فعلاً بررسی نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.");
     }
   }
 
