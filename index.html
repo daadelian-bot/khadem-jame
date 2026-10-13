@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta name="app-release" content="142">
+<meta name="app-release" content="139">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۴۲</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۳۹</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -82,7 +82,7 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 .login-card-pro.is-signup #signupConfirmWrap{display:block}
 [data-navorder]{min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px}
 [data-subparent]{max-width:190px;min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px;background:var(--card,#fff);color:inherit}
-/* نسخه ۱۴۰: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
+/* نسخه ۱۳۹: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
 .nav-group[data-group="settings"] .settings-subgroup{margin:5px 0;border:1px solid #ffffff1a;border-radius:10px;overflow:hidden;background:#ffffff05}
 .nav-group[data-group="settings"] .settings-subgroup-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 9px;border:0;background:#ffffff0a;color:#e8d3b7;text-align:right;font-family:inherit;font-size:12px;font-weight:700;line-height:1.7;cursor:pointer}
 .nav-group[data-group="settings"] .settings-subgroup-toggle:focus-visible{outline:2px solid #d7ad6c;outline-offset:-2px}
@@ -467,53 +467,28 @@ async function saveFinanceTransaction(){const amount=Number($('f_amount').value)
 
 let shrineCache=[];async function loadShrines(){const box=$('shrinesTable');if(!box)return;try{const r=await api('/rest/v1/shrine_sites?select=id,name,city,is_active&order=name.asc');const j=await r.json();if(!r.ok)throw new Error(j.message||j.hint||'خطای دریافت محل‌ها');shrineCache=Array.isArray(j)?j:[];const role=await currentUserRole();const canManage=role==='admin';if($('addShrineBtn'))$('addShrineBtn').style.display=canManage?'inline-flex':'none';box.innerHTML=shrineCache.length?`<div style="overflow:auto"><table class="data-table"><thead><tr><th>نام حرم / محل</th><th>شهر</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${shrineCache.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.city||'—')}</td><td>${x.is_active===false?'غیرفعال':'فعال'}</td><td>${canManage?`<button class="mini-btn mini-toggle" onclick="removeShrine('${esc(x.id)}')">حذف</button>`:'فقط مشاهده'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">هنوز محل خدمتی ثبت نشده است.</div>'}catch(e){box.innerHTML='<div class="notice">فهرست حرم‌ها دریافت نشد: '+esc(e.message)+'؛ فایل مهاجرت نسخه ۷۴ را اجرا کنید.</div>'}}
 async function loadShrineOptions(){const sel=$('s_shrine');if(!sel)return;try{const r=await api('/rest/v1/shrine_sites?select=id,name,city&is_active=eq.true&order=name.asc');const j=await r.json();if(!r.ok)throw new Error('');sel.innerHTML='<option value="">انتخاب حرم / محل…</option>'+j.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.city?' — '+esc(x.city):''}</option>`).join('')}catch(e){sel.innerHTML='<option value="">محل‌ها پس از اجرای مهاجرت در دسترس‌اند</option>'}}
-async function refreshKhademSession(force=false){
- const parse=()=>{try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}};
- let sess=parse();
- const access=String(sess.access_token||sess.session?.access_token||sess.currentSession?.access_token||'');
- const refresh=String(sess.refresh_token||sess.session?.refresh_token||sess.currentSession?.refresh_token||'');
- const authUrl=String(CFG.url||'').replace(/\/$/,'');
- if(!authUrl||!CFG.key)throw new Error('پیکربندی احراز هویت در دسترس نیست.');
- if(!access&&!refresh)throw new Error('نشست ورود یافت نشد؛ دوباره وارد شوید.');
- const callUser=async token=>fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});
- let user=null;
- if(access&&!force){
-   const ur=await callUser(access);
-   if(ur.ok)user=await ur.json();
-   else if(ur.status!==401&&ur.status!==403)throw new Error('بررسی هویت با خطای HTTP '+ur.status);
- }
- if(!user){
-   if(!refresh)throw new Error('نشست منقضی شده و توکن تازه‌سازی موجود نیست؛ دوباره وارد شوید.');
-   const rr=await fetch(authUrl+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({refresh_token:refresh}),cache:'no-store'});
-   const fresh=await rr.json().catch(()=>({}));
-   if(!rr.ok||!fresh.access_token)throw new Error('تازه‌سازی نشست ناموفق بود (HTTP '+rr.status+'). دوباره وارد شوید.');
-   sess={...sess,...fresh,user:fresh.user||sess.user};
-   localStorage.setItem('khadem_session',JSON.stringify(sess));
-   user=fresh.user||null;
-   if(!user){const ur=await callUser(fresh.access_token);if(!ur.ok)throw new Error('تأیید هویت پس از تازه‌سازی ناموفق بود (HTTP '+ur.status+').');user=await ur.json()}
- }
- if(!user?.id)throw new Error('شناسه حساب احراز هویت‌شده پیدا نشد.');
- sess.user={...(sess.user||{}),...user};
- localStorage.setItem('khadem_session',JSON.stringify(sess));
- return {session:sess,user,accessToken:String(sess.access_token||sess.session?.access_token||sess.currentSession?.access_token||'')};
-}
 async function currentUserRole(){
  try{
-  const auth=await refreshKhademSession(false);
-  const id=String(auth.user.id);
-  const base=String(CFG.url||'').replace(/\/$/,'');
-  const query=()=>fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+auth.accessToken,Accept:'application/json'},cache:'no-store'});
-  let pr=await query();
-  if(pr.status===401){
-    const refreshed=await refreshKhademSession(true);
-    pr=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+refreshed.accessToken,Accept:'application/json'},cache:'no-store'});
-  }
-  const payload=await pr.json().catch(()=>({}));
-  if(!pr.ok){console.error('بررسی نقش در profiles ناموفق بود',{status:pr.status,details:payload.message||payload.details||payload.hint||payload.code||''});return ''}
-  if(!Array.isArray(payload)||!payload.length){console.error('پروفایل حساب احراز هویت‌شده پیدا نشد.');return ''}
-  if(payload[0].is_active===false){console.error('پروفایل حساب غیرفعال است.');return ''}
-  return String(payload[0].role||'').trim().toLowerCase();
- }catch(e){console.error('بررسی نقش حساب کامل نشد:',e?.message||e);return ''}
+  const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
+  const token=String(sess.access_token||sess.session?.access_token||'');
+  if(!token)return '';
+  const authUrl=String(CFG.url||'').replace(/\/$/,'');
+  if(!authUrl||!CFG.key)return '';
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
+  try{
+   const ur=await fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',signal:controller.signal});
+   if(!ur.ok)return '';
+   const user=await ur.json();
+   const id=String(user?.id||'');
+   if(!id)return '';
+   const pr=await fetch(authUrl+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',signal:controller.signal});
+   if(!pr.ok)return '';
+   const rows=await pr.json();
+   if(!Array.isArray(rows)||!rows.length||rows[0].is_active===false)return '';
+   return String(rows[0].role||'').trim().toLowerCase();
+  }finally{clearTimeout(timer)}
+ }catch(e){console.warn('بررسی نقش حساب کامل نشد:',e?.message||e);return ''}
 }
 async function addShrine(){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم اضافه کند.');return}const name=$('shrineName').value.trim(),city=$('shrineCity').value.trim();if(!name){toast('نام حرم الزامی است.');return}try{const r=await api('/rest/v1/shrine_sites',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name,city:city||null,is_active:true})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.hint||'خطای ثبت')}toast('محل خدمت اضافه شد.');$('shrineName').value='';$('shrineCity').value='';await loadShrines()}catch(e){toast('افزودن حرم: '+e.message)}}
 async function removeShrine(id){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم حذف کند.');return}if(!confirm('این محل از فهرست فعال حذف شود؟ سوابق قبلی خدمت حفظ می‌شوند.'))return;try{const r=await api('/rest/v1/shrine_sites?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_active:false})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||'خطا')}toast('محل از فهرست فعال خارج شد؛ سوابق قدیمی حذف نشدند.');await loadShrines()}catch(e){toast('حذف محل: '+e.message)}}
@@ -591,7 +566,7 @@ async function addKhadem(){const code=Number($('k_code').value);const b={khadem_
 async function updateKhadem(){if(!selectedKhademId){toast('پرونده‌ای برای ویرایش انتخاب نشده است.');return}const b={full_name:$('k_name').value.trim(),tri_name:$('k_tri').value.trim()||null,father_name:$('k_father').value.trim()||null,national_id:$('k_nid').value.trim()||null,phone:$('k_phone').value.trim()||null,membership_date:readDateInput('k_date')||null,birth_date:readDateInput('k_birth')||null,occupation:$('k_job').value.trim()||null,residence:$('k_residence').value.trim()||null,blood_type:$('k_blood').value||null,medical_history:$('k_medical').value.trim()||null,emergency_contact_name:$('k_emergency_name').value.trim()||null,emergency_contact_phone:$('k_emergency_phone').value.trim()||null,extra_data:{...parseExtraFields($('k_extra').value),education_level:$('k_education')?.value||null,skills:[...document.querySelectorAll('[data-k-skill]:checked')].map(x=>x.value).concat(($('k_skill_other')?.value||'').split(/[,،]/).map(x=>x.trim()).filter(Boolean)),emergency_contact_name_2:$('k_emergency_name_2')?.value.trim()||null,emergency_contact_phone_2:$('k_emergency_phone_2').value.trim()||null,emergency_contact_name_3:$('k_emergency_name_3')?.value.trim()||null,emergency_contact_phone_3:$('k_emergency_phone_3')?.value.trim()||null},responsibility:$('k_resp').value.trim()||null,notes:$('k_notes').value.trim()||null,is_active:$('k_active').value==='true'};if(!b.full_name){toast('نام و نام خانوادگی الزامی است.');return}const duplicate=findKhademDuplicate(b,selectedKhademId);if(duplicate){toast('این کد ملی قبلاً برای پرونده «'+duplicate.full_name+'» ثبت شده است؛ ذخیره تکراری مجاز نیست.');return}if($('k_date').value.trim()&&!b.membership_date){toast('تاریخ عضویت شمسی معتبر نیست.');return}if($('k_birth').value.trim()&&!b.birth_date){toast('تاریخ تولد شمسی معتبر نیست.');return}try{const r=await api('/rest/v1/khadems?id=eq.'+encodeURIComponent(selectedKhademId),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.details||('HTTP '+r.status))}toast('تغییرات پرونده ذخیره شد.');await loadKhadems();render('khadem:profile')}catch(e){toast('ویرایش پرونده: '+e.message)}}
 async function changeKhademCode(){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی مجاز به تغییر کد خادم است.');return}const k=khademCache.find(x=>String(x.id)===String(selectedKhademId));if(!k)return;const raw=prompt('کد جدید خادم را وارد کنید (عدد یکتا از ۱۰۰۰ به بالا):',String(k.khadem_code||''));if(raw===null)return;const code=Number(latinDigits(raw).trim());if(!Number.isInteger(code)||code<1000){toast('کد باید عدد صحیح و از ۱۰۰۰ به بالا باشد.');return}if(khademCache.some(x=>String(x.id)!==String(k.id)&&Number(x.khadem_code)===code)){toast('این کد قبلاً به خادم دیگری اختصاص یافته است.');return}if(!confirm('کد خادم '+k.full_name+' از '+k.khadem_code+' به '+code+' تغییر کند؟'))return;try{const r=await api('/rest/v1/khadems?id=eq.'+encodeURIComponent(k.id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({khadem_code:code})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.details||j.hint||('HTTP '+r.status))}toast('کد خادم تغییر کرد.');await loadKhadems();render('khadem:profile')}catch(e){toast('تغییر کد خادم: '+e.message)}}
 async function toggleKhadem(id){const k=khademCache.find(x=>String(x.id)===String(id));if(!k)return;const next=k.is_active===false; if(!confirm(next?'این خادم فعال شود؟':'این خادم غیرفعال شود؟'))return;try{const r=await api('/rest/v1/khadems?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_active:next})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.details||('HTTP '+r.status))}toast(next?'خادم فعال شد.':'خادم غیرفعال شد.');await loadKhadems()}catch(e){toast('تغییر وضعیت: '+e.message)}}
-async function addService(type){const sel=$('s_khadem');selectKhademByCode();let k=khademCache.find(x=>String(x.id)===String(sel?.value));if(!k){try{const code=latinDigits($('s_code')?.value||'').trim();const rr=await api('/rest/v1/khadems?select=id,khadem_code,full_name,is_active&khadem_code=eq.'+encodeURIComponent(code)+'&limit=1');const jj=await rr.json();if(rr.ok&&jj.length&&jj[0].is_active!==false){k=jj[0];if(!khademCache.some(x=>String(x.id)===String(k.id)))khademCache.push(k)}}catch(e){}}const date=readDateInput('s_date');if(!k||!date){toast('انتخاب خادم و تاریخ شمسی معتبر الزامی است.');return}const b={khadem_id:k.id,khadem_code:k.khadem_code,khadem_name:k.full_name,service_type:type,service_date:date,shrine_id:$('s_shrine')?.value||null,location:($('s_location').value.trim()||$('s_shrine')?.selectedOptions?.[0]?.textContent||null),responsibility:$('s_resp').value.trim()||null,notes:$('s_notes').value.trim()||null};try{if(type==='friday'){let checked=false,prior=[];for(const q of ['/rest/v1/service_records?select=id,service_date,khadem_id,khadem_code&khadem_id=eq.'+encodeURIComponent(String(k.id))+'&service_type=eq.friday&limit=500','/rest/v1/service_records?select=id,service_date,khadem_id,khadem_code&khadem_code=eq.'+encodeURIComponent(String(k.khadem_code))+'&service_type=eq.friday&limit=500']){try{const cr=await api(q);const cj=await cr.json().catch(()=>[]);if(cr.ok){checked=true;if(Array.isArray(cj))prior.push(...cj)}}catch(e){}}if(!checked){if(!confirm('امکان بررسی سابقه شب جمعه از پایگاه داده فراهم نشد. با آگاهی از احتمال ثبت تکراری، ادامه می‌دهید؟'))return}else{const target=Date.parse(date+'T12:00:00Z');const conflict=prior.find(x=>x.service_date&&Number.isFinite(Date.parse(String(x.service_date).slice(0,10)+'T12:00:00Z'))&&Math.abs(target-Date.parse(String(x.service_date).slice(0,10)+'T12:00:00Z'))<45*86400000);if(conflict&&!confirm('برای این خادم در تاریخ '+serviceDateLabel(conflict.service_date)+' سابقه شب جمعه وجود دارد و فاصله تا تاریخ انتخابی کمتر از ۴۵ روز است. با این حال ثبت شود؟'))return}}const r=await api('/rest/v1/service_records',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.details||j.hint||'HTTP '+r.status)}toast('سابقه خدمت با موفقیت ثبت شد.');$('s_code').value='';$('s_khadem').value='';$('s_date').value='';$('s_notes').value='';$('s_location').value='';$('s_resp').value='';await loadServiceRecords(true)}catch(e){toast('ثبت سابقه خدمت: '+e.message)}}
+async function addService(type){const b={khadem_id:$('s_khadem').value.trim(),service_type:type,service_date:readDateInput('s_date'),location:$('s_location').value.trim()||null,responsibility:$('s_resp').value.trim()||null,notes:$('s_notes').value.trim()||null};if(!b.khadem_id||!b.service_date){toast('شناسه خادم و تاریخ شمسی خدمت الزامی است. نمونه: ۱۴۰۵/۰۷/۱۷');return}try{const r=await api('/rest/v1/service_records',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.hint||('HTTP '+r.status))}toast('سابقه خدمت ثبت شد.')}catch(e){toast('ثبت خدمت: '+e.message)}}
 let chatRecipientsCache=[];
 async function loadChatRecipients(){const sel=$('chatRecipient');if(!sel)return;const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}'),myId=String(sess.user?.id||sess.user_id||'');try{const r=await api('/rest/v1/chat_recipients?select=user_id,display_name,role&order=display_name.asc&limit=500');const j=await r.json().catch(()=>[]);if(!r.ok)throw new Error(j.message||j.hint||('HTTP '+r.status));chatRecipientsCache=Array.isArray(j)?j.filter(x=>String(x.user_id)!==myId):[];sel.innerHTML='<option value="">انتخاب گیرنده…</option>'+chatRecipientsCache.map(u=>{const role=({admin:'مدیر اصلی',manager:'مدیر',user:'کاربر عادی'})[u.role]||u.role||'';return '<option value="'+esc(u.user_id)+'">'+esc((u.display_name||'کاربر سامانه')+(role?' · '+role:''))+'</option>'}).join('');if(!chatRecipientsCache.length)sel.innerHTML='<option value="">حساب دیگری برای انتخاب در دسترس نیست.</option>'}catch(e){chatRecipientsCache=[];sel.innerHTML='<option value="">فهرست گیرندگان دریافت نشد؛ اتصال یا مجوز فهرست کاربران را بررسی کنید.</option>';console.warn('فهرست گیرندگان چت:',e)} }
 function updateChatModeUI(){const mode=$('chatMode')?.value||'public',wrap=$('chatRecipientWrap'),notice=$('chatModeNotice');if(wrap)wrap.style.display=mode==='private'?'block':'none';if(notice)notice.textContent=mode==='private'?'این پیام فقط برای فرستنده و گیرنده قابل مشاهده است. گیرنده را از فهرست حساب‌های فعال انتخاب کنید.':'پیام در گفت‌وگوی همگانی برای همه کاربران واردشده قابل مشاهده است.'}
@@ -1441,7 +1416,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 </script>
 
 
-<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۴۲</div>
+<div id="khReleaseBadge" style="position:fixed;bottom:8px;left:8px;z-index:9998;font:11px Tahoma,sans-serif;opacity:.72;background:var(--card,#fff);border:1px solid var(--line,#ddd);border-radius:20px;padding:3px 9px">نسخه برنامه ۱۳۸</div>
 <script>
 /* نسخه ۸۱: تقویم شمسی سراسری، آفلاین‌محور با همگام‌سازی تاریخ امروز در صورت اتصال */
 (()=>{
@@ -1638,28 +1613,11 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
 
 <!-- فایل ۱۳۳: ثبت Service Worker؛ درخواست‌های Supabase در Service Worker کش نمی‌شوند. -->
 <script>
-/* نسخه ۱۴۲: تازه‌سازی اجباری نشست مدیر و به‌روزرسانی کنترل‌شدهٔ پوسته */
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  window.addEventListener('load', async function () {
-    try {
-      const registration = await navigator.serviceWorker.register('./service-worker.js', {
-        updateViaCache: 'none'
-      });
-      try { await registration.update(); } catch (error) {
-        console.warn('بررسی نسخهٔ جدید سرویس‌ورکر انجام نشد:', error);
-      }
-      if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      let reloaded = false;
-      navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (reloaded) return;
-        reloaded = true;
-        const target = new URL(window.location.href);
-        target.searchParams.set('app-release', '142');
-        window.location.replace(target.toString());
-      }, { once: true });
-    } catch (error) {
-      console.warn('ثبت یا به‌روزرسانی سرویس‌ورکر انجام نشد:', error);
-    }
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js').catch(function (error) {
+      console.warn('ثبت حالت نصب‌پذیر انجام نشد:', error);
+    });
   });
 }
 </script>
@@ -2262,123 +2220,87 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 })();
 </script>
 
-<!-- نسخه ۱۴۰: جلوگیری از رد دسترسی موقت هنگام بازسازی منو -->
-<script id="khadem-v140-admin-only-settings">
+<!-- نسخه ۱۳۰: مدیریت سامانه فقط برای مدیر اصلی -->
+
+<!-- نسخه ۱۳۰: مدیریت سامانه فقط برای مدیر اصلی -->
+<script id="khadem-v131-admin-only-settings">
 (function(){
  'use strict';
- if(window.__khAdminOnlySettingsV140)return;
- window.__khAdminOnlySettingsV140=true;
+ if(window.__khAdminOnlySettingsV130)return;window.__khAdminOnlySettingsV130=true;
  const $=id=>document.getElementById(id);
- let lastRole='', checking=false, requestNo=0;
-
+ let lastRole='', checking=false;
  async function verifiedRole(){
-   let role='';
+   // A non-admin/empty answer from the first helper is not final: try independent
+   // authenticated checks before denying access. Never trust a locally stored role.
+   let primaryRole='';
    try{
-     if(typeof window.currentUserRole==='function'){
-       role=String(await window.currentUserRole()||'').trim().toLowerCase();
-       if(role==='admin')return 'admin';
-     }
-   }catch(e){console.warn('بررسی اولیه نقش مدیر:',e?.message||e)}
-
-   // Retry with a freshly refreshed Supabase session before falling back.
-   // This checks the database role again; it never trusts a role from localStorage.
-   try{
-     if(typeof window.refreshKhademSession==='function'){
-       const auth=await window.refreshKhademSession(true);
-       const cfg=(typeof CFG!=='undefined'&&CFG)?CFG:(window.CFG||window.config||{});
-       const base=String(cfg.url||cfg.supabaseUrl||'').replace(/\/$/,'');
-       const key=String(cfg.key||cfg.anonKey||cfg.publishableKey||'');
-       const id=String(auth?.user?.id||'');
-       const token=String(auth?.accessToken||'');
-       if(base&&key&&id&&token){
-         const pr=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{
-           headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
-           cache:'no-store'
-         });
-         const rows=await pr.json().catch(()=>[]);
-         if(pr.ok&&Array.isArray(rows)&&rows.length&&rows[0].is_active===true){
-           const dbRole=String(rows[0].role||'').trim().toLowerCase();
-           if(dbRole==='admin')return 'admin';
-           role=dbRole||role;
-         }else{
-           console.error('تأیید نقش پس از تازه‌سازی نشست ناموفق بود',{status:pr.status,rows});
-         }
-       }
-     }
-   }catch(e){console.warn('بررسی نقش با نشست تازه ناموفق بود:',e?.message||e)}
+     if(typeof window.currentUserRole==='function')
+       primaryRole=String(await window.currentUserRole()||'').trim().toLowerCase();
+   }catch(e){console.warn('بررسی اولیه نقش ناموفق بود:',e?.message||e)}
+   if(primaryRole==='admin')return 'admin';
 
    try{
      if(typeof window.admin==='function' && await window.admin())return 'admin';
-   }catch(e){console.warn('بررسی نقش مدیر از مسیر جایگزین:',e?.message||e)}
-   return role;
- }
+   }catch(e){console.warn('بررسی جایگزین مدیر ناموفق بود:',e?.message||e)}
 
- function setSettingsVisibility(role){
-   // This function only changes navigation visibility. It must NEVER replace page
-   // content while an asynchronous role check is in progress.
-   const known=role==='admin'||role==='user'||role==='operator'||role==='manager';
-   if(!known)return;
-   const allowed=role==='admin';
-   document.querySelectorAll('#sidebar .nav-group[data-group="settings"]').forEach(el=>{
-     el.style.display=allowed?'':'none';
-     el.setAttribute('aria-hidden',String(!allowed));
-   });
- }
-
- async function refresh(){
-   if(checking)return;
-   checking=true;
-   const myRequest=++requestNo;
    try{
-     const role=await verifiedRole();
-     if(myRequest!==requestNo)return;
-     lastRole=role;
-     setSettingsVisibility(role);
-   }finally{checking=false}
+     const sess=JSON.parse(localStorage.getItem('khadem_session')||'{}');
+     const token=String(sess.access_token||sess.session?.access_token||sess.currentSession?.access_token||'');
+     const cfg=(typeof CFG!=='undefined'&&CFG)?CFG:(window.CFG||window.config||{});
+     const base=String(cfg.url||cfg.supabaseUrl||'').replace(/\/$/,'');
+     const key=String(cfg.key||cfg.anonKey||cfg.publishableKey||'');
+     if(!token||!base||!key){
+       console.warn('بررسی دسترسی مدیر: نشست یا تنظیمات احراز هویت کامل نیست.');
+       return primaryRole;
+     }
+     let id=String(sess.user?.id||sess.user?.sub||sess.user_id||sess.session?.user?.id||sess.currentSession?.user?.id||'');
+     if(!id){
+       const ur=await fetch(base+'/auth/v1/user',{
+         headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
+         cache:'no-store'
+       });
+       if(!ur.ok){console.warn('بررسی هویت مدیر با خطای HTTP',ur.status);return primaryRole}
+       const user=await ur.json();id=String(user?.id||'');
+     }
+     if(!id)return primaryRole;
+     const r=await fetch(base+'/rest/v1/profiles?select=id,role,is_active&id=eq.'+encodeURIComponent(id)+'&limit=1',{
+       headers:{apikey:key,Authorization:'Bearer '+token,Accept:'application/json'},
+       cache:'no-store'
+     });
+     if(!r.ok){console.warn('بررسی نقش مدیر از profiles با خطای HTTP',r.status);return primaryRole}
+     const rows=await r.json();
+     if(Array.isArray(rows)&&rows[0]?.is_active!==false&&String(rows[0]?.role||'').trim().toLowerCase()==='admin')return 'admin';
+     return primaryRole || String(rows?.[0]?.role||'').trim().toLowerCase();
+   }catch(e){console.warn('بررسی نهایی نقش ناموفق بود:',e?.message||e);return primaryRole}
  }
-
+ function setSettingsVisibility(role){
+   const allowed=role==='admin';
+   document.querySelectorAll('#sidebar .nav-group[data-group="settings"]').forEach(el=>{el.style.display=allowed?'':'none';el.setAttribute('aria-hidden',String(!allowed));});
+   if(!allowed&&String(window.khademCurrentPage||'').split(':')[0]==='settings'){
+     const content=$('content');if(content)content.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">سامانه نتوانست نقش «مدیر اصلی» را از نشست و پروفایل تأیید کند. از حساب مدیر اصلی خارج شوید و دوباره وارد شوید؛ اگر خطا باقی ماند، پاسخ احراز هویت یا مجوز خواندن پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
+   }
+ }
+ async function refresh(){if(checking)return;checking=true;try{const role=await verifiedRole();lastRole=role;setSettingsVisibility(role)}finally{checking=false}}
  const oldBuild=window.buildNav;
- if(typeof oldBuild==='function')window.buildNav=function(){
-   const out=oldBuild.apply(this,arguments);
-   setSettingsVisibility(lastRole);
-   refresh();
-   return out;
- };
-
+ if(typeof oldBuild==='function')window.buildNav=function(){const out=oldBuild.apply(this,arguments);setSettingsVisibility('');refresh();return out};
  const oldRender=window.render;
  if(typeof oldRender==='function')window.render=function(page){
    const target=String(page||'dashboard');
    if(target.split(':')[0]==='settings'){
-     const content=$('content');
-     if(content)content.innerHTML='<div class="card"><h2>بررسی دسترسی مدیر</h2><div class="notice">در حال تأیید نشست ورود و نقش ثبت‌شده…</div></div>';
-     const myRequest=++requestNo;
-     verifiedRole().then(role=>{
-       if(myRequest!==requestNo)return;
-       lastRole=role;
-       setSettingsVisibility(role);
-       if(role==='admin'){
-         oldRender.call(this,target);
-       }else{
-         const c=$('content');
-         if(c)c.innerHTML='<div class="card"><h2>دسترسی تأیید نشد</h2><div class="notice">حساب جاری از پایگاه داده به‌عنوان مدیر اصلی تأیید نشد. لطفاً از حساب خارج شوید و دوباره وارد شوید. اگر ادامه داشت، وضعیت نقش و پاسخ درخواست پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
-       }
-     }).catch(e=>{
-       console.error('بررسی دسترسی مدیریت سامانه ناموفق بود:',e);
-       const c=$('content');
-       if(c)c.innerHTML='<div class="card"><h2>بررسی دسترسی ناموفق بود</h2><div class="notice">ارتباط با سرویس احراز هویت یا پروفایل کامل نشد. دوباره تلاش کنید.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>';
-     });
+     const content=$('content');if(content)content.innerHTML='<div class="card"><h2>بررسی دسترسی…</h2><div class="notice">در حال بررسی مجوز مدیر اصلی.</div></div>';
+     verifiedRole().then(role=>{setSettingsVisibility(role);if(role==='admin'){oldRender.call(this,target)}else{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">سامانه نتوانست نقش «مدیر اصلی» را از نشست و پروفایل تأیید کند. از حساب مدیر اصلی خارج شوید و دوباره وارد شوید؛ اگر خطا باقی ماند، پاسخ احراز هویت یا مجوز خواندن پروفایل باید بررسی شود.</div><button class="btn primary" onclick="render(\'dashboard\')">بازگشت به داشبورد</button></div>'}}).catch(()=>{const c=$('content');if(c)c.innerHTML='<div class="card"><h2>دسترسی غیرمجاز</h2><div class="notice">تأیید نقش مدیر اصلی ناموفق بود. نشست ورود و پاسخ احراز هویت/پروفایل بررسی شود.</div></div>'});
      return;
    }
    return oldRender.apply(this,arguments);
  };
-
- function watch(){refresh()}
+ // The initial menu is hidden until the role check completes. Refresh after login/logout without requiring a page reload.
+ function watch(){refresh();}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});else watch();
  window.addEventListener('focus',watch);
- window.addEventListener('online',watch);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)watch()});
+ setInterval(()=>{const roleNow=JSON.parse(localStorage.getItem('khadem_session')||'{}').access_token?'signed-in':'signed-out';if(roleNow!==window.__khAdminOnlyLastSession){window.__khAdminOnlyLastSession=roleNow;refresh()}},3000);
 })();
 </script>
 
+<!-- نسخه ۱۳۹: رفع مسیر جایگزین تشخیص مدیر و گروه‌بندی تو‌در‌توی زیرمنوها -->
 </body>
 </html>
