@@ -21,6 +21,8 @@
     meetings: [],
     deployments: [],
     finance: [],
+    tuitionDues: [],
+    financeInstallments: [],
     fund: [],
     donors: [],
     selectedKhadem: null,
@@ -154,6 +156,8 @@
       ["meetings", "meetings"],
       ["deployments", "deployments"],
       ["finance", "finance_transactions"],
+      ["tuitionDues", "tuition_dues"],
+      ["financeInstallments", "finance_installments"],
       ["fund", "fund_transactions"],
       ["donors", "donors"]
     ];
@@ -301,8 +305,10 @@
     const labels = {
       id:"شناسه", khadem_code:"کد خادم", code:"کد", full_name:"نام و نام خانوادگی", name:"نام",
       first_name:"نام", last_name:"نام خانوادگی", family:"نام خانوادگی", father_name:"نام پدر",
-      national_code:"کد ملی", phone:"تلفن همراه", mobile:"تلفن همراه", email:"ایمیل",
-      birth_date:"تاریخ تولد", address:"نشانی", status:"وضعیت", active:"فعال",
+      national_code:"کد ملی", national_id:"کد ملی", phone:"تلفن همراه", mobile:"تلفن همراه", email:"ایمیل",
+      triple_name:"نام سه‌گانه", tri_name:"نام سه‌گانه", membership_date:"تاریخ عضویت",
+      birth_date:"تاریخ تولد", address:"نشانی", residence:"محل سکونت", status:"وضعیت", active:"فعال", is_active:"وضعیت فعالیت",
+      primary_responsibility:"مسئولیت اصلی", job:"شغل", occupation:"شغل", blood_type:"گروه خونی", medical_history:"سوابق پزشکی",
       skills:"مهارت‌ها", education_level:"سطح تحصیلات", marital_status:"وضعیت تأهل",
       emergency_contact_name:"نام تماس اضطراری", emergency_contact_phone:"تلفن تماس اضطراری",
       emergency_contact_name_2:"نام تماس اضطراری دوم", emergency_contact_name_3:"نام تماس اضطراری سوم",
@@ -407,6 +413,8 @@
     if (!k) return `<h1 class="kj-page-title">پرونده خادم</h1>${empty("خادم انتخاب نشده است.")}<button class="kj-secondary" id="kj-back">بازگشت</button>`;
     const services = relatedRows(state.services, k);
     const finances = relatedRows(state.finance, k);
+    const tuitionDues = relatedRows(state.tuitionDues, k);
+    const installments = relatedRows(state.financeInstallments, k);
     const fields = dataFields(k, ["id"]);
     const serviceCols = [
       {key:"service_date",label:"تاریخ خدمت"},
@@ -419,18 +427,41 @@
       {key:"category",label:"دسته‌بندی"},
       {key:"title",label:"عنوان"},
       {key:"amount",label:"مبلغ ثبت‌شده"},
+      {key:"paid_amount",label:"مبلغ پرداخت‌شده"},
+      {key:"balance",label:"مانده / بدهی"},
       {key:"transaction_date",label:"تاریخ تراکنش"},
       {key:"description",label:"شرح"}
     ];
-    const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,[key, ...(key==="service_date"?["date","created_at"]:key==="description"?["notes","note"]:[])])]));
-    const financeRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","transaction_date","description"])}));
+    const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,
+      key==="service_date" ? [key,"date","created_at"] :
+      key==="description" ? [key,"notes","note"] :
+      key==="amount" ? [key,"total_amount","amount_toman","total_amount_toman"] :
+      key==="paid_amount" ? [key,"amount_paid","paid_toman","paid_amount_toman"] :
+      key==="balance" ? [key,"remaining_amount","remaining_toman","debt","balance_toman"] :
+      [key]
+    )]));
+    const financeTransactionRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","paid_amount","balance","transaction_date","description"])}));
+    const tuitionRows = tuitionDues.map(r => ({
+      ...r, transaction_type: "شهریه", category: "شهریه ماهانه",
+      title: "شهریه " + dateText(r.period_month), amount: r.amount_toman,
+      paid_amount: r.paid_toman, balance: Math.max(0, num(r.amount_toman) - num(r.paid_toman)),
+      transaction_date: r.period_month, description: val(r, ["notes"]) || r.status
+    }));
+    const installmentRows = installments.map(r => ({
+      ...r, transaction_type: "قسط", category: "اقساط",
+      title: "قسط شماره " + fa(r.installment_number), amount: r.amount,
+      paid_amount: r.paid_amount, balance: Math.max(0, num(r.amount) - num(r.paid_amount)),
+      transaction_date: r.due_date, description: val(r, ["notes"]) || r.status
+    }));
+    const financeRows = [...financeTransactionRows, ...tuitionRows, ...installmentRows];
+    const financeLoadError = state.errors.finance_transactions || state.errors.tuition_dues || state.errors.finance_installments;
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
       <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
       <div class="kj-card"><h3 class="kj-section-title" style="margin-top:0">مشخصات خادم</h3>${fields}</div>
-      <div class="kj-card" style="margin-top:14px"><div class="kj-grid" style="margin:0"><div><div class="kj-muted">کد خادم</div><b>${esc(khademCode(k) || "—")}</b></div><div><div class="kj-muted">تعداد سوابق خدمت</div><b>${fa(services.length)}</b></div><div><div class="kj-muted">تعداد تراکنش‌های مالی</div><b>${fa(finances.length)}</b></div></div></div>
-      <div class="kj-card" style="margin-top:14px">${relatedSection("سوابق خدمت","services",serviceRows,serviceCols,"هنوز سابقه خدمتی برای این خادم ثبت نشده است.")}</div>
-      <div class="kj-card" style="margin-top:14px">${relatedSection("سوابق مالی خادم","finance",financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است.")}</div>`;
+      <div class="kj-card" style="margin-top:14px"><div class="kj-grid" style="margin:0"><div><div class="kj-muted">کد خادم</div><b>${esc(khademCode(k) || "—")}</b></div><div><div class="kj-muted">تعداد سوابق خدمت</div><b>${fa(services.length)}</b></div><div><div class="kj-muted">تعداد تراکنش‌های مالی</div><b>${fa(financeRows.length)}</b></div></div></div>
+      <div class="kj-card" style="margin-top:14px">${relatedSection("سوابق خدمت","service_records",serviceRows,serviceCols,"هنوز سابقه خدمتی برای این خادم ثبت نشده است.")}</div>
+      <div class="kj-card" style="margin-top:14px"><h3 class="kj-section-title">سوابق مالی خادم</h3>${errBox("finance_transactions")}${errBox("tuition_dues")}${errBox("finance_installments")}${financeLoadError ? empty("به دلیل خطای دریافت، خالی بودن سوابق مالی قابل تأیید نیست.") : tableHtml(financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است")}</div>`;
   }
   function genericPage(key, title, rows, preferredColumns) {
     const cols = preferredColumns || (rows.length ? Object.keys(rows[0]).filter(k => !["id","updated_at","created_at"].includes(k)).slice(0,5).map(k=>({key:k,label:fieldLabel(k)})) : []);
