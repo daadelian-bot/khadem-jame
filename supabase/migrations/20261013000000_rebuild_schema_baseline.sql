@@ -1,6 +1,6 @@
 -- REBUILD BASELINE generated from live schema of khadem-jame-next on 2026-10-13.
 -- Includes tables, constraints, indexes, functions, triggers, RLS policies, grants, and views.
--- Schema only: no production rows, Auth users, or Storage objects are included.
+-- Views are ordered by dependencies. Schema only: no production rows, Auth users, or Storage objects.
 -- Intended for a fresh recovery project; review Supabase Auth/Storage settings separately.
 
 CREATE SCHEMA IF NOT EXISTS private;
@@ -587,59 +587,6 @@ CREATE INDEX IF NOT EXISTS meeting_attendance_v141_khadem_idx ON public.meeting_
 
 CREATE UNIQUE INDEX app_settings_v141_id_uidx ON public.app_settings USING btree (id);
 
-CREATE OR REPLACE VIEW public.finance_balance_summary WITH (security_invoker=true) AS  SELECT COALESCE(sum(
-        CASE
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text])) AND status = 'posted'::text THEN amount
-            ELSE 0::numeric
-        END), 0::numeric) AS total_income,
-    COALESCE(sum(
-        CASE
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN amount
-            ELSE 0::numeric
-        END), 0::numeric) AS total_expense,
-    COALESCE(sum(
-        CASE
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text])) AND status = 'posted'::text THEN amount
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN - amount
-            ELSE 0::numeric
-        END), 0::numeric) AS balance
-   FROM finance_transactions;;
-
-CREATE OR REPLACE VIEW public.friday_overdue WITH (security_invoker=true) AS  SELECT id,
-    khadem_code,
-    full_name,
-    tri_name,
-    status,
-    main_count,
-    friday_count,
-    first_main_date,
-    last_main_date,
-    first_friday_date,
-    last_friday_date,
-    CURRENT_DATE - last_friday_date AS days_since_friday
-   FROM khadem_service_summary
-  WHERE status = 'active'::text AND (last_friday_date IS NULL OR (CURRENT_DATE - last_friday_date) > COALESCE(( SELECT (system_settings.value_json #>> '{}'::text[])::integer AS int4
-           FROM system_settings
-          WHERE system_settings.key = 'friday_cycle_days'::text), 45));;
-
-CREATE OR REPLACE VIEW public.fund_balance_summary WITH (security_invoker=true) AS  SELECT COALESCE(sum(
-        CASE
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text, 'donation'::text])) AND status = 'posted'::text THEN amount
-            ELSE 0::numeric
-        END), 0::numeric) AS total_income,
-    COALESCE(sum(
-        CASE
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN amount
-            ELSE 0::numeric
-        END), 0::numeric) AS total_expense,
-    COALESCE(sum(
-        CASE
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text, 'donation'::text])) AND status = 'posted'::text THEN amount
-            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN - amount
-            ELSE 0::numeric
-        END), 0::numeric) AS balance
-   FROM fund_transactions;;
-
 CREATE OR REPLACE VIEW public.khadem_service_summary WITH (security_invoker=true) AS  SELECT k.id,
     k.khadem_code,
     k.full_name,
@@ -689,6 +636,23 @@ CREATE OR REPLACE VIEW public.khadems_compat WITH (security_invoker=true) AS  SE
     tri_name AS triad_name
    FROM khadems k;;
 
+CREATE OR REPLACE VIEW public.friday_overdue WITH (security_invoker=true) AS  SELECT id,
+    khadem_code,
+    full_name,
+    tri_name,
+    status,
+    main_count,
+    friday_count,
+    first_main_date,
+    last_main_date,
+    first_friday_date,
+    last_friday_date,
+    CURRENT_DATE - last_friday_date AS days_since_friday
+   FROM khadem_service_summary
+  WHERE status = 'active'::text AND (last_friday_date IS NULL OR (CURRENT_DATE - last_friday_date) > COALESCE(( SELECT (system_settings.value_json #>> '{}'::text[])::integer AS int4
+           FROM system_settings
+          WHERE system_settings.key = 'friday_cycle_days'::text), 45));;
+
 CREATE OR REPLACE VIEW public.meeting_attendance_summary WITH (security_invoker=true) AS  SELECT k.id,
     k.khadem_code,
     k.full_name,
@@ -714,6 +678,42 @@ CREATE OR REPLACE VIEW public.meeting_stats_summary WITH (security_invoker=true)
      LEFT JOIN meeting_invitees mi ON mi.meeting_id = m.id
      LEFT JOIN meeting_attendance ma ON ma.meeting_id = m.id AND ma.khadem_id = mi.khadem_id
   GROUP BY m.meeting_type;;
+
+CREATE OR REPLACE VIEW public.finance_balance_summary WITH (security_invoker=true) AS  SELECT COALESCE(sum(
+        CASE
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text])) AND status = 'posted'::text THEN amount
+            ELSE 0::numeric
+        END), 0::numeric) AS total_income,
+    COALESCE(sum(
+        CASE
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN amount
+            ELSE 0::numeric
+        END), 0::numeric) AS total_expense,
+    COALESCE(sum(
+        CASE
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text])) AND status = 'posted'::text THEN amount
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN - amount
+            ELSE 0::numeric
+        END), 0::numeric) AS balance
+   FROM finance_transactions;;
+
+CREATE OR REPLACE VIEW public.fund_balance_summary WITH (security_invoker=true) AS  SELECT COALESCE(sum(
+        CASE
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text, 'donation'::text])) AND status = 'posted'::text THEN amount
+            ELSE 0::numeric
+        END), 0::numeric) AS total_income,
+    COALESCE(sum(
+        CASE
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN amount
+            ELSE 0::numeric
+        END), 0::numeric) AS total_expense,
+    COALESCE(sum(
+        CASE
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['income'::text, 'receipt'::text, 'دریافت'::text, 'donation'::text])) AND status = 'posted'::text THEN amount
+            WHEN (lower(COALESCE(transaction_type, ''::text)) = ANY (ARRAY['expense'::text, 'payment'::text, 'پرداخت'::text])) AND status = 'posted'::text THEN - amount
+            ELSE 0::numeric
+        END), 0::numeric) AS balance
+   FROM fund_transactions;;
 
 CREATE TRIGGER v141_sync_chat_compat_fields BEFORE INSERT OR UPDATE ON chat_messages FOR EACH ROW EXECUTE FUNCTION private.sync_v141_compat_fields();
 
