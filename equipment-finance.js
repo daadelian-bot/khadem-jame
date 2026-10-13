@@ -97,7 +97,7 @@
     if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">حساب هیئت، موجودی مجموعه و پرونده مالی خادم</span></div>' +
       '<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + tabs + '</div>' + html;
     if (content) content.querySelectorAll('[data-eq-tab]').forEach(button => button.addEventListener('click', () => { activeSection = button.dataset.eqTab; renderPage(); }));
-    if (content && activeSection !== 'nonattendance') {
+    if (content) {
       const selectors = {
         receipt: ['۱. ثبت دریافت وسایل از هیئت'],
         issue: ['۲. ثبت تحویل وسیله به خادم'],
@@ -445,7 +445,7 @@
       const panel = document.createElement('section');
       panel.id = 'eqServiceAbsenceHistory';
       panel.className = 'card section';
-      panel.innerHTML = '<h3>عدم حضور در ' + kindTitle + '</h3>' +
+      panel.innerHTML = '<h3>ثبت و پیگیری عدم حضور در ' + kindTitle + '</h3>' +
         '<p class="muted">اگر خادم پس از طی مراحل اعزام و حتی پس از پرداخت هزینه نتوانست حاضر شود، پرونده را همین‌جا ثبت کنید. این سابقه به‌عنوان خدمت انجام‌شده محاسبه نمی‌شود و پرداخت‌ها را خودکار تغییر نمی‌دهد.</p>' +
         '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div class="card"><span class="muted">تعداد پرونده‌های عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(rows.length)) + '</b></div><div class="card"><span class="muted">هزینه پرداخت‌شده مرتبط</span><b style="display:block;font-size:20px">' + esc(money(paid)) + '</b></div></div>' +
         '<form id="eqAbsenceForm" class="card" style="margin:12px 0"><h4>ثبت عدم حضور در ' + kindTitle + '</h4><div class="form-grid">' +
