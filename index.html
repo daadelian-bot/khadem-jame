@@ -1,99 +1,7 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<!-- KJ_AUTH_GATE_V1: redesigned login, auth-only access gate -->
-<style id="kj-auth-gate-style">
-html.kj-auth-pending #app{display:none!important}
-#kj-auth-gate{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:auto;padding:20px;background:radial-gradient(circle at 12% 8%,#dce9dd,transparent 42%),linear-gradient(145deg,#f8f6ef,#e8eee8);font-family:"Vazirmatn",Tahoma,sans-serif;color:#18332e}
-#kj-auth-gate *{box-sizing:border-box}
-#kj-auth-gate .kj-auth-wrap{width:min(100%,440px);margin:auto}
-#kj-auth-gate .kj-auth-brand{text-align:center;margin:0 auto 18px}
-#kj-auth-gate .kj-auth-seal{width:68px;height:68px;border-radius:22px;margin:0 auto 12px;display:grid;place-items:center;background:linear-gradient(145deg,#286052,#10372f);color:#fff;border:1px solid #c6a45c;font-size:28px;box-shadow:0 10px 28px #123c3420}
-#kj-auth-gate .kj-auth-brand h1{font-size:21px;line-height:1.8;margin:0;font-weight:900}
-#kj-auth-gate .kj-auth-brand p{font-size:12px;color:#63756f;margin:4px 0}
-#kj-auth-gate .kj-auth-card{padding:27px 24px;border-radius:25px;background:#ffffffed;border:1px solid #fff;box-shadow:0 22px 60px #183c2b16}
-#kj-auth-gate .kj-auth-eyebrow{font-size:12px;font-weight:800;color:#8b6c30}
-#kj-auth-gate .kj-auth-card h2{font-size:23px;margin:8px 0}
-#kj-auth-gate .kj-auth-intro{font-size:13px;line-height:2;color:#64756f;margin:0 0 18px}
-#kj-auth-gate .kj-auth-field{display:block;margin:14px 0}
-#kj-auth-gate .kj-auth-field span{display:block;font-size:13px;font-weight:800;margin-bottom:7px}
-#kj-auth-gate .kj-auth-field input{width:100%;height:49px;border:1px solid #dce4de;border-radius:13px;padding:12px 14px;font:inherit;font-size:14px;background:#fbfcfa;outline:none}
-#kj-auth-gate .kj-auth-field input:focus{border-color:#347568;box-shadow:0 0 0 3px #34756819}
-#kj-auth-gate .kj-auth-primary{width:100%;min-height:50px;border:0;border-radius:14px;background:linear-gradient(100deg,#1c554a,#10372f);color:white;font:inherit;font-size:15px;font-weight:800;margin-top:8px;cursor:pointer}
-#kj-auth-gate .kj-auth-primary:disabled{opacity:.65;cursor:wait}
-#kj-auth-gate .kj-auth-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:15px}
-#kj-auth-gate .kj-auth-link{border:0;background:transparent;padding:6px 0;color:#174b43;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
-#kj-auth-gate .kj-auth-status{display:none;margin:13px 0 0;padding:11px 12px;border-radius:12px;font-size:12px;line-height:1.9;overflow-wrap:anywhere}
-#kj-auth-gate .kj-auth-status.show{display:block}
-#kj-auth-gate .kj-auth-status.error{background:#fff0ef;color:#a83232}
-#kj-auth-gate .kj-auth-status.ok{background:#edf7ef;color:#20643c}
-#kj-auth-gate .kj-auth-note{margin-top:17px;padding:12px;border-radius:13px;background:#f0f5f0;color:#52665e;font-size:11px;line-height:2}
-#kj-auth-gate .kj-auth-foot{text-align:center;color:#75827d;font-size:11px;line-height:2;margin:15px 8px 0}
-@media(max-width:390px){#kj-auth-gate{padding:14px}#kj-auth-gate .kj-auth-card{padding:22px 18px}#kj-auth-gate .kj-auth-brand h1{font-size:19px}}
-</style>
-<script id="kj-auth-gate-script">
-(function(){
-'use strict';
-var AUTH_URL='https://fxxtyfurdzpzfvweoppo.supabase.co';
-var AUTH_KEY='sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
-var SESSION_KEY='khadem_session';
-document.documentElement.classList.add('kj-auth-pending');
-function readSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'{}')}catch(e){return {}}}
-function saveSession(s){localStorage.setItem(SESSION_KEY,JSON.stringify(s));if(s.user&&s.user.email)localStorage.setItem('khadem_last_email',s.user.email)}
-function clearSession(){localStorage.removeItem(SESSION_KEY)}
-async function authRequest(path,body,token){
- var headers={'apikey':AUTH_KEY,'Content-Type':'application/json','Accept':'application/json'};
- if(token)headers.Authorization='Bearer '+token;
- var response=await fetch(AUTH_URL+path,{method:'POST',headers:headers,body:JSON.stringify(body||{}),cache:'no-store',credentials:'omit'});
- var data={};try{data=await response.json()}catch(e){}
- if(!response.ok)throw new Error(data.msg||data.message||data.error_description||data.error||('HTTP '+response.status));
- return data;
-}
-function showGate(){
- if(document.getElementById('kj-auth-gate'))return;
- var gate=document.createElement('div');gate.id='kj-auth-gate';
- gate.innerHTML='<main class="kj-auth-wrap"><header class="kj-auth-brand"><div class="kj-auth-seal" aria-hidden="true">✦</div><h1>سامانه جامع خادمین</h1><p>مجموعة السیدة زینب سلام الله علیها</p></header><section class="kj-auth-card"><div class="kj-auth-eyebrow">دسترسی امن و مدیریت‌شده</div><h2 id="kj-auth-title">ورود به سامانه</h2><p class="kj-auth-intro">برای حفاظت از پرونده‌ها و سوابق مالی، با حساب کاربری تأییدشده خود وارد شوید.</p><form id="kj-auth-form" autocomplete="on"><label class="kj-auth-field"><span>ایمیل حساب کاربری</span><input id="kj-auth-email" type="email" inputmode="email" autocomplete="username" placeholder="ایمیل ثبت‌شده" required></label><label class="kj-auth-field"><span>رمز عبور</span><input id="kj-auth-password" type="password" autocomplete="current-password" placeholder="رمز عبور حساب" required></label><button id="kj-auth-submit" class="kj-auth-primary" type="submit">ورود امن به سامانه</button></form><div class="kj-auth-links"><button id="kj-auth-recover" class="kj-auth-link" type="button">فراموشی رمز عبور</button><button id="kj-auth-clear" class="kj-auth-link" type="button">پاک‌کردن فرم</button></div><div id="kj-auth-status" class="kj-auth-status" role="status" aria-live="polite"></div><div class="kj-auth-note"><b>حفاظت از اطلاعات:</b> ورود بدون احراز هویت فعال نیست. دسترسی به اطلاعات خادمین و امور مالی باید پس از تأیید حساب و مجوزهای سمت سرور انجام شود.</div></section><p class="kj-auth-foot">اگر حساب ندارید یا دسترسی شما غیرفعال شده است، با مدیر سامانه تماس بگیرید.</p></main>';
- document.body.appendChild(gate);
- var form=document.getElementById('kj-auth-form'),email=document.getElementById('kj-auth-email'),password=document.getElementById('kj-auth-password'),submit=document.getElementById('kj-auth-submit'),status=document.getElementById('kj-auth-status');
- function message(t,type){status.textContent=t;status.className='kj-auth-status show '+(type||'')}
- form.addEventListener('submit',async function(e){
-  e.preventDefault();if(!email.value.trim()||!password.value){message('ایمیل و رمز عبور را وارد کنید.','error');return}
-  submit.disabled=true;submit.textContent='در حال بررسی اطلاعات…';message('','');
-  try{
-   var result=await authRequest('/auth/v1/token?grant_type=password',{email:email.value.trim(),password:password.value});
-   if(!result.access_token||!result.user)throw new Error('سرور نشست معتبر ورود را برنگرداند.');
-   saveSession({access_token:result.access_token,refresh_token:result.refresh_token||null,token_type:result.token_type||'bearer',expires_at:result.expires_at||Math.floor(Date.now()/1000)+(result.expires_in||3600),user:result.user});
-   localStorage.setItem('kj_access_token',result.access_token);localStorage.setItem('kj_user',JSON.stringify(result.user));
-   message('ورود موفق بود؛ در حال بازکردن سامانه…','ok');location.reload();
-  }catch(err){message('ورود انجام نشد. ایمیل و رمز را بررسی کنید؛ اگر حساب تأیید نشده یا غیرفعال است با مدیر سامانه تماس بگیرید. '+err.message,'error')}
-  finally{submit.disabled=false;submit.textContent='ورود امن به سامانه'}
- });
- document.getElementById('kj-auth-clear').addEventListener('click',function(){form.reset();message('','')});
- document.getElementById('kj-auth-recover').addEventListener('click',async function(){
-  var address=email.value.trim();if(!address){message('ابتدا ایمیل حساب خود را وارد کنید.','error');email.focus();return}
-  var btn=this;btn.disabled=true;btn.textContent='در حال ارسال…';
-  try{await authRequest('/auth/v1/recover?redirect_to='+encodeURIComponent(new URL('reset-password.html',location.href).href),{email:address});message('اگر این ایمیل به حسابی تعلق داشته باشد، دستور بازیابی ارسال می‌شود. پوشه هرزنامه را هم بررسی کنید.','ok')}
-  catch(err){message('درخواست بازیابی ارسال نشد: '+err.message,'error')}
-  finally{btn.disabled=false;btn.textContent='فراموشی رمز عبور'}
- });
-}
-async function init(){
- var session=readSession();
- if(session.access_token){
-  try{
-   var response=await fetch(AUTH_URL+'/auth/v1/user',{headers:{apikey:AUTH_KEY,Authorization:'Bearer '+session.access_token},cache:'no-store'});
-   if(response.ok){var user=await response.json();session.user=user;saveSession(session);localStorage.setItem('kj_access_token',session.access_token);localStorage.setItem('kj_user',JSON.stringify(user));document.documentElement.classList.remove('kj-auth-pending');return}
-  }catch(e){}
-  if(session.refresh_token){
-   try{var refreshed=await authRequest('/auth/v1/token?grant_type=refresh_token',{refresh_token:session.refresh_token});if(refreshed.access_token&&refreshed.user){saveSession({access_token:refreshed.access_token,refresh_token:refreshed.refresh_token||session.refresh_token,token_type:refreshed.token_type||'bearer',expires_at:refreshed.expires_at||Math.floor(Date.now()/1000)+(refreshed.expires_in||3600),user:refreshed.user});localStorage.setItem('kj_access_token',refreshed.access_token);localStorage.setItem('kj_user',JSON.stringify(refreshed.user));location.reload();return}}catch(e){}
-  }
-  clearSession();localStorage.removeItem('kj_access_token');localStorage.removeItem('kj_user');
- }
- showGate();
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();
-</script>
+<!-- Authentication gate removed; app shell starts directly. -->
 
 <meta name="app-release" content="148">
 <meta charset="utf-8">
@@ -160,37 +68,6 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 <style id="khadem-menu-fix110">
 @media(max-width:760px){#sidebar.show{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;right:0!important;top:126px!important;z-index:99999!important;width:min(88vw,350px)!important;height:calc(100dvh - 126px)!important;overflow-y:auto!important;background:linear-gradient(180deg,#382116,#24150f)!important;color:#fff!important;transform:none!important}#sidebar.show .nav-group{display:block!important;visibility:visible!important}#sidebar.show .nav-main{display:flex!important;visibility:visible!important;pointer-events:auto!important}#sidebar.show .nav-group.open>.submenu{display:block!important;visibility:visible!important;opacity:1!important}}
 #sidebar .nav-group.open>.submenu{display:block!important}
-</style>
-
-<style id="khadem-login-v118">
-
-.login-card.login-card-pro{width:min(100%,560px);padding:clamp(20px,4vw,38px);border-radius:30px!important;background:linear-gradient(155deg,#fffdf9 0%,#f8f1e8 100%);border:1px solid #fff9;box-shadow:0 32px 90px #0006;position:relative;overflow:hidden}
-.login-card-pro:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#c49a5a,#6d4428,#d7bd8d)}
-.login-card-pro .logo{display:block;width:82px;height:82px;object-fit:contain;margin:4px auto 14px;border-radius:24px;box-shadow:0 10px 28px #65432822}
-.login-card-pro .brand{text-align:center;margin-bottom:20px}.login-card-pro .brand h1{font-size:clamp(21px,4vw,29px);line-height:1.6;margin:0;color:#352116;font-weight:900}.login-card-pro .brand p{margin:4px 0 0;color:#80664f;line-height:1.9;font-size:13px}
-.login-card-pro .login-clock{border:1px solid #eadbc7;background:#fffaf3;border-radius:16px;padding:12px 15px;margin-bottom:20px}
-.login-card-pro .field{margin:13px 0}.login-card-pro .field label{display:block;font-weight:800;color:#493322;margin:0 0 7px}.login-card-pro .field input{width:100%;min-height:50px;border:1px solid #dfd0bd;background:#fff;border-radius:14px;padding:12px 14px;font:inherit;outline:none;transition:border-color .2s,box-shadow .2s}.login-card-pro .field input:focus{border-color:#9b6c38;box-shadow:0 0 0 4px #b88b5124}
-.login-card-pro .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.login-card-pro .btn{min-height:47px;border-radius:14px;font-weight:800}.login-card-pro .btn.primary{background:linear-gradient(135deg,#70472a,#3b2418);box-shadow:0 8px 18px #4a2a1930}.login-card-pro .login-utility{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}.login-card-pro .login-utility button{border:0;background:transparent;color:#77502e;font:inherit;font-size:12px;font-weight:800;text-decoration:underline;text-underline-offset:3px;padding:7px 0;cursor:pointer}.login-card-pro .status{line-height:1.9;margin-top:16px;padding:12px 14px;border-radius:14px;background:#f5eee5;color:#705840;font-size:12px;overflow-wrap:anywhere}
-#signupNameWrap,#signupConfirmWrap{display:none}.login-card-pro.is-signup #signupNameWrap,.login-card-pro.is-signup #signupConfirmWrap{display:block}.login-card-pro.is-signup .login-clock{display:none}.login-card-pro.is-signup .brand h1:after{content:" · درخواست عضویت";display:block;font-size:13px;color:#8c633d;font-weight:700}.login-card-pro.is-signup .login-caption{background:#f1e6d8;border-radius:12px;padding:10px}.login-card-pro.is-signup #email{autocomplete:tel}.login-card-pro.is-signup .actions{grid-template-columns:1fr}.login-card-pro .login-caption{display:flex;gap:8px;align-items:flex-start;margin-top:16px;color:#806c59;font-size:11px;line-height:1.8}.login-card-pro .login-caption span:first-child{font-size:18px}
-@media(max-width:480px){.login-card.login-card-pro{padding:22px 18px;border-radius:24px!important}.login-card-pro .actions{grid-template-columns:1fr}.login-card-pro .login-clock{font-size:12px}.login-card-pro .logo{width:70px;height:70px}}
-.login-card-pro.is-signup #signupConfirmWrap{display:block}
-[data-navorder]{min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px}
-[data-subparent]{max-width:190px;min-height:36px;border:1px solid var(--line,#ddd);border-radius:8px;padding:5px;background:var(--card,#fff);color:inherit}
-/* نسخه ۱۳۹: گروه‌های بازشونده زیرمنوی مدیریت سامانه */
-.nav-group[data-group="settings"] .settings-subgroup{margin:5px 0;border:1px solid #ffffff1a;border-radius:10px;overflow:hidden;background:#ffffff05}
-.nav-group[data-group="settings"] .settings-subgroup-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 9px;border:0;background:#ffffff0a;color:#e8d3b7;text-align:right;font-family:inherit;font-size:12px;font-weight:700;line-height:1.7;cursor:pointer}
-.nav-group[data-group="settings"] .settings-subgroup-toggle:focus-visible{outline:2px solid #d7ad6c;outline-offset:-2px}
-.nav-group[data-group="settings"] .settings-subgroup-arrow{transition:transform .15s}
-.nav-group[data-group="settings"] .settings-subgroup.open .settings-subgroup-arrow{transform:rotate(180deg)}
-.nav-group[data-group="settings"] .settings-subgroup-items[hidden]{display:none}
-.nav-group[data-group="settings"] .settings-subgroup-items{padding:3px 5px 6px}
-.nav-group[data-group="settings"] .settings-subgroup-items .sub{min-height:34px;padding:6px 8px;font-size:12px}
-/* نسخه ۱۳۶: گروه‌بندی خواناتر زیرمنوهای مدیریت سامانه */
-.nav-group[data-group="settings"] .settings-nav-heading{margin:8px 2px 4px;padding:7px 9px;border:1px solid #ffffff1b;border-radius:8px;background:#ffffff0b;color:#9dd9d0;font-size:11px;line-height:1.7}
-.nav-group[data-group="settings"] .settings-nav-heading:first-child{margin-top:2px}
-.nav-group[data-group="settings"] .sub{min-height:35px;padding:6px 9px;font-size:12px}
-#tuitionPanelSettings .field input,#tuitionPanelSettings .field select,#tuitionPanelSettings .field textarea,#tuitionPanelReceive .field input,#tuitionPanelReceive .field select,#tuitionPanelReceive .field textarea{min-height:32px}
-@media(max-width:760px){.nav-group[data-group="settings"] .settings-nav-heading{font-size:10px;padding:6px 8px}.nav-group[data-group="settings"] .sub{min-height:38px}}
 </style>
 
 <style>
@@ -1420,7 +1297,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
  const api=window.api||((path,opt={})=>fetch(CFG.url+path,{...opt,headers:{apikey:CFG.key,Accept:'application/json',...(opt.headers||{}),}}));
  const tables=[['khadems','بانک خدام'],['service_records','سوابق خدمت'],['meeting_attendance','حضور و غیاب خدمت'],['meeting_invitees','فهرست دعوت‌شدگان جلسات'],['meetings','جلسات'],['deployments','مأموریت‌ها'],['deployment_participants','شرکت‌کنندگان مأموریت'],['deployment_costs','هزینه‌های مأموریت'],['finance_transactions','تراکنش‌های مالی'],['fund_transactions','گردش خزانه'],['finance_accounts','حساب‌های مالی'],['funds','صندوق‌ها'],['finance_installments','اقساط'],['donors','نیکوکاران'],['drivers','رانندگان'],['vehicles','خودروها'],['shrine_sites','محل‌های خدمت'],['chat_messages','پیام‌ها'],['khadem_receipt_attachments','پیوست رسیدها']];
  let menuConfig={};
- async function admin(){return true;}
+ async function admin(){return false;}
  window.admin=admin;
  async function loadCfg(){try{const r=await api('/rest/v1/app_settings?select=value&setting_key=eq.ui_config&limit=1');const j=await r.json();if(r.ok&&j[0]?.value)menuConfig=j[0].value}catch(e){}}
  async function persistCfg(){const sess={};const patch=await api('/rest/v1/app_settings?setting_key=eq.ui_config',{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({value:menuConfig,updated_at:new Date().toISOString(),updated_by:sess.user?.id||sess.user_id||null})});if(!patch.ok)throw Error(await patch.text());const check=await api('/rest/v1/app_settings?select=setting_key&setting_key=eq.ui_config');const rows=await check.json();if(!rows.length){const ins=await api('/rest/v1/app_settings',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({setting_key:'ui_config',value:menuConfig})});if(!ins.ok)throw Error(await ins.text())}}
