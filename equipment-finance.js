@@ -32,15 +32,36 @@
     const text = await response.text();
     return text ? JSON.parse(text) : [];
   }
+  function digitsAscii(v) { return String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)); }
+  function jalaliToIso(jy, jm, jd) {
+    jy += 1595;
+    let days = -355668 + 365 * jy + Math.floor(jy / 33) * 8 + Math.floor(((jy % 33) + 3) / 4) + jd;
+    days += jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186;
+    let gy = 400 * Math.floor(days / 146097); days %= 146097;
+    if (days > 36524) { gy += 100 * Math.floor(--days / 36524); days %= 36524; if (days >= 365) days++; }
+    gy += 4 * Math.floor(days / 1461); days %= 1461;
+    if (days > 365) { gy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+    let gd = days + 1;
+    const leap = (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0;
+    const mdays = [0,31,leap ? 29 : 28,31,30,31,30,31,31,30,31,30,31];
+    let gm = 1;
+    while (gm <= 12 && gd > mdays[gm]) { gd -= mdays[gm]; gm++; }
+    return String(gy).padStart(4,'0') + '-' + String(gm).padStart(2,'0') + '-' + String(gd).padStart(2,'0');
+  }
   function dateVal(id) {
-    try { if (typeof readDateInput === 'function') return readDateInput(id) || null; } catch (_) {}
-    const v = $(id)?.value?.trim() || '';
-    return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    const v = digitsAscii($(id)?.value?.trim() || '');
+    if (!v) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    const m = v.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})$/);
+    if (!m) return null;
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    if (mo < 1 || mo > 12 || d < 1 || d > (mo <= 6 ? 31 : mo <= 11 ? 30 : 30)) return null;
+    return jalaliToIso(y, mo, d);
   }
   function jdate(v) {
     if (!v) return '—';
-    try { if (typeof isoToJalali === 'function') return isoToJalali(v); } catch (_) {}
-    return v;
+    try { return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(String(v).slice(0,10) + 'T12:00:00')); }
+    catch (_) { return v; }
   }
   function toast(msg) {
     if (typeof window.toast === 'function') window.toast(msg);
@@ -176,7 +197,18 @@
       if (sizeWrap) sizeWrap.style.display = shirt ? '' : 'none';
       if (orderWrap) orderWrap.style.display = shirt ? '' : 'none';
     }
-    itemSel?.addEventListener('change', syncIssueFields); syncIssueFields();
+    function filterStockOptions() {
+      const source = $('eqSource');
+      if (!source) return;
+      Array.from(source.options).forEach(opt => {
+        if (!opt.dataset.item) return;
+        const matches = opt.dataset.item === itemSel.value;
+        opt.hidden = !matches; opt.disabled = !matches;
+      });
+      if (source.selectedOptions[0]?.disabled) source.value = '';
+    }
+    itemSel?.addEventListener('change', () => { syncIssueFields(); filterStockOptions(); });
+    syncIssueFields(); filterStockOptions();
     $('eqPayType')?.addEventListener('change', () => {
       const committee = $('eqPayType').value === 'committee';
       $('eqPayIssueWrap').style.display = committee ? 'none' : '';
