@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication gate removed; app shell starts directly. -->
 
-<meta name="app-release" content="149">
+<meta name="app-release" content="150">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۴۹</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۵۰</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -315,11 +315,11 @@ function syncMeetingAttendanceRow(tr, reset=false){
  const status=tr.querySelector('.mi-status:checked')?.value||'absent';
  const absence=tr.querySelector('.mi-absence-type:checked')?.value||'';
  const absent=status==='absent';
- tr.querySelectorAll('.mi-absence-type').forEach(el=>el.disabled=!absent);
+ tr.querySelectorAll('.mi-absence-type').forEach(el=>{el.disabled=!absent;if(!absent)el.checked=false;});
  const details=absent&&!!absence;
  const reason=tr.querySelector('.mi-reason'),notes=tr.querySelector('.mi-notes');
- if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details)}
- if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details)}
+ if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(!details)reason.value=''}
+ if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(!details)notes.value=''}
  const am=tr.querySelector('.mi-arrival-mode'),at=tr.querySelector('.mi-time');
  const dm=tr.querySelector('.mi-departure-mode'),dt=tr.querySelector('.mi-departure-time');
  if(at){at.disabled=am?.value==='session_start';if(at.disabled)at.value=''}
