@@ -1302,7 +1302,7 @@ async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_
  else {
   const identityRules={service_records:[['khadem_code','service_date','service_type','location']],meetings:[['title','meeting_date']],finance_transactions:[['khadem_code','transaction_date','amount','transaction_type']],fund_transactions:[['fund_id','transaction_date','amount','transaction_type']],donors:[['national_id'],['full_name','phone']],vehicles:[['plate_number']],drivers:[['national_id'],['full_name','phone']],documents:[['title']]};
   const rules=identityRules[dest]||[];
-  const identity=o=>{for(const keys of rules){if(keys.every(k=>o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!==''))return keys.map(k=>{let v=o[k];if(['service_date','meeting_date','transaction_date'].includes(k)&&typeof jalaliToISO==='function'){const mt=String(v).trim().match(/^(\\d{3,4})[\\/.-](\\d{1,2})[\\/.-](\\d{1,2})$/);if(mt&&+mt[1]<1700)v=jalaliToISO(mt[1]+'/'+mt[2]+'/'+mt[3])||v;}return normalize(v).toLowerCase();}).join('|');}return '';};
+  const identity=o=>{for(const keys of rules){if(keys.every(k=>o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!==''))return keys.map(k=>{let v=o[k];if(['service_date','meeting_date','transaction_date'].includes(k)&&typeof jalaliToISO==='function'){const parts=String(v).trim().split(/[\\/.-]/);if(parts.length===3&&/^\\d{3,4}$/.test(parts[0])&&/^\\d{1,2}$/.test(parts[1])&&/^\\d{1,2}$/.test(parts[2])&&+parts[0]<1700)v=jalaliToISO(parts[0]+'/'+parts[1]+'/'+parts[2])||v;}return normalize(v).toLowerCase();}).join('|');}return '';};
   const existingRows=[];let offset=0,total=null,pageSize=1000,maxRows=100000;
   while(rules.length&&offset<maxRows){
    const end=Math.min(offset+pageSize,maxRows)-1;
@@ -1720,7 +1720,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
   }catch(e){console.warn('ثبت وضعیت حضور:',e);presenceNotice('ثبت زمان حضور ناموفق بود؛ اتصال یا دسترسی را بررسی کنید.');}
   finally{heartbeatBusy=false;}
  }
- document.addEventListener('DOMContentLoaded',()=>{heartbeat();renderOwnTitle();setInterval(heartbeat,60000);setInterval(renderOwnTitle,15000)});if(document.readyState!=='loading'){heartbeat();renderOwnTitle();setInterval(heartbeat,60000);setInterval(renderOwnTitle,15000)}
+ const startPresenceHeartbeat=()=>{if(window.__khademPresenceHeartbeatStarted)return;window.__khademPresenceHeartbeatStarted=true;heartbeat();renderOwnTitle();setInterval(heartbeat,60000);setInterval(renderOwnTitle,15000)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startPresenceHeartbeat,{once:true});else startPresenceHeartbeat()
  const prior=window.filterSystemUsers;if(typeof prior==='function'){window.filterSystemUsers=function(q){const r=prior.apply(this,arguments);setTimeout(renderPanel,0);return r}}
  const observer=new MutationObserver(()=>{if($('systemUsersStatus')&&Array.isArray(window.systemUsersCache))setTimeout(renderPanel,0);if(!$('khOwnIdentityTitle'))setTimeout(renderOwnTitle,0)});observer.observe(document.body,{childList:true,subtree:true});
  setTimeout(renderPanel,1500);
