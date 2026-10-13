@@ -2150,5 +2150,54 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
 })();
 </script>
 
+
+<!-- v148: بازیابی مستقل منو و داشبورد در صورت شکست راه‌اندازی قبلی -->
+<script>
+(function(){
+  function mountVisibleNavigation(){
+    var app=document.getElementById('app');
+    var side=document.getElementById('sidebar');
+    var content=document.getElementById('content');
+    if(!app||!side||!content) return;
+    app.style.setProperty('display','block','important');
+    side.style.setProperty('display','block','important');
+    side.style.setProperty('visibility','visible','important');
+    side.style.setProperty('opacity','1','important');
+    var menuData=[];
+    try { if(typeof menus!=='undefined' && Array.isArray(menus)) menuData=menus; } catch(e){}
+    if(!menuData.length && Array.isArray(window.menus)) menuData=window.menus;
+    if(menuData.length){
+      side.innerHTML=menuData.map(function(m){
+        var subs=Array.isArray(m[3])?m[3]:[];
+        return '<section class="nav-group" data-group="'+String(m[0]).replace(/[^a-z0-9_-]/gi,'')+'">'+
+          '<button class="nav-main" type="button" data-v148-nav="'+String(m[0])+'"><span>'+String(m[1]||'')+' '+String(m[2]||'')+'</span></button>'+
+          (subs.length?'<div class="submenu" style="display:grid!important;visibility:visible!important">'+subs.map(function(s){
+            return '<button class="sub" type="button" data-v148-page="'+String(m[0])+':'+String(s[0])+'">'+String(s[1]||s[0])+'</button>';
+          }).join('')+'</div>':'')+'</section>';
+      }).join('');
+    } else if(!side.children.length){
+      side.innerHTML='<section class="nav-group"><button class="nav-main" type="button" data-v148-page="dashboard">🏠 داشبورد مدیریتی</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="khadem:list">👤 بانک خادمین</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="service:mainservice">📋 خدمت</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="finance:dashboard">💰 امور مالی</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="meetings:list">👥 جلسات</button></section><section class="nav-group"><button class="nav-main" type="button" data-v148-page="settings:users">⚙️ تنظیمات</button></section>';
+    }
+    side.querySelectorAll('[data-v148-nav]').forEach(function(b){b.addEventListener('click',function(){
+      var group=b.closest('.nav-group'); if(group) group.classList.toggle('open');
+      try { if(typeof window.render==='function') window.render(b.getAttribute('data-v148-nav')); } catch(e){ console.error(e); }
+    });});
+    side.querySelectorAll('[data-v148-page]').forEach(function(b){b.addEventListener('click',function(){
+      var page=b.getAttribute('data-v148-page');
+      try { if(typeof window.render==='function') window.render(page); else content.innerHTML='<div class="page-title"><h2>'+b.textContent+'</h2><p>بخش انتخاب‌شده: '+page+'</p></div>'; } catch(e){content.innerHTML='<div class="page-title"><h2>'+b.textContent+'</h2><p>نمایش این بخش با خطا مواجه شد. صفحه را تازه‌سازی کنید.</p></div>'; console.error(e);}
+    });});
+    if(!content.innerHTML.trim() || content.innerHTML.trim()==='در حال بارگذاری...'){
+      content.innerHTML='<div class="page-title"><h2>🏠 داشبورد مدیریتی</h2><p>سامانه جامع خادمین مجموعة السیدة زینب سلام الله علیها</p></div><div class="grid">'+
+        [['👤','بانک خادمین','khadem:list'],['📋','خدمت','service:mainservice'],['💰','امور مالی','finance:dashboard'],['👥','جلسات','meetings:list'],['⚙️','تنظیمات','settings:users']].map(function(x){return '<button class="card stat" type="button" data-v148-page="'+x[2]+'"><div class="icon">'+x[0]+'</div><span>'+x[1]+'</span></button>';}).join('')+'</div>';
+      content.querySelectorAll('[data-v148-page]').forEach(function(b){b.addEventListener('click',function(){try{if(typeof window.render==='function')window.render(b.getAttribute('data-v148-page'));}catch(e){console.error(e);}});});
+    } else {
+      try { if(typeof window.render==='function' && (!window.khademCurrentPage || window.khademCurrentPage==='login')) window.render('dashboard'); } catch(e){console.error(e);}
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mountVisibleNavigation,{once:true});
+  else mountVisibleNavigation();
+})();
+</script>
+
 </body>
 </html>
