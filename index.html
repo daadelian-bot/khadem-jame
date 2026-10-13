@@ -115,6 +115,42 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
 @media(max-width:760px){.topbar{min-height:74px}.grid{gap:10px}.card{border-radius:17px!important}main{padding:12px}.page-title{align-items:flex-start;flex-wrap:wrap}.stat{min-height:126px}}
 </style>
 
+
+<!-- v149 security hotfix: validate the Supabase session before exposing app data. -->
+<script>
+(function(){
+ 'use strict';
+ var authUrl='https://fxxtyfurdzpzfvweoppo.supabase.co';
+ var authKey='sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
+ document.documentElement.style.visibility='hidden';
+ function readSession(){try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}}
+ function clearSession(){['khadem_session','kj_access_token','kj_user'].forEach(function(k){try{localStorage.removeItem(k)}catch(_){}})}
+ function goLogin(){location.replace('./login.html?reason=session');}
+ function networkError(){
+  document.documentElement.style.visibility='visible';
+  var show=function(){
+   document.body.innerHTML='<main style="max-width:560px;margin:12vh auto;padding:28px;font:16px/1.9 sans-serif;text-align:center;direction:rtl"><h2>بررسی اتصال و نشست انجام نشد</h2><p>برای حفاظت از اطلاعات، سامانه تا تأیید نشست باز نمی‌شود. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.</p><button id="authRetry" style="padding:12px 24px;border-radius:12px;background:#17365d;color:#fff">تلاش دوباره</button></main>';
+   document.getElementById('authRetry').onclick=function(){location.reload()};
+  };
+  if(document.body)show();else document.addEventListener('DOMContentLoaded',show,{once:true});
+ }
+ var session=readSession();
+ if(!session.access_token){goLogin();return;}
+ fetch(authUrl+'/auth/v1/user',{method:'GET',headers:{apikey:authKey,Authorization:'Bearer '+session.access_token,Accept:'application/json'},cache:'no-store',credentials:'omit'})
+ .then(function(response){
+  if(response.status===401||response.status===403){clearSession();goLogin();return null;}
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  return response.json();
+ }).then(function(user){
+  if(!user)return;
+  if(!user.id){clearSession();goLogin();return;}
+  session.user=user;session.user_id=user.id;
+  try{localStorage.setItem('khadem_session',JSON.stringify(session));localStorage.setItem('kj_access_token',session.access_token);localStorage.setItem('kj_user',JSON.stringify(user));}catch(_){}
+  document.documentElement.style.visibility='visible';
+ }).catch(networkError);
+})();
+</script>
+
 </head>
 <body>
 
@@ -400,7 +436,7 @@ async function uploadReceiptForRecord(recordId,recordTable,transactionType){
  if(!file&&!sender)return null;
  if(file&&file.size>8*1024*1024)throw new Error('حجم رسید نباید بیشتر از ۸ مگابایت باشد.');
  if(file&&!(/^(image\/(jpeg|png|webp|gif)|application\/pdf)$/i.test(file.type)))throw new Error('فقط تصویرهای مجاز یا سند پیوست پذیرفته می‌شود.');
- const sess={};const token=sess.access_token;
+ let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(e){}const token=sess.access_token;
  
  let filePath=null,fileName=null,mimeType=null,fileSize=null;
  if(file){fileName=file.name;mimeType=file.type||'application/octet-stream';fileSize=file.size;const safeName=file.name.replace(/[^\w.\-\u0600-\u06FF]+/g,'_').slice(-100);filePath=recordTable+'/'+recordId+'/'+Date.now()+'_'+safeName;
@@ -417,7 +453,7 @@ async function saveFinanceTransaction(){const amount=Number($('f_amount').value)
 
 let shrineCache=[];async function loadShrines(){const box=$('shrinesTable');if(!box)return;try{const r=await api('/rest/v1/shrine_sites?select=id,name,city,is_active&order=name.asc');const j=await r.json();if(!r.ok)throw new Error(j.message||j.hint||'خطای دریافت محل‌ها');shrineCache=Array.isArray(j)?j:[];const role=await currentUserRole();const canManage=role==='admin';if($('addShrineBtn'))$('addShrineBtn').style.display=canManage?'inline-flex':'none';box.innerHTML=shrineCache.length?`<div style="overflow:auto"><table class="data-table"><thead><tr><th>نام حرم / محل</th><th>شهر</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${shrineCache.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.city||'—')}</td><td>${x.is_active===false?'غیرفعال':'فعال'}</td><td>${canManage?`<button class="mini-btn mini-toggle" onclick="removeShrine('${esc(x.id)}')">حذف</button>`:'فقط مشاهده'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">هنوز محل خدمتی ثبت نشده است.</div>'}catch(e){box.innerHTML='<div class="notice">فهرست حرم‌ها دریافت نشد: '+esc(e.message)+'؛ فایل مهاجرت نسخه ۷۴ را اجرا کنید.</div>'}}
 async function loadShrineOptions(){const sel=$('s_shrine');if(!sel)return;try{const r=await api('/rest/v1/shrine_sites?select=id,name,city&is_active=eq.true&order=name.asc');const j=await r.json();if(!r.ok)throw new Error('');sel.innerHTML='<option value="">انتخاب حرم / محل…</option>'+j.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.city?' — '+esc(x.city):''}</option>`).join('')}catch(e){sel.innerHTML='<option value="">محل‌ها پس از اجرای مهاجرت در دسترس‌اند</option>'}}
-async function currentUserRole(){return 'admin';}
+async function currentUserRole(){try{const s=JSON.parse(localStorage.getItem('khadem_session')||'{}');const id=s.user?.id||s.user_id;if(!id)return '';const r=await api('/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(id)+'&limit=1');const j=await r.json().catch(()=>[]);return r.ok&&j[0]?.role?String(j[0].role):''}catch(e){return ''}}
 async function addShrine(){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم اضافه کند.');return}const name=$('shrineName').value.trim(),city=$('shrineCity').value.trim();if(!name){toast('نام حرم الزامی است.');return}try{const r=await api('/rest/v1/shrine_sites',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name,city:city||null,is_active:true})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||j.hint||'خطای ثبت')}toast('محل خدمت اضافه شد.');$('shrineName').value='';$('shrineCity').value='';await loadShrines()}catch(e){toast('افزودن حرم: '+e.message)}}
 async function removeShrine(id){if(await currentUserRole()!=='admin'){toast('فقط مدیر اصلی می‌تواند حرم حذف کند.');return}if(!confirm('این محل از فهرست فعال حذف شود؟ سوابق قبلی خدمت حفظ می‌شوند.'))return;try{const r=await api('/rest/v1/shrine_sites?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_active:false})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||'خطا')}toast('محل از فهرست فعال خارج شد؛ سوابق قدیمی حذف نشدند.');await loadShrines()}catch(e){toast('حذف محل: '+e.message)}}
 let uiConfig={appTitle:'سامانه جامع مدیریت خدام',appSubtitle:'مرکز مدیریت و عملیات',adminDisplayName:'مدیر اصلی',menuLabels:{},customMenus:[],menuOrder:[],submenuParents:{}};
@@ -431,7 +467,7 @@ setInterval(tick,1000);tick();buildNav();render();
 
 function endpoint(path){return CFG.url+path}
 async function fetchTimeout(url,opt={},ms=10000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{...opt,signal:c.signal,mode:"cors",cache:"no-store"})}finally{clearTimeout(t)}}
-async function api(path,opt={}){const token={}.access_token;const headers=Object.assign({"apikey":CFG.key,"Accept":"application/json"},opt.headers||{});return fetchTimeout(endpoint(path),Object.assign({},opt,{headers}))}
+async function api(path,opt={}){let token='';try{token=JSON.parse(localStorage.getItem('khadem_session')||'{}').access_token||''}catch(e){}const auth=token?{"Authorization":"Bearer "+token}:{};const headers=Object.assign({"apikey":CFG.key,"Accept":"application/json"},auth,opt.headers||{});return fetchTimeout(endpoint(path),Object.assign({},opt,{headers}))}
 /* دریافت صفحه‌به‌صفحه بدون سقف ثابت؛ برای جدول‌های بزرگ، درخواست‌ها به بسته‌های کوچک تقسیم می‌شوند. */
 async function apiGetAll(path,pageSize=1000){let all=[],offset=0;const base=String(path).replace(/([?&])limit=\d+/,'$1').replace(/[?&]$/,'');while(true){const sep=base.includes('?')?'&':'?';const r=await api(base+sep+'limit='+pageSize,{headers:{'Range-Unit':'items','Range':offset+'-'+(offset+pageSize-1)}});const j=await r.json().catch(()=>[]);if(!r.ok)throw new Error(j.message||j.hint||('HTTP '+r.status));if(!Array.isArray(j))throw new Error('پاسخ دریافت سوابق، فهرست معتبر نیست.');const cr=r.headers?.get?.('content-range')||'';const match=cr.match(/^(\d+)-(\d+|\*)\//);if(offset>0&&match&&Number(match[1])!==offset)throw new Error('صفحه‌بندی سوابق درست پاسخ نداد؛ دریافت متوقف شد تا داده‌ای جا نیفتد.');if(!j.length)break;all.push(...j);offset+=j.length;if(j.length<pageSize)break;}return all}
 let khademCache=[];let selectedKhademId=null;
@@ -1222,7 +1258,7 @@ async function loadInstallments(){const box=$('installmentsTable');if(!box)retur
 function drawInstallments(){const box=$('installmentsTable');if(!box)return;let rows=installmentCache;const q=($('ins_search')?.value||'').toLowerCase();if(q)rows=rows.filter(x=>String(x.transaction_id||'').toLowerCase().includes(q)||String(x.khadem_id||'').toLowerCase().includes(q));const total=rows.reduce((a,x)=>a+Number(x.amount||0),0),paid=rows.reduce((a,x)=>a+Number(x.paid_amount||0),0);box.innerHTML=`<div class="notice">جمع مبلغ اقساط: ${faNum(total)} ریال · پرداخت‌شده: ${faNum(paid)} ریال · مانده: ${faNum(total-paid)} ریال</div>`+(rows.length?`<div style="overflow:auto"><table class="data-table"><thead><tr><th>تراکنش</th><th>شماره قسط</th><th>مبلغ</th><th>سررسید</th><th>پرداخت‌شده</th><th>مانده</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(String(x.transaction_id||'').slice(0,8))}…</td><td>${faNum(x.installment_number)}</td><td>${faNum(x.amount)} ریال</td><td>${esc(x.due_date||'—')}</td><td>${faNum(x.paid_amount||0)}</td><td>${faNum(Math.max(0,Number(x.amount||0)-Number(x.paid_amount||0)))}</td><td>${esc(({pending:'در انتظار',paid:'پرداخت شده',overdue:'معوق',cancelled:'لغو'}[x.status]||x.status||'—'))}</td><td><button class="mini-btn" onclick="markInstallmentPaid('${esc(x.id)}',${Number(x.amount||0)})">ثبت پرداخت کامل</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="notice">قسطی ثبت نشده است.</div>')}
 function filterInstallments(){drawInstallments()}
 async function markInstallmentPaid(id,amount){if(!confirm('این قسط به‌عنوان پرداخت کامل ثبت شود؟'))return;const b={paid_amount:amount,status:'paid',paid_date:new Date().toISOString().slice(0,10)};try{const r=await api('/rest/v1/finance_installments?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)});if(!r.ok)throw new Error((await r.text()).slice(0,180));toast('وضعیت قسط به پرداخت‌شده تغییر کرد.');await loadInstallments()}catch(e){toast('به‌روزرسانی قسط ناموفق بود: '+e.message)}}
-async function saveGenericAttachment(){const table=$('att_table')?.value,record=$('att_record')?.value.trim(),file=$('att_file')?.files?.[0],sender=$('att_sender')?.value.trim();if(!table||!record){toast('جدول و شناسه رکورد الزامی است.');return}if(!file&&!sender){toast('حداقل فایل یا نام ارسال‌کننده را وارد کنید.');return}try{if(file&&file.size>8*1024*1024)throw new Error('حجم فایل نباید بیشتر از ۸ مگابایت باشد.');if(file&&!(/^(image\/(jpeg|png|webp|gif)|application\/pdf)$/i.test(file.type)))throw new Error('فقط تصویرهای مجاز یا سند پیوست پذیرفته می‌شود.');const sess={},token=sess.access_token;if(!token)throw new Error('نشست ورود معتبر نیست؛ دوباره وارد شوید.');let filePath=null,fileName=null,mimeType=null,fileSize=null;if(file){fileName=file.name;mimeType=file.type||'application/octet-stream';fileSize=file.size;const safeName=file.name.replace(/[^\w.\-\u0600-\u06FF]+/g,'_').slice(-100);filePath=table+'/'+record+'/'+Date.now()+'_'+safeName;const up=await fetch(CFG.url+'/storage/v1/object/khadem-receipts/'+filePath,{method:'POST',headers:{apikey:CFG.key,'Content-Type':mimeType,'x-upsert':'false'},body:file});if(!up.ok)throw new Error('بارگذاری فایل انجام نشد: '+(await up.text()).slice(0,120))}const meta={record_table:table,record_id:String(record),receipt_type:$('att_type')?.value||'other',sender_name:sender||null,file_path:filePath,file_name:fileName,mime_type:mimeType,file_size:fileSize,notes:$('att_notes')?.value.trim()||null};const r=await api('/rest/v1/khadem_receipt_attachments',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(meta)});if(!r.ok)throw new Error('فایل ارسال شد اما مشخصات پیوست ثبت نشد: '+(await r.text()).slice(0,140));toast('پیوست ثبت و به رکورد متصل شد.');$('att_file').value='';$('att_sender').value='';$('att_notes').value='';await loadGenericAttachments()}catch(e){toast('ثبت پیوست ناموفق بود: '+e.message)}}
+async function saveGenericAttachment(){const table=$('att_table')?.value,record=$('att_record')?.value.trim(),file=$('att_file')?.files?.[0],sender=$('att_sender')?.value.trim();if(!table||!record){toast('جدول و شناسه رکورد الزامی است.');return}if(!file&&!sender){toast('حداقل فایل یا نام ارسال‌کننده را وارد کنید.');return}try{if(file&&file.size>8*1024*1024)throw new Error('حجم فایل نباید بیشتر از ۸ مگابایت باشد.');if(file&&!(/^(image\/(jpeg|png|webp|gif)|application\/pdf)$/i.test(file.type)))throw new Error('فقط تصویرهای مجاز یا سند پیوست پذیرفته می‌شود.');let sess={};try{sess=JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(e){}const token=sess.access_token;if(!token)throw new Error('نشست ورود معتبر نیست؛ دوباره وارد شوید.');let filePath=null,fileName=null,mimeType=null,fileSize=null;if(file){fileName=file.name;mimeType=file.type||'application/octet-stream';fileSize=file.size;const safeName=file.name.replace(/[^\w.\-\u0600-\u06FF]+/g,'_').slice(-100);filePath=table+'/'+record+'/'+Date.now()+'_'+safeName;const up=await fetch(CFG.url+'/storage/v1/object/khadem-receipts/'+filePath,{method:'POST',headers:{apikey:CFG.key,'Content-Type':mimeType,'x-upsert':'false'},body:file});if(!up.ok)throw new Error('بارگذاری فایل انجام نشد: '+(await up.text()).slice(0,120))}const meta={record_table:table,record_id:String(record),receipt_type:$('att_type')?.value||'other',sender_name:sender||null,file_path:filePath,file_name:fileName,mime_type:mimeType,file_size:fileSize,notes:$('att_notes')?.value.trim()||null};const r=await api('/rest/v1/khadem_receipt_attachments',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(meta)});if(!r.ok)throw new Error('فایل ارسال شد اما مشخصات پیوست ثبت نشد: '+(await r.text()).slice(0,140));toast('پیوست ثبت و به رکورد متصل شد.');$('att_file').value='';$('att_sender').value='';$('att_notes').value='';await loadGenericAttachments()}catch(e){toast('ثبت پیوست ناموفق بود: '+e.message)}}
 async function loadGenericAttachments(){const table=$('att_table')?.value,record=$('att_record')?.value.trim(),box=$('attachmentsResult');if(!table||!record){toast('جدول و شناسه رکورد را وارد کنید.');return}box.innerHTML='در حال دریافت…';try{const r=await api('/rest/v1/khadem_receipt_attachments?select=*&record_table=eq.'+encodeURIComponent(table)+'&record_id=eq.'+encodeURIComponent(record)+'&order=created_at.desc');const rows=await r.json();if(!r.ok)throw new Error(r.message||'HTTP '+r.status);box.innerHTML=rows.length?`<div class="notice">${rows.length} پیوست یافت شد.</div>`+rows.map(x=>`<div class="card" style="margin-top:8px"><b>${esc(x.file_name||'پیوست بدون فایل')}</b><div>${esc(x.sender_name||'ارسال‌کننده ثبت نشده')} · ${esc(x.receipt_type||'سند')} · ${esc(x.created_at||'')}</div>${x.file_path?`<button class="btn secondary" onclick="openGenericAttachment('${esc(x.id)}')">بازکردن فایل</button>`:''}</div>`).join(''):'<div class="notice">پیوستی برای این رکورد ثبت نشده است.</div>'}catch(e){box.innerHTML='<div class="notice">دریافت پیوست‌ها ناموفق بود: '+esc(e.message)+'</div>'}}
 async function openGenericAttachment(id){try{const r=await api('/rest/v1/khadem_receipt_attachments?select=file_path&id=eq.'+encodeURIComponent(id));const j=await r.json();if(!r.ok||!j[0]?.file_path)throw new Error('مسیر فایل پیدا نشد');const sess={};const sr=await fetch(CFG.url+'/storage/v1/object/sign/khadem-receipts/'+j[0].file_path,{method:'POST',headers:{apikey:CFG.key,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:300})});const sj=await sr.json();if(!sr.ok)throw new Error(sj.message||'HTTP '+sr.status);window.open(CFG.url+'/storage/v1'+sj.signedURL,'_blank','noopener')}catch(e){toast('بازکردن پیوست ناموفق بود: '+e.message)}}
 </script>
@@ -1510,7 +1546,7 @@ body.kh-layout-edit [data-kh-drop-target="1"]{outline:2px solid #146c43!importan
  const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const cfg=window.CFG; if(!cfg?.url||!cfg?.key)return;
  let enabled=false, isAdmin=false, layout={orders:{}};
- const session=()=>{try{return {}}catch(_){return {}}};
+ const session=()=>{try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}};
  const headers=(extra={})=>{const s=session();return {apikey:cfg.key,Accept:'application/json',...extra}};
  async function api(path,opts={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);try{return await fetch(cfg.url+path,{...opts,signal:controller.signal,headers:headers(opts.headers||{})})}catch(e){if(e&&e.name==='AbortError')throw new Error('مهلت اتصال به پایگاه داده تمام شد (۱۲ ثانیه). اتصال شبکه، نشانی Supabase و سیاست‌های دسترسی را بررسی کنید.');throw e}finally{clearTimeout(timer)}}
  async function checkAdmin(){try{const s=session(),id=s.user?.id||s.user_id;if(!id)return false;const r=await api('/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(id)+'&limit=1');const j=await r.json();return r.ok&&j[0]?.role==='admin'}catch(_){return false}}
@@ -1686,7 +1722,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
  if(window.__khAdminIdentityV1)return;window.__khAdminIdentityV1=true;
  const $=id=>document.getElementById(id);
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const session=()=>{try{return {}}catch(_){return {}}};
+ const session=()=>{try{return JSON.parse(localStorage.getItem('khadem_session')||'{}')}catch(_){return {}}};
  const api=window.api||((path,opts={})=>{const s=session();const base=typeof CFG!=='undefined'?CFG.url:'';const key=typeof CFG!=='undefined'?CFG.key:'';return fetch(base+path,{...opts,headers:{apikey:key,Accept:'application/json',...(opts.headers||{})}})});
  const notify=m=>{if(typeof window.toast==='function')window.toast(m);else alert(m)};
  let aliases={},requestUsers={},presenceAvailable=false,loading=false,lastPanel='';
