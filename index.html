@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication gate removed; app shell starts directly. -->
 
-<meta name="app-release" content="150">
+<meta name="app-release" content="151">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۵۰</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۵۱</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -157,10 +157,11 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
 .mi-attendance-table{min-width:1120px}.mi-attendance-table th,.mi-attendance-table td{vertical-align:middle}.mi-radio-cell{text-align:center;min-width:76px}
 .mi-radio-cell input[type="radio"]{appearance:none;-webkit-appearance:none;width:23px;height:23px;border:2px solid var(--border,#b8c2cf);border-radius:50%;background:var(--surface,#fff);display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle;margin:0}
 .mi-radio-cell input[type="radio"]::before{content:"";width:11px;height:11px;border-radius:50%;transform:scale(0);transition:transform .12s ease;background:currentColor}
+.mi-radio-cell input.mi-status{border-color:#9ca3af;color:#9ca3af;background:#f3f4f6}
 .mi-radio-cell input.mi-status[value="present"]:checked{border-color:#138a53;color:#138a53;background:#e5f8ee}.mi-radio-cell input.mi-status[value="absent"]:checked{border-color:#c24141;color:#c24141;background:#fdeaea}
 .mi-radio-cell input.mi-absence-type[value="excused"]:checked{border-color:#1676b8;color:#1676b8;background:#e7f3ff}.mi-radio-cell input.mi-absence-type[value="unexcused"]:checked{border-color:#b45309;color:#b45309;background:#fff0d8}
 .mi-radio-cell input[type="radio"]:checked::before{transform:scale(1)}.mi-radio-cell input[type="radio"]:disabled{opacity:.25;cursor:not-allowed}
-.mi-detail-cell input,.mi-detail-cell textarea{min-width:150px;width:100%;box-sizing:border-box}.mi-detail-cell.mi-detail-muted,.mi-row-present .mi-detail-cell{opacity:.38}.mi-row-absent .mi-detail-cell{opacity:1}
+.mi-detail-cell input,.mi-detail-cell textarea{min-width:170px;width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--border,#b8c2cf);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1f2937);font:inherit;line-height:1.6}.mi-detail-cell textarea{min-height:62px;resize:vertical}.mi-detail-cell input:enabled,.mi-detail-cell textarea:enabled{border-color:#9ca3af;box-shadow:inset 0 0 0 1px rgba(156,163,175,.12)}.mi-detail-cell input:disabled,.mi-detail-cell textarea:disabled{background:#f3f4f6;color:#6b7280;opacity:.65;cursor:not-allowed}.mi-detail-cell.mi-detail-muted,.mi-row-present .mi-detail-cell{opacity:.55}.mi-row-absent .mi-detail-cell{opacity:1}
 </style></head>
 <body>
 
@@ -316,7 +317,7 @@ function syncMeetingAttendanceRow(tr, reset=false){
  const absence=tr.querySelector('.mi-absence-type:checked')?.value||'';
  const absent=status==='absent';
  tr.querySelectorAll('.mi-absence-type').forEach(el=>{el.disabled=!absent;if(!absent)el.checked=false;});
- const details=absent&&!!absence;
+ const details=absent;
  const reason=tr.querySelector('.mi-reason'),notes=tr.querySelector('.mi-notes');
  if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(status==='present')reason.value=''}
  if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(status==='present')notes.value=''}
