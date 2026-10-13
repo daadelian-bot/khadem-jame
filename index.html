@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication gate removed; app shell starts directly. -->
 
-<meta name="app-release" content="151">
+<meta name="app-release" content="152">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۵۱</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۵۲</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -161,7 +161,7 @@ table{border-collapse:separate;border-spacing:0;overflow:hidden}th{background:#e
 .mi-radio-cell input.mi-status[value="present"]:checked{border-color:#138a53;color:#138a53;background:#e5f8ee}.mi-radio-cell input.mi-status[value="absent"]:checked{border-color:#c24141;color:#c24141;background:#fdeaea}
 .mi-radio-cell input.mi-absence-type[value="excused"]:checked{border-color:#1676b8;color:#1676b8;background:#e7f3ff}.mi-radio-cell input.mi-absence-type[value="unexcused"]:checked{border-color:#b45309;color:#b45309;background:#fff0d8}
 .mi-radio-cell input[type="radio"]:checked::before{transform:scale(1)}.mi-radio-cell input[type="radio"]:disabled{opacity:.25;cursor:not-allowed}
-.mi-detail-cell input,.mi-detail-cell textarea{min-width:170px;width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--border,#b8c2cf);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1f2937);font:inherit;line-height:1.6}.mi-detail-cell textarea{min-height:62px;resize:vertical}.mi-detail-cell input:enabled,.mi-detail-cell textarea:enabled{border-color:#9ca3af;box-shadow:inset 0 0 0 1px rgba(156,163,175,.12)}.mi-detail-cell input:disabled,.mi-detail-cell textarea:disabled{background:#f3f4f6;color:#6b7280;opacity:.65;cursor:not-allowed}.mi-detail-cell.mi-detail-muted,.mi-row-present .mi-detail-cell{opacity:.55}.mi-row-absent .mi-detail-cell{opacity:1}
+.mi-detail-cell input,.mi-detail-cell textarea{min-width:170px;width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--border,#b8c2cf);border-radius:8px;background:var(--surface,#fff);color:var(--text,#1f2937);font:inherit;line-height:1.6}.mi-detail-cell textarea{min-height:62px;resize:vertical}.mi-detail-cell input:enabled,.mi-detail-cell textarea:enabled{border-color:#9ca3af;box-shadow:inset 0 0 0 1px rgba(156,163,175,.12)}.mi-detail-cell input:disabled,.mi-detail-cell textarea:disabled{background:#f3f4f6;color:#6b7280;opacity:.65;cursor:not-allowed}.mi-detail-cell.mi-detail-muted,.mi-row-present .mi-detail-cell{opacity:.55}.mi-row-present .mi-detail-cell.mi-notes-always-active,.mi-row-absent .mi-detail-cell{opacity:1}
 </style></head>
 <body>
 
@@ -320,7 +320,7 @@ function syncMeetingAttendanceRow(tr, reset=false){
  const details=absent;
  const reason=tr.querySelector('.mi-reason'),notes=tr.querySelector('.mi-notes');
  if(reason){reason.disabled=!details;reason.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(status==='present')reason.value=''}
- if(notes){notes.disabled=!details;notes.closest('.mi-detail-cell')?.classList.toggle('mi-detail-muted',!details);if(status==='present')notes.value=''}
+ if(notes){notes.disabled=false;notes.closest('.mi-detail-cell')?.classList.remove('mi-detail-muted')}
  const am=tr.querySelector('.mi-arrival-mode'),at=tr.querySelector('.mi-time');
  const dm=tr.querySelector('.mi-departure-mode'),dt=tr.querySelector('.mi-departure-time');
  if(at){at.disabled=am?.value==='session_start';if(at.disabled)at.value=''}
@@ -346,7 +346,7 @@ function drawMeetingInvitees(){
    '<td class="mi-radio-cell">'+radio(sn,'present',st==='present','حاضر','mi-status')+'</td><td class="mi-radio-cell">'+radio(sn,'absent',st==='absent','غایب','mi-status')+'</td>'+
    '<td class="mi-radio-cell">'+radio(an,'excused',absence==='excused','غیبت موجه','mi-absence-type')+'</td><td class="mi-radio-cell">'+radio(an,'unexcused',absence==='unexcused','غیبت غیرموجه','mi-absence-type')+'</td>'+
    '<td class="mi-detail-cell"><input class="mi-reason" type="text" maxlength="500" placeholder="دلیل غیبت" value="'+attr(x.excuse_reason||'')+'" onchange="meetingAttendanceDirty=true"></td>'+
-   '<td class="mi-detail-cell"><textarea class="mi-notes" rows="2" maxlength="2000" placeholder="توضیحات غیبت" onchange="meetingAttendanceDirty=true">'+esc(x.notes||'')+'</textarea></td>'+
+   '<td class="mi-detail-cell mi-notes-always-active"><textarea class="mi-notes" rows="2" maxlength="2000" placeholder="توضیحات" onchange="meetingAttendanceDirty=true">'+esc(x.notes||'')+'</textarea></td>'+
    '<td><div style="display:grid;gap:5px;min-width:130px"><select class="mi-arrival-mode" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest(\'tr\'))"><option value="time" '+(am==='time'?'selected':'')+'>انتخاب ساعت</option><option value="session_start" '+(am==='session_start'?'selected':'')+'>شروع جلسه</option></select><input class="mi-time" type="time" value="'+attr(x.arrival_time||'')+'" onchange="meetingAttendanceDirty=true"></div></td>'+
    '<td><div style="display:grid;gap:5px;min-width:130px"><select class="mi-departure-mode" onchange="meetingAttendanceDirty=true;syncMeetingAttendanceRow(this.closest(\'tr\'))"><option value="time" '+(dm==='time'?'selected':'')+'>انتخاب ساعت</option><option value="session_end" '+(dm==='session_end'?'selected':'')+'>پایان جلسه</option></select><input class="mi-departure-time" type="time" value="'+attr(x.departure_time||'')+'" onchange="meetingAttendanceDirty=true"></div></td></tr>';
  }).join('')+'</tbody></table></div>':'<div class="notice">برای این جلسه مدعوی فعالی ثبت نشده است. هنگام ساخت جلسه، گزینه «همه خادمین فعال» را انتخاب کنید یا فهرست مدعوین را بررسی کنید.</div>';
