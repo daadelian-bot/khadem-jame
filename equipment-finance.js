@@ -163,7 +163,7 @@
       '<form id="eqPayForm"><div class="form-grid"><div class="field"><label>نوع پرداخت</label><select id="eqPayType"><option value="khadem">دریافت از خادم</option><option value="committee">پرداخت مجموعه به هیئت</option></select></div><div class="field full" id="eqPayIssueWrap"><label>قلم و پرونده خادم</label><select id="eqPayIssue">' + issueOptions + '</select></div><div class="field full" id="eqPayReceiptWrap" style="display:none"><label>رسید دریافت از هیئت</label><select id="eqPayReceipt">' + cache.receipts.map(r => '<option value="' + esc(r.id) + '">' + esc(jdate(r.received_date)) + ' · ' + esc(r.reference_no || 'بدون شماره') + ' · مانده ' + esc(money(Math.max(0,receiptTotal(r)-paidForReceipt(r.id)))) + '</option>').join('') + '</select></div><div class="field"><label>مبلغ پرداخت (تومان)</label><input id="eqPayAmount" type="number" min="1" step="1" required></div><div class="field"><label>تاریخ پرداخت (شمسی)</label><input id="eqPayDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field"><label>روش پرداخت</label><select id="eqPayMethod"><option value="cash">نقدی</option><option value="card">کارت‌به‌کارت / کارت</option><option value="bank">حواله بانکی</option><option value="other">سایر</option></select></div><div class="field"><label>شماره رسید / پیگیری</label><input id="eqPayRef"></div><div class="field full"><label>توضیحات</label><textarea id="eqPayNotes"></textarea></div></div><button class="btn primary" type="submit">ثبت پرداخت</button><span id="eqPMsg" class="muted"></span></form></div>' +
       '<div class="card section"><h3>موجودی وسایل مجموعه</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>قلم</th><th>دریافت از هیئت</th><th>تحویل‌شده به خدام</th><th>موجودی باقی‌مانده</th></tr></thead><tbody>' + stockRows + '</tbody></table></div></div>' +
       '<div class="card section"><h3>دفتر حساب مجموعه با هیئت</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>تاریخ</th><th>شماره رسید</th><th>اقلام و قیمت‌های همان نوبت</th><th>کل هزینه</th><th>پرداخت‌شده</th><th>بدهی مجموعه</th></tr></thead><tbody>' + (receiptRows || '<tr><td colspan="6">هنوز دریافتی از هیئت ثبت نشده است.</td></tr>') + '</tbody></table></div></div>' +
-      '<div class="card section"><h3>پرونده تحویل و بدهی خدام</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>قلم</th><th>تعداد</th><th>قیمت واحد</th><th>هزینه کل</th><th>پرداخت خادم</th><th>بدهی خادم</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>' + (issueRows || '<tr><td colspan="10">هنوز وسیله‌ای به خادم تحویل نشده است.</td></tr>') + '</tbody></table></div></div>' +
+      '<div class="card section"><h3>پرونده تحویل و بدهی خدام</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>قلم</th><th>تعداد</th><th>قیمت واحد</th><th>هزینه کل</th><th>پرداخت خادم</th><th>بدهی خادم</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>' + (issueRows || '<tr><td colspan="11">هنوز وسیله‌ای به خادم تحویل نشده است.</td></tr>') + '</tbody></table></div></div>' +
       '<div class="card section"><h3>خلاصه پرداخت خدام</h3><p>هزینه ثبت‌شده اقلام: <b>' + esc(money(issueCost)) + '</b> · پرداخت‌های ثبت‌شده: <b>' + esc(money(khademPaid)) + '</b></p><p class="muted">بدهی فقط برای اقلامی محاسبه می‌شود که وضعیت آن‌ها «تحویل خادم شده» باشد.</p></div>'
     );
     bindForms();
@@ -253,7 +253,7 @@
           });
           if (result && result.ledgerWarning) ledgerWarnings.push(result.ledgerWarning);
         }
-        setMsg(msg,ledgerWarnings.length?'رسید ذخیره شد، اما دفتر مالی عمومی به‌روزرسانی نشد: '+ledgerWarnings.join('؛ '):'رسید و همه اقلام این نوبت ثبت شد.');
+        toast(ledgerWarnings.length?'رسید ذخیره شد، اما دفتر مالی عمومی به‌روزرسانی نشد: '+ledgerWarnings.join('؛ '):'رسید و همه اقلام این نوبت ثبت شد.');
         $('eqReceiptForm').reset(); ['vest','white_cap','cream_cap','fringe'].forEach(k=>{$('eqRQty_'+k).value='0';$('eqRPrice_'+k).value='0'}); $('eqRPay').value='0';
         await loadData(); renderPage();
       } catch (err) { setMsg(msg,'ثبت کامل نشد: '+err.message,true); }
@@ -274,7 +274,7 @@
       const payload={khadem_id:khademId,source_receipt_item_id:sourceId,item_key:item,quantity:qty,unit_price_toman:price,issue_status:status,issue_date:date,delivery_date:status==='delivered'?date:null,tailor_name:item==='service_shirt'?($('eqTailor').value.trim()||null):null,shirt_size:item==='service_shirt'?($('eqSize').value.trim()||null):null,order_date:item==='service_shirt'?(dateVal('eqOrderDate')||date):null,notes:$('eqINotes').value.trim()||null};
       try {
         await api('khadem_equipment_issues','POST','',payload);
-        setMsg(msg,'سابقه ثبت شد؛ قیمت این نوبت مستقل است و پرداخت‌نشده به‌عنوان بدهی باقی می‌ماند.');
+        toast('سابقه ثبت شد؛ قیمت این نوبت مستقل است و مبلغ پرداخت‌نشده در بدهی خادم محاسبه می‌شود.');
         $('eqIssueForm').reset(); $('eqQty').value='1'; await loadData(); renderPage();
       } catch(err) { setMsg(msg,'ثبت تحویل ناموفق بود: '+err.message,true); }
     });
@@ -283,6 +283,7 @@
       const msg='eqPMsg'; setMsg(msg,'در حال ثبت پرداخت…');
       const amount=num($('eqPayAmount').value), date=dateVal('eqPayDate'), method=$('eqPayMethod').value, ref=$('eqPayRef').value.trim()||null, notes=$('eqPayNotes').value.trim()||null;
       if (!amount || !date) { setMsg(msg,'مبلغ و تاریخ معتبر لازم است.',true); return; }
+      let ledgerWarning = null;
       try {
         if ($('eqPayType').value==='committee') {
           const receiptId=$('eqPayReceipt').value;
@@ -290,7 +291,7 @@
           const rec=cache.receipts.find(r=>r.id===receiptId), balance=rec?Math.max(0,receiptTotal(rec)-paidForReceipt(rec.id)):0;
           if (amount>balance) { setMsg(msg,'مبلغ پرداخت از بدهی باقی‌مانده این رسید بیشتر است.',true); return; }
           var committeeResult = await bindLedgerPayment({table:'equipment_committee_payments',payload:{receipt_id:receiptId,amount_toman:amount,paid_date:date,payment_method:method,reference_no:ref,notes},transaction:{transaction_date:date,transaction_type:'expense',amount:amount*10,title:'پرداخت بدهی وسایل خدمت به هیئت',category:'وسایل خدمت',party:'هیئت',reference_no:ref,payment_method:method,status:'posted',description:notes||'پرداخت ثبت‌شده در بخش وسایل خدمت'}});
-          if (committeeResult.ledgerWarning) setMsg(msg,'پرداخت ثبت شد، اما دفتر مالی عمومی به‌روزرسانی نشد: '+committeeResult.ledgerWarning,true);
+          ledgerWarning = committeeResult.ledgerWarning || null;
         } else {
           const issueId=$('eqPayIssue').value, issue=cache.issues.find(i=>i.id===issueId);
           if (!issue) { setMsg(msg,'قلم و پرونده خادم را انتخاب کنید.',true); return; }
@@ -298,9 +299,10 @@
           if (amount>balance) { setMsg(msg,'مبلغ پرداخت از مانده این قلم بیشتر است.',true); return; }
           const k=issueKhadem(issue);
           var khademResult = await bindLedgerPayment({table:'khadem_equipment_payments',payload:{issue_id:issueId,amount_toman:amount,paid_date:date,payment_method:method,reference_no:ref,notes},transaction:{transaction_date:date,transaction_type:'income',amount:amount*10,title:'دریافت بابت '+label(issue.item_key),category:'وسایل خدمت',party:k.full_name||'خادم',khadem_id:k.id,khadem_code:k.khadem_code,khadem_name:k.full_name,reference_no:ref,payment_method:method,status:'posted',description:notes||'دریافت ثبت‌شده در پرونده مالی خادم'}});
-          if (khademResult.ledgerWarning) setMsg(msg,'پرداخت خادم ثبت شد، اما دفتر مالی عمومی به‌روزرسانی نشد: '+khademResult.ledgerWarning,true);
+          ledgerWarning = khademResult.ledgerWarning || null;
         }
-        setMsg(msg,'پرداخت ثبت شد و مانده بدهی دوباره محاسبه می‌شود.');
+        if (ledgerWarning) toast('پرداخت در دفتر وسایل ثبت شد، اما ثبت/پیوند دفتر مالی عمومی ناموفق بود: ' + ledgerWarning);
+        else toast('پرداخت ثبت شد؛ مانده بدهی دوباره محاسبه شد.');
         $('eqPayForm').reset(); await loadData(); renderPage();
       } catch(err) { setMsg(msg,'ثبت پرداخت ناموفق بود: '+err.message,true); }
     });
