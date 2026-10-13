@@ -2227,7 +2227,7 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
     const r=await request('/rest/v1/app_settings?setting_key=eq.ui_config',{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({value:cfg,updated_at:new Date().toISOString(),updated_by:uid})});
     if(!r.ok)throw new Error('ذخیره در پایگاه داده انجام نشد: '+(await r.text()).slice(0,300));
     const check=await readConfig();
-    if(JSON.stringify(check)!==JSON.stringify(cfg))throw new Error('تغییر برای تأیید دوباره از پایگاه داده خوانده نشد؛ دوباره تلاش کنید.');
+    const stable=function(v){if(Array.isArray(v))return '['+v.map(stable).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().map(function(k){return JSON.stringify(k)+':'+stable(v[k])}).join(',')+'}';return JSON.stringify(v)};if(stable(check)!==stable(cfg))throw new Error('تغییر برای تأیید دوباره از پایگاه داده خوانده نشد؛ دوباره تلاش کنید.');
     try{
       const log=await request('/rest/v1/audit_logs',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({actor_user_id:uid,action:'menu_structure_delete',module_key:'settings:delete',old_data:{description:description},new_data:{deleted_at:new Date().toISOString(),config_key:'ui_config'}})});
       if(!log.ok)console.warn('Menu deletion saved but audit log insert failed:',await log.text());
