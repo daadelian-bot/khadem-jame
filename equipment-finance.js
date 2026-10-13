@@ -86,8 +86,7 @@
     ['stock', 'موجودی وسایل مجموعه'],
     ['khadem-ledger', 'پرونده تحویل و بدهی خدام'],
     ['committee-ledger', 'دفتر حساب مجموعه با هیئت'],
-    ['khadem-summary', 'خلاصه پرداخت خدام'],
-    ['nonattendance', 'عدم حضور در خدمت']
+    ['khadem-summary', 'خلاصه پرداخت خدام']
   ];
   function mountPage(html) {
     const content = $('content');
@@ -421,32 +420,93 @@
     const existing = $('eqServiceAbsenceHistory');
     if (existing) existing.remove();
     const kind = page === 'friday' ? 'friday_night' : 'official';
+    const kindTitle = kind === 'friday_night' ? 'خدمت شب‌های جمعه' : 'خدمت رسمی';
+    const reasonLabels = {border_exit_issue:'مشکل خروج از مرز',illness:'بیماری',family_emergency:'اتفاق یا ضرورت خانوادگی',other:'سایر موارد'};
+    const statusLabels = {pending:'در انتظار پیگیری',rescheduled:'تغییر تاریخ خدمت',refunded:'هزینه بازپرداخت شد',not_refundable:'هزینه قابل بازپرداخت نیست',closed:'مختومه'};
     try {
       const [rows, khadems] = await Promise.all([
-        api('khadem_service_nonattendance', 'GET', 'select=*&service_kind=eq.' + kind + '&order=planned_service_date.desc,created_at.desc&limit=100'),
-        api('khadems', 'GET', 'select=id,khadem_code,full_name&limit=3000')
+        api('khadem_service_nonattendance', 'GET', 'select=*&service_kind=eq.' + kind + '&order=planned_service_date.desc,created_at.desc&limit=1000'),
+        api('khadems', 'GET', 'select=id,khadem_code,full_name,is_active&order=khadem_code.asc&limit=3000')
       ]);
+      if (window.khademCurrentPage !== page || !$('content')) return;
+      const activeKhadems = khadems.filter(k => k.is_active !== false);
+      const options = activeKhadems.map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '—') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
       const names = new Map(khadems.map(k => [k.id, k]));
       const paid = rows.reduce((sum, r) => sum + num(r.cost_paid_toman), 0);
       const list = rows.map(r => {
         const k = names.get(r.khadem_id) || {};
-        const reason = ({border_exit_issue:'مشکل خروج از مرز',illness:'بیماری',family_emergency:'اتفاق یا ضرورت خانوادگی',other:'سایر موارد'})[r.reason_code] || 'سایر موارد';
-        const state = ({pending:'در انتظار پیگیری',rescheduled:'تغییر تاریخ خدمت',refunded:'هزینه بازپرداخت شد',not_refundable:'هزینه قابل بازپرداخت نیست',closed:'مختومه'})[r.resolution_status] || r.resolution_status;
-        return '<tr><td>' + esc(k.khadem_code || '—') + '</td><td>' + esc(k.full_name || '—') + '</td><td>' + esc(jdate(r.planned_service_date)) + '</td><td>' + esc(reason) + '</td><td>' + esc(money(r.cost_paid_toman)) + '</td><td>' + esc(state) + '</td></tr>';
+        const reason = reasonLabels[r.reason_code] || 'سایر موارد';
+        const state = statusLabels[r.resolution_status] || r.resolution_status || '—';
+        return '<tr><td>' + esc(k.khadem_code || '—') + '</td><td>' + esc(k.full_name || 'خادم نامشخص') + '</td><td>' + esc(jdate(r.planned_service_date)) + '</td><td>' + (r.preparation_completed ? 'کامل' : 'ناقص') + '</td><td>' + esc(reason) + (r.reason_details ? '<br><small>' + esc(r.reason_details) + '</small>' : '') + '</td><td>' + esc(money(r.cost_paid_toman)) + ' از ' + esc(money(r.cost_total_toman)) + '</td><td><select class="eq-absence-resolution" data-id="' + esc(r.id) + '">' +
+          ['pending','rescheduled','refunded','not_refundable','closed'].map(s => '<option value="' + s + '"' + (r.resolution_status === s ? ' selected' : '') + '>' + esc(statusLabels[s]) + '</option>').join('') +
+          '</select><input class="eq-absence-refund" data-id="' + esc(r.id) + '" type="number" min="0" step="1" value="' + esc(r.refund_amount_toman || 0) + '" aria-label="مبلغ بازپرداخت تومان" placeholder="مبلغ بازپرداخت" style="max-width:130px;margin-top:5px"><button type="button" class="btn secondary eq-save-absence" data-id="' + esc(r.id) + '" style="margin-top:5px">ثبت پیگیری</button></td></tr>';
       }).join('');
       const panel = document.createElement('section');
       panel.id = 'eqServiceAbsenceHistory';
       panel.className = 'card section';
-      panel.innerHTML = '<h3>عدم حضور در ' + (kind === 'friday_night' ? 'خدمت شب‌های جمعه' : 'خدمت رسمی') + '</h3>' +
-        '<p class="muted">این پرونده‌ها در سوابق برنامه خدمت و آمار عدم حضور نمایش داده می‌شوند، اما به‌عنوان خدمت انجام‌شده شمرده نمی‌شوند.</p>' +
-        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div class="card"><span class="muted">تعداد عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(rows.length)) + '</b></div><div class="card"><span class="muted">هزینه پرداخت‌شده مرتبط</span><b style="display:block;font-size:20px">' + esc(money(paid)) + '</b></div></div>' +
-        '<div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>تاریخ برنامه</th><th>علت</th><th>هزینه پرداخت‌شده</th><th>وضعیت پیگیری</th></tr></thead><tbody>' + (list || '<tr><td colspan="6">برای این نوع خدمت پرونده عدم حضوری ثبت نشده است.</td></tr>') + '</tbody></table></div>';
+      panel.innerHTML = '<h3>عدم حضور در ' + kindTitle + '</h3>' +
+        '<p class="muted">اگر خادم پس از طی مراحل اعزام و حتی پس از پرداخت هزینه نتوانست حاضر شود، پرونده را همین‌جا ثبت کنید. این سابقه به‌عنوان خدمت انجام‌شده محاسبه نمی‌شود و پرداخت‌ها را خودکار تغییر نمی‌دهد.</p>' +
+        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div class="card"><span class="muted">تعداد پرونده‌های عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(rows.length)) + '</b></div><div class="card"><span class="muted">هزینه پرداخت‌شده مرتبط</span><b style="display:block;font-size:20px">' + esc(money(paid)) + '</b></div></div>' +
+        '<form id="eqAbsenceForm" class="card" style="margin:12px 0"><h4>ثبت عدم حضور در ' + kindTitle + '</h4><div class="form-grid">' +
+        '<div class="field"><label for="eqAbsKhadem">خادم</label><select id="eqAbsKhadem" required><option value="">انتخاب خادم…</option>' + options + '</select></div>' +
+        '<div class="field"><label for="eqAbsDate">تاریخ برنامه‌ریزی‌شده خدمت (شمسی)</label><input id="eqAbsDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱" required></div>' +
+        '<div class="field"><label for="eqAbsPreparation">مراحل پیش از خدمت</label><select id="eqAbsPreparation"><option value="true">کامل شده</option><option value="false">کامل نشده</option></select></div>' +
+        '<div class="field"><label for="eqAbsReason">علت عدم حضور</label><select id="eqAbsReason" required><option value="border_exit_issue">مشکل خروج از مرز</option><option value="illness">بیماری</option><option value="family_emergency">اتفاق یا ضرورت خانوادگی</option><option value="other">سایر موارد</option></select></div>' +
+        '<div class="field"><label for="eqAbsTotal">کل هزینه خدمت (تومان)</label><input id="eqAbsTotal" type="number" min="0" step="1" value="0" required></div>' +
+        '<div class="field"><label for="eqAbsPaid">هزینه پرداخت‌شده (تومان)</label><input id="eqAbsPaid" type="number" min="0" step="1" value="0" required></div>' +
+        '<div class="field full"><label for="eqAbsDetails">شرح علت / توضیحات</label><textarea id="eqAbsDetails" placeholder="اختیاری"></textarea></div>' +
+        '<div class="field full"><label for="eqAbsNotes">یادداشت داخلی</label><textarea id="eqAbsNotes" placeholder="اختیاری"></textarea></div></div>' +
+        '<button class="btn primary" type="submit">ثبت عدم حضور</button> <span id="eqAbsMsg" class="muted"></span></form>' +
+        '<h4>سوابق عدم حضور همین نوع خدمت</h4><p class="muted">برای جلوگیری از دوباره‌شماری، ثبت عدم حضور سابقه خدمت انجام‌شده ایجاد نمی‌کند و بازپرداخت در دفتر مالی عمومی به‌صورت خودکار ثبت نمی‌شود.</p>' +
+        '<div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>تاریخ برنامه</th><th>مراحل اعزام</th><th>علت</th><th>هزینه پرداخت‌شده</th><th>وضعیت پیگیری / بازپرداخت</th></tr></thead><tbody>' + (list || '<tr><td colspan="7">برای این نوع خدمت پرونده عدم حضوری ثبت نشده است.</td></tr>') + '</tbody></table></div>';
       content.appendChild(panel);
+      try { if (typeof initOfflineJalaliCalendars === 'function') initOfflineJalaliCalendars(); } catch (_) {}
+      $('eqAbsenceForm')?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const msg = 'eqAbsMsg';
+        const total = num($('eqAbsTotal').value), paidAmount = num($('eqAbsPaid').value), date = dateVal('eqAbsDate');
+        const khademId = $('eqAbsKhadem').value;
+        if (!khademId || !date || !Number.isInteger(total) || !Number.isInteger(paidAmount) || total < 0 || paidAmount < 0 || paidAmount > total) {
+          setMsg(msg, 'خادم و تاریخ معتبر لازم است؛ مبالغ باید عدد صحیح تومان باشند و پرداخت‌شده از کل هزینه بیشتر نباشد.', true); return;
+        }
+        if (rows.some(r => r.khadem_id === khademId && String(r.planned_service_date).slice(0,10) === date)) {
+          setMsg(msg, 'برای این خادم در همین تاریخ، پرونده عدم حضور ثبت شده است؛ سوابق قبلی را پیگیری کنید.', true); return;
+        }
+        setMsg(msg, 'در حال ثبت پرونده…');
+        try {
+          await api('khadem_service_nonattendance', 'POST', '', {
+            khadem_id: khademId, service_kind: kind, planned_service_date: date,
+            preparation_completed: $('eqAbsPreparation').value === 'true',
+            cost_total_toman: total, cost_paid_toman: paidAmount,
+            reason_code: $('eqAbsReason').value,
+            reason_details: $('eqAbsDetails').value.trim() || null,
+            notes: $('eqAbsNotes').value.trim() || null,
+            resolution_status: 'pending', refund_amount_toman: 0
+          });
+          toast('عدم حضور در سوابق این خادم ثبت شد؛ این مورد خدمت انجام‌شده محسوب نمی‌شود.');
+          await appendNonattendanceToServicePage(page);
+        } catch (err) { setMsg(msg, 'ثبت عدم حضور ناموفق بود: ' + err.message, true); }
+      });
+      panel.querySelectorAll('.eq-save-absence').forEach(button => button.addEventListener('click', async () => {
+        const id = button.dataset.id;
+        const status = panel.querySelector('.eq-absence-resolution[data-id="' + id + '"]')?.value;
+        const refund = num(panel.querySelector('.eq-absence-refund[data-id="' + id + '"]')?.value);
+        const record = rows.find(x => x.id === id);
+        if (!record) return;
+        if (refund < 0 || refund > num(record.cost_paid_toman)) { toast('مبلغ بازپرداخت نمی‌تواند از مبلغ پرداخت‌شده بیشتر باشد.'); return; }
+        if (status === 'refunded' && refund <= 0) { toast('برای وضعیت بازپرداخت‌شده، مبلغ بازپرداخت را وارد کنید.'); return; }
+        try {
+          await api('khadem_service_nonattendance', 'PATCH', 'id=eq.' + encodeURIComponent(id), {resolution_status:status, refund_amount_toman:refund});
+          toast('وضعیت پیگیری عدم حضور ذخیره شد.');
+          await appendNonattendanceToServicePage(page);
+        } catch (err) { toast('ذخیره پیگیری ناموفق بود: ' + err.message); }
+      }));
     } catch (err) {
+      if (window.khademCurrentPage !== page || !$('content')) return;
       const panel = document.createElement('section');
       panel.id = 'eqServiceAbsenceHistory';
       panel.className = 'card section';
-      panel.innerHTML = '<h3>سوابق عدم حضور</h3>' + notice('دریافت آمار عدم حضور ممکن نشد: ' + err.message, true);
+      panel.innerHTML = '<h3>عدم حضور در ' + kindTitle + '</h3>' + notice('دریافت یا ثبت سوابق عدم حضور ممکن نشد: ' + err.message, true);
       content.appendChild(panel);
     }
   }
