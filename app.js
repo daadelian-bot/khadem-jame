@@ -47,6 +47,7 @@
     profileEditOpen: false,
     registrationOpen: false,
     search: "",
+    birthdayMonth: null,
     loading: false,
     errors: {},
     loaded: false
@@ -872,8 +873,10 @@
       phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"]), referrer_name:val(k,["referrer_name","introducer_name","referred_by","referrer"]), active_label:activeLabel(k)}));
     const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی با کد ۱۰۰۰ به بالا ثبت نشده است.");
     const currentJalaliMonth = Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(new Date()).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
-    const birthdayRows = rows.filter(k => { const raw=String(val(k,["birth_date"])||"").trim(); let month=0; const jm=raw.match(/^(?:13|14)\d{2}[/-](\d{1,2})[/-]\d{1,2}$/); if(jm) month=Number(jm[1]); else { const d=new Date(raw); if(!Number.isNaN(d.getTime())) month=Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(d).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))); } return month===currentJalaliMonth; }).map(k=>({full_name:nameOf(k),birth_date:val(k,["birth_date"])}));
-    const birthdays = `<section class="kj-card" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین این ماه</h2><p class="kj-muted">ماه جاری بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
+    if (!state.birthdayMonth) state.birthdayMonth = currentJalaliMonth;
+    const birthdayRows = rows.filter(k => { const raw=String(val(k,["birth_date"])||"").trim(); let month=0; const jm=raw.match(/^(?:13|14)\d{2}[/-](\d{1,2})[/-]\d{1,2}$/); if(jm) month=Number(jm[1]); else { const d=new Date(raw); if(!Number.isNaN(d.getTime())) month=Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(d).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))); } return month===Number(state.birthdayMonth); }).map(k=>({full_name:nameOf(k),birth_date:val(k,["birth_date"])}));
+    const monthOptions = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"].map((m,i)=>`<option value="${i+1}" ${Number(state.birthdayMonth)===i+1?"selected":""}>${m}</option>`).join("");
+    const birthdays = `<section class="kj-card" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین ماه انتخابی</h2><label class="kj-field"><b>انتخاب ماه</b><select id="kj-birthday-month">${monthOptions}</select></label><p class="kj-muted">فهرست خادمین متولد ماه انتخاب‌شده بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
       <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
       ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>${birthdays}`;
@@ -958,8 +961,8 @@
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
       ["national_code","کد ملی","text",val(k,["national_code","national_id"])],
-      ["birth_date","تاریخ تولد","text",val(k,["birth_date"])],
-      ["membership_date","تاریخ عضویت","text",val(k,["membership_date"])],
+      ["birth_date","تاریخ تولد (هجری شمسی)","text",dateText(val(k,["birth_date"]))],
+      ["membership_date","تاریخ عضویت (هجری شمسی)","text",dateText(val(k,["membership_date"]))],
       ["occupation","شغل","text",val(k,["occupation","job"])],
       ["phone","شماره تلفن","tel",val(k,["phone","mobile","phone_number"])],
       ["residence","محل سکونت","text",val(k,["residence","address","home_address"])],
@@ -976,7 +979,7 @@
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
   }
   async function saveKhademProfile(form) {
-    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem) || String(khademCode(x)) === String(state.selectedKhadem));
+    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem)) || state.khadems.find(x => String(khademCode(x)) === String(state.selectedKhadem));
     const message = $("#kj-profile-edit-message"), button = $("#kj-save-profile");
     if (!k) { if(message) message.textContent = "پرونده خادم پیدا نشد."; return; }
     const fd = new FormData(form), known = new Set(Object.keys(k)), payload = {};
@@ -1031,7 +1034,7 @@
   }
 
   function khademProfile() {
-    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem) || String(khademCode(x)) === String(state.selectedKhadem));
+    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem)) || state.khadems.find(x => String(khademCode(x)) === String(state.selectedKhadem));
     if (!k) return `<h1 class="kj-page-title">پرونده خادم</h1>${empty("خادم انتخاب نشده است.")}<button class="kj-secondary" id="kj-back">بازگشت</button>`;
     const services = relatedRows(state.services, k);
     const finances = relatedRows(state.finance, k);
@@ -1311,6 +1314,7 @@
         bindKhademButtons();
       });
       bindKhademButtons();
+      $("#kj-birthday-month")?.addEventListener("change", e => { state.birthdayMonth = Number(e.target.value); const main=$("#kj-main"); if(main){main.innerHTML=khademList(); bindKhademRegistrationControls(); bindKhademButtons(); $("#kj-birthday-month")?.addEventListener("change", ev=>{state.birthdayMonth=Number(ev.target.value);render();});} });
     }
     if (["services","nonattendance","meetings","deployments","finance","fund","donors"].includes(state.tab)) {
       const key = ({services:"services",nonattendance:"nonattendance",meetings:"meetings",deployments:"deployments",finance:"finance",fund:"fund",donors:"donors"})[state.tab];
