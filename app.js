@@ -336,7 +336,7 @@
       .kj-nav button{white-space:nowrap;border:1px solid var(--kj-border);border-radius:10px;padding:8px 12px;background:#fff;color:#554c47}.kj-nav button.active{background:#f4e8e9;color:var(--kj-maroon);border-color:#d6b4b9;font-weight:bold}
       .kj-main{padding:16px;min-height:65vh}.kj-page-title{margin:0 0 14px;font-size:21px}.kj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
       .kj-card{background:white;border:1px solid var(--kj-border);border-radius:14px;padding:15px;min-width:0}.kj-stat{font-size:25px;font-weight:bold;color:var(--kj-maroon);margin-top:5px}.kj-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:13px}.kj-toolbar .kj-search{flex:1;min-width:190px}
-      .kj-table-wrap{overflow:auto;background:white;border:1px solid var(--kj-border);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:650px}th,td{text-align:right;padding:8px 9px;border:1px solid #e6ddd4;vertical-align:top}th{background:#faf7f3;color:#5b443c;white-space:nowrap;font-weight:700}td{white-space:normal}tr:last-child td{border-bottom:1px solid #e6ddd4}.kj-khadem-table table{min-width:1080px}.kj-khadem-table th,.kj-khadem-table td{padding:7px 8px}.kj-profile-details{display:block}.kj-profile-details .kj-profile-grid{display:flex;flex-direction:column;gap:0}.kj-profile-details .kj-field{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr);gap:12px;border:0;border-bottom:1px solid #e6ddd4;border-radius:0;padding:8px 4px}.kj-profile-details .kj-field b{margin:0;font-size:13px}
+      .kj-table-wrap{overflow:auto;background:white;border:1px solid var(--kj-border);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:650px}th,td{text-align:right;padding:8px 9px;border:1px solid #e6ddd4;vertical-align:top}th{background:#faf7f3;color:#5b443c;white-space:nowrap;font-weight:700}td{white-space:normal}tr:last-child td{border-bottom:1px solid #e6ddd4}.kj-khadem-table table{min-width:1080px}.kj-khadem-table th,.kj-khadem-table td{padding:9px 10px}.kj-khadem-table{border-radius:16px;box-shadow:0 8px 24px #34251b0a}.kj-khadem-table th{background:linear-gradient(135deg,#f7eee8,#f4e8e9);color:#781f32}.kj-khadem-table tbody tr:nth-child(even){background:#fcfaf8}.kj-khadem-table tbody tr:hover{background:#fff5e8}.kj-registration-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.kj-registration-grid .kj-field{margin:0;background:linear-gradient(180deg,#fff,#fdfaf7);border:1px solid #e8ddd3;border-radius:13px;padding:11px 13px;box-shadow:0 2px 8px #34251b06}.kj-registration-grid .kj-field b{color:#69554b;font-size:13px;margin-bottom:5px}.kj-registration-grid input,.kj-registration-grid select,.kj-registration-grid textarea,#kj-registration-form textarea{width:100%;border:1px solid #ded4ca;border-radius:9px;padding:10px 11px;background:#fff;color:#292522;outline:none;transition:border-color .15s,box-shadow .15s}.kj-registration-grid input:focus,#kj-registration-form textarea:focus{border-color:#bd9855;box-shadow:0 0 0 3px #bd985522}.kj-registration-grid .kj-code-field{background:linear-gradient(135deg,#781f32,#9a3446);border-color:#781f32}.kj-registration-grid .kj-code-field b{color:#fff}.kj-registration-grid .kj-code-field input{background:#fff8e9;border-color:#e3c98f;color:#781f32;font-size:20px;font-weight:bold;letter-spacing:1px}.kj-registration-grid .kj-name-field{border-color:#d9b77a;background:#fffdf7}.kj-registration-grid .kj-name-field input{font-weight:600}.kj-registration-grid .kj-code-field{order:-2}.kj-registration-grid .kj-name-field{order:-1}.kj-profile-details{display:block}.kj-profile-details .kj-profile-grid{display:flex;flex-direction:column;gap:0}.kj-profile-details .kj-field{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr);gap:12px;border:0;border-bottom:1px solid #e6ddd4;border-radius:0;padding:8px 4px}.kj-profile-details .kj-field b{margin:0;font-size:13px}
       .kj-link{border:0;background:transparent;color:var(--kj-maroon);font-weight:bold;padding:3px;text-align:right}.kj-pill{display:inline-block;background:#f4e8e9;color:var(--kj-maroon);border-radius:30px;padding:2px 9px;font-size:12px}
       .kj-empty{padding:22px;text-align:center;color:var(--kj-muted)}.kj-actions{display:flex;gap:8px;flex-wrap:wrap}.kj-secondary{border:1px solid var(--kj-border);background:#fff;color:#514741;border-radius:9px;padding:8px 12px}
       .kj-profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.kj-field{padding:10px;border:1px solid #eee7e0;border-radius:10px;overflow-wrap:anywhere}.kj-field b{display:block;color:#796d65;font-size:12px;margin-bottom:3px}
@@ -354,7 +354,7 @@
       @media(min-width:1000px){.kj-main{padding:22px}.kj-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.kj-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(min-width:1450px){.kj-main{padding:28px}.kj-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
       @media(max-width:800px){.kj-nav{position:sticky;top:0}.kj-main{padding:12px}.kj-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:600px){.kj-top{padding:12px}.kj-brand{font-size:15px}.kj-main{padding:10px}.kj-page-title{font-size:18px}.kj-card{padding:12px}.kj-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-stat{font-size:21px}.kj-nav{top:0}.kj-profile-grid{grid-template-columns:1fr}.kj-login-card{padding:20px}.kj-toolbar{align-items:stretch}.kj-toolbar .kj-search{min-width:100%}}
+      @media(max-width:600px){.kj-registration-grid{grid-template-columns:1fr}.kj-registration-grid .kj-code-field,.kj-registration-grid .kj-name-field{grid-column:1}.kj-top{padding:12px}.kj-brand{font-size:15px}.kj-main{padding:10px}.kj-page-title{font-size:18px}.kj-card{padding:12px}.kj-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-stat{font-size:21px}.kj-nav{top:0}.kj-profile-grid{grid-template-columns:1fr}.kj-login-card{padding:20px}.kj-toolbar{align-items:stretch}.kj-toolbar .kj-search{min-width:100%}}
       @media(max-width:360px){.kj-grid{grid-template-columns:1fr}.kj-actions{width:100%}.kj-actions button{flex:1}}
       @media(hover:none){.kj-link{padding:8px;min-height:42px}}
     `;
@@ -968,10 +968,19 @@
       ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>${birthdays}`;
   }
 
+  function nextKhademCode() {
+    const codes = state.khadems.map(k => {
+      const raw = String(khademCode(k) ?? "").replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+      const digits = raw.replace(/[^0-9]/g, "");
+      return digits ? Number(digits) : 0;
+    }).filter(Number.isFinite);
+    return Math.max(999, ...codes) + 1;
+  }
+
   function khademRegistrationForm() {
     const skills = ["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"];
     const fields = [
-      ["full_name","نام و نام خانوادگی *","text"],["khadem_code","کد خادم","text"],["referrer_name","معرف خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
+      ["khadem_code","کد خادم (صدور خودکار)","text"],["full_name","نام و نام خانوادگی *","text"],["referrer_name","معرف خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
       ["birth_date","تاریخ تولد","text"],["membership_date","تاریخ عضویت","text"],["phone","شماره تلفن خادم","tel"],["occupation","شغل","text"],
       ["primary_responsibility","مسئولیت اصلی","text"],["address","نشانی محل سکونت","text"],
       ["emergency_contact_name","تماس اضطراری ۱ — نام","text"],["emergency_contact_phone","تماس اضطراری ۱ — شماره تلفن","tel"],
@@ -979,7 +988,7 @@
     ];
     return `<form id="kj-registration-form" class="kj-card" style="margin:14px 0" novalidate>
       <h2 class="kj-section-title">فرم ثبت خادم جدید</h2>
-      <div class="kj-profile-grid">${fields.map(([name,label,type])=>`<label class="kj-field"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} autocomplete="off"></label>`).join("")}</div>
+      <div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="${name==="khadem_code"?fa(nextKhademCode()):""}" autocomplete="off" placeholder="${name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}"></label>`).join("")}</div>
       <fieldset style="border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:14px 0"><legend>مهارت‌ها و توانمندی‌ها</legend><div class="kj-skill-list">${skills.map(s=>`<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;margin:4px"><input type="checkbox" name="skills" value="${esc(s)}">${esc(s)}</label>`).join("")}</div></fieldset>
       <label class="kj-field"><b>توضیحات</b><textarea name="notes" rows="3"></textarea></label>
       <div id="kj-registration-message" class="kj-muted" role="status" aria-live="polite"></div>
@@ -1001,7 +1010,9 @@
     if (!["full_name","name","khadem_name"].some(x=>Object.prototype.hasOwnProperty.call(payload,x))) {
       const parts=fullName.split(/\s+/); put(["first_name"],parts.shift()||fullName); put(["last_name","family_name","family"],parts.join(" "));
     }
-    put(["khadem_code","personnel_code","code"],String(fd.get("khadem_code")||"").trim());
+    // کد در لحظه ثبت دوباره از آخرین کد موجود محاسبه می‌شود؛ مقدار فرم صرفاً نمایشی است.
+    const generatedCode = String(nextKhademCode());
+    put(["khadem_code","personnel_code","code"],generatedCode);
     put(["father_name"],String(fd.get("father_name")||"").trim());
     put(["national_code","national_id"],String(fd.get("national_code")||"").trim());
     put(["birth_date"],String(fd.get("birth_date")||"").trim());
