@@ -44,6 +44,7 @@
     appSettings: [],
     tuitionPayments: [],
     selectedKhadem: null,
+    profileEditOpen: false,
     registrationOpen: false,
     search: "",
     loading: false,
@@ -286,7 +287,7 @@
       .kj-nav button{white-space:nowrap;border:1px solid var(--kj-border);border-radius:10px;padding:8px 12px;background:#fff;color:#554c47}.kj-nav button.active{background:#f4e8e9;color:var(--kj-maroon);border-color:#d6b4b9;font-weight:bold}
       .kj-main{padding:16px;min-height:65vh}.kj-page-title{margin:0 0 14px;font-size:21px}.kj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
       .kj-card{background:white;border:1px solid var(--kj-border);border-radius:14px;padding:15px;min-width:0}.kj-stat{font-size:25px;font-weight:bold;color:var(--kj-maroon);margin-top:5px}.kj-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:13px}.kj-toolbar .kj-search{flex:1;min-width:190px}
-      .kj-table-wrap{overflow:auto;background:white;border:1px solid var(--kj-border);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:650px}th,td{text-align:right;padding:11px;border-bottom:1px solid #eee7e0;vertical-align:top}th{background:#faf7f3;color:#5b443c;white-space:nowrap}tr:last-child td{border-bottom:0}
+      .kj-table-wrap{overflow:auto;background:white;border:1px solid var(--kj-border);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:650px}th,td{text-align:right;padding:8px 9px;border:1px solid #e6ddd4;vertical-align:top}th{background:#faf7f3;color:#5b443c;white-space:nowrap;font-weight:700}td{white-space:normal}tr:last-child td{border-bottom:1px solid #e6ddd4}.kj-khadem-table table{min-width:1080px}.kj-khadem-table th,.kj-khadem-table td{padding:7px 8px}.kj-profile-details{display:block}.kj-profile-details .kj-profile-grid{display:flex;flex-direction:column;gap:0}.kj-profile-details .kj-field{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr);gap:12px;border:0;border-bottom:1px solid #e6ddd4;border-radius:0;padding:8px 4px}.kj-profile-details .kj-field b{margin:0;font-size:13px}
       .kj-link{border:0;background:transparent;color:var(--kj-maroon);font-weight:bold;padding:3px;text-align:right}.kj-pill{display:inline-block;background:#f4e8e9;color:var(--kj-maroon);border-radius:30px;padding:2px 9px;font-size:12px}
       .kj-empty{padding:22px;text-align:center;color:var(--kj-muted)}.kj-actions{display:flex;gap:8px;flex-wrap:wrap}.kj-secondary{border:1px solid var(--kj-border);background:#fff;color:#514741;border-radius:9px;padding:8px 12px}
       .kj-profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.kj-field{padding:10px;border:1px solid #eee7e0;border-radius:10px;overflow-wrap:anywhere}.kj-field b{display:block;color:#796d65;font-size:12px;margin-bottom:3px}
@@ -854,22 +855,18 @@
     const q = state.search.trim().toLowerCase();
     const rows = state.khadems.filter(k => !q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_code"])].join(" ").toLowerCase().includes(q));
     const columns = [
-      {key:"khadem_code",label:"کد خادم"},
-      {key:"full_name",label:"نام و نام خانوادگی"},
-      {key:"phone",label:"تلفن"},
-      {key:"status",label:"وضعیت"}
+      {key:"khadem_code",label:"کد خادم"},{key:"full_name",label:"نام و نام خانوادگی"},{key:"triple_name",label:"نام ثلاثی"},
+      {key:"national_code",label:"کد ملی"},{key:"birth_date",label:"تاریخ تولد"},{key:"membership_date",label:"تاریخ عضویت"},
+      {key:"occupation",label:"شغل"},{key:"phone",label:"شماره تلفن"},{key:"residence",label:"محل سکونت"}
     ];
-    const htmlRows = rows.map(k => ({
-      ...k,
-      khadem_code: khademCode(k),
-      full_name: nameOf(k),
-      phone: val(k,["phone","mobile","phone_number"]),
-      status: val(k,["status","active"]) || "—"
-    }));
+    const htmlRows = rows.map(k => ({...k, khadem_code:khademCode(k), full_name:nameOf(k),
+      triple_name:val(k,["triple_name","tri_name","full_name_triple","full_name"]), national_code:val(k,["national_code","national_id"]),
+      birth_date:val(k,["birth_date"]), membership_date:val(k,["membership_date"]), occupation:val(k,["occupation","job"]),
+      phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"])}));
+    const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی ثبت نشده است.");
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
-      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
-      ${state.registrationOpen ? khademRegistrationForm() : ""}
-      ${tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی ثبت نشده است.")}`;
+      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
+      ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>`;
   }
 
   function khademRegistrationForm() {
@@ -1067,7 +1064,7 @@
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
       <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
-      <div class="kj-card"><h3 class="kj-section-title" style="margin-top:0">مشخصات خادم</h3>${fields}</div>
+      <div class="kj-card"><div class="kj-toolbar" style="justify-content:space-between"><h3 class="kj-section-title" style="margin:0">مشخصات خادم</h3><button type="button" class="kj-primary" id="kj-edit-profile">${state.profileEditOpen?"بستن ویرایش":"✏️ ویرایش مشخصات خادم"}</button></div><div class="kj-profile-details">${state.profileEditOpen ? khademEditForm(k) : fields}</div></div>
       <div class="kj-card" style="margin-top:14px"><details class="kj-profile-subsection">
         <summary class="kj-section-title">☎️ تماس‌ها و شماره‌های ضروری</summary>
         ${tableHtml([{contact_type:"شماره تماس اصلی",contact_name:"خود خادم",contact_phone:val(k,["phone","mobile","phone_number"])},{contact_type:"تماس اضطراری ۱",contact_name:val(k,["emergency_contact_name","emergency_contact_1_name"]),contact_phone:val(k,["emergency_contact_phone","emergency_contact_1_phone","emergency_phone"])},{contact_type:"تماس اضطراری ۲",contact_name:val(k,["emergency_contact_name_2","emergency_contact_2_name"]),contact_phone:val(k,["emergency_contact_phone_2","emergency_contact_2_phone"])}],[{key:"contact_type",label:"نوع تماس"},{key:"contact_name",label:"نام مخاطب"},{key:"contact_phone",label:"شماره تلفن"}],"شماره تماسی برای نمایش ثبت نشده است.")}
@@ -1222,7 +1219,10 @@
     if (!main) return;
     if (state.selectedKhadem !== null && state.tab === "khadems") {
       main.innerHTML = khademProfile();
-      $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; render(); });
+      $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; state.profileEditOpen = false; render(); });
+      $("#kj-edit-profile")?.addEventListener("click", () => { state.profileEditOpen = !state.profileEditOpen; render(); });
+      $("#kj-profile-edit-form")?.addEventListener("submit", e => { e.preventDefault(); saveKhademProfile(e.currentTarget); });
+      $("#kj-cancel-profile-edit")?.addEventListener("click", () => { state.profileEditOpen = false; render(); });
       return;
     }
     const views = {
