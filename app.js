@@ -675,32 +675,75 @@
   function khademId(k) { return val(k, ["id", "khadem_id"]); }
   function fieldLabel(key) {
     const labels = {
-      id:"شناسه", khadem_code:"کد خادم", code:"کد", full_name:"نام و نام خانوادگی", name:"نام",
-      first_name:"نام", last_name:"نام خانوادگی", family:"نام خانوادگی", father_name:"نام پدر",
-      national_code:"کد ملی", national_id:"کد ملی", phone:"تلفن همراه", mobile:"تلفن همراه", email:"ایمیل",
+      id:"شناسه داخلی", khadem_id:"شناسه خادم", person_id:"شناسه شخص", personnel_id:"شناسه پرسنلی",
+      khadem_code:"کد خادم", personnel_code:"کد خادم", code:"کد", full_name:"نام و نام خانوادگی", name:"نام",
+      first_name:"نام", last_name:"نام خانوادگی", family:"نام خانوادگی", family_name:"نام خانوادگی", father_name:"نام پدر",
+      national_code:"کد ملی", national_id:"کد ملی", phone:"تلفن همراه", mobile:"تلفن همراه", phone_number:"شماره تماس", email:"ایمیل",
       triple_name:"نام سه‌گانه", tri_name:"نام سه‌گانه", membership_date:"تاریخ عضویت",
       birth_date:"تاریخ تولد", address:"نشانی", residence:"محل سکونت", status:"وضعیت", active:"فعال", is_active:"وضعیت فعالیت",
       primary_responsibility:"مسئولیت اصلی", job:"شغل", occupation:"شغل", blood_type:"گروه خونی", medical_history:"سوابق پزشکی",
-      skills:"مهارت‌ها", education_level:"سطح تحصیلات", marital_status:"وضعیت تأهل",
+      skills:"مهارت‌ها", education_level:"سطح تحصیلات", marital_status:"وضعیت تأهل", education:"تحصیلات",
       emergency_contact_name:"نام تماس اضطراری", emergency_contact_phone:"تلفن تماس اضطراری",
       emergency_contact_name_2:"نام تماس اضطراری دوم", emergency_contact_name_3:"نام تماس اضطراری سوم",
       emergency_contact_phone_2:"تلفن تماس اضطراری دوم", emergency_contact_phone_3:"تلفن تماس اضطراری سوم",
-      created_at:"تاریخ ثبت", updated_at:"آخرین به‌روزرسانی", notes:"توضیحات",
-      service_date:"تاریخ خدمت", date:"تاریخ", service_type:"نوع خدمت", category:"دسته‌بندی",
-      amount:"مبلغ", paid_amount:"مبلغ پرداخت‌شده", balance:"مانده", debt:"بدهی",
-      transaction_type:"نوع تراکنش", type:"نوع", description:"شرح", title:"عنوان",
-      meeting_date:"تاریخ جلسه", meeting_title:"عنوان جلسه", deployment_date:"تاریخ مأموریت",
-      role:"نقش", responsibility:"مسئولیت", education:"تحصیلات"
+      created_at:"تاریخ ثبت", updated_at:"آخرین به‌روزرسانی", notes:"توضیحات", description:"شرح", title:"عنوان",
+      service_date:"تاریخ خدمت", date:"تاریخ", service_type:"نوع خدمت", service_kind:"نوع خدمت", category:"دسته‌بندی",
+      amount:"مبلغ", amount_toman:"مبلغ (تومان)", total_amount:"مبلغ کل", total_amount_toman:"مبلغ کل",
+      paid_amount:"مبلغ پرداخت‌شده", paid_toman:"مبلغ پرداخت‌شده", balance:"مانده", debt:"بدهی",
+      remaining_amount:"مانده بدهی", remaining_toman:"مانده بدهی", cost_total_toman:"هزینه کل", cost_paid_toman:"هزینه پرداخت‌شده",
+      transaction_type:"نوع تراکنش", type:"نوع", paid_date:"تاریخ پرداخت", transaction_date:"تاریخ تراکنش",
+      meeting_date:"تاریخ جلسه", meeting_title:"عنوان جلسه", meeting_type:"نوع جلسه", meeting_id:"شناسه جلسه",
+      deployment_date:"تاریخ مأموریت", responsibility:"مسئولیت", role:"نقش", reason:"توضیحات",
+      reason_code:"علت", resolution_status:"وضعیت پیگیری", invitee_count:"تعداد مدعوین", present_count:"تعداد حاضران", absent_count:"تعداد غایبان",
+      service_count:"تعداد سوابق خدمت", main_service_count:"تعداد خدمات اصلی", friday_service_count:"تعداد خدمات شب جمعه",
+      service_days:"روزهای خدمت", total_service_days:"مجموع روزهای خدمت", extra_data:"اطلاعات تکمیلی",
+      tuition_exempt:"معافیت از شهریه", period_month:"دوره شهریه", due_date:"تاریخ سررسید", payment_date:"تاریخ پرداخت",
+      installment_number:"شماره قسط", item_key:"شرح قلم", quantity:"تعداد", unit_cost_toman:"قیمت واحد", total_cost_toman:"مبلغ کل",
+      vehicle_type:"نوع وسیله نقلیه", model:"مدل", plate_number:"شماره پلاک", capacity:"ظرفیت", driver_name:"نام راننده",
+      issue_status:"وضعیت تحویل", issue_date:"تاریخ تحویل", received_date:"تاریخ دریافت", received_from:"دریافت از",
+      reference_no:"شماره مرجع", payment_method:"روش پرداخت", display_name:"نام نمایشی", role_key:"شناسه نقش",
+      is_system:"نقش سیستمی", permission_key:"شناسه مجوز", permission_id:"شناسه مجوز", role_id:"شناسه نقش",
+      actor_user_id:"شناسه کاربر", action:"عملیات", module_key:"بخش", record_id:"شناسه رکورد",
+      key:"کلید تنظیم", setting_key:"کلید تنظیم", label:"عنوان", config_key:"کلید پیکربندی",
+      tuition_due:"بدهی شهریه", amount_paid:"مبلغ پرداخت‌شده", refund_amount_toman:"مبلغ بازپرداخت",
+      issue_id:"شناسه تحویل", receipt_id:"شناسه رسید", amount_toman:"مبلغ (تومان)", paid_date:"تاریخ پرداخت",
+      due_date:"سررسید", period_month:"دوره", attendance_status:"وضعیت حضور", invite_status:"وضعیت دعوت",
+      service_name:"عنوان خدمت", service_status:"وضعیت خدمت", service_days_count:"تعداد روزهای خدمت",
+      total_service_count:"مجموع سوابق خدمت", friday_service_days:"روزهای خدمت شب جمعه", main_service_days:"روزهای خدمت اصلی"
     };
-    return labels[key] || key.replaceAll("_", " ");
+    return labels[key] || "اطلاعات تکمیلی";
+  }
+  function translateValue(value) {
+    const translations = {
+      active:"فعال", inactive:"غیرفعال", pending:"در انتظار پرداخت", paid:"پرداخت‌شده", unpaid:"پرداخت‌نشده",
+      present:"حاضر", absent:"غایب", excused:"با عذر", invited:"دعوت‌شده", confirmed:"تأییدشده",
+      cancelled:"لغوشده", canceled:"لغوشده", completed:"تکمیل‌شده", rejected:"ردشده", approved:"تأییدشده",
+      yes:"بله", no:"خیر", true:"بله", false:"خیر", null:"ثبت‌نشده",
+      main:"اصلی", friday:"شب جمعه", service:"خدمت", tuition:"شهریه", installment:"قسط",
+      cash:"نقدی", transfer:"انتقال بانکی", card:"کارت‌به‌کارت", other:"سایر", personal:"شخصی",
+      car:"خودرو", personal_car:"اتومبیل شخصی", committee_vehicle:"خودروی مجموعه",
+      deferred:"معوق", due:"سررسیدشده", open:"باز", closed:"بسته", refunded:"بازپرداخت‌شده",
+      male:"مرد", single:"مجرد", married:"متأهل", employee:"کارمند"
+    };
+    const raw = String(value);
+    const key = raw.trim().toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(translations,key)) return translations[key];
+    return raw.replaceAll("_"," ");
   }
   function formatValue(key, value) {
     if (value === null || value === undefined || value === "") return "—";
-    if (/(date|_at)$/.test(key) || key === "birth_date") return dateText(value);
-    if (/(amount|balance|debt|salary|cost|price|paid)/i.test(key) && (typeof value === "number" || /^-?[\d,.]+$/.test(String(value)))) return money(value);
+    if (/(date|_at|_date|_month)$/.test(key) || key === "birth_date") return dateText(value);
+    if (/(amount|balance|debt|salary|cost|price|paid|refund)/i.test(key) && (typeof value === "number" || /^-?[\\d,.]+$/.test(String(value)))) return money(value);
     if (typeof value === "boolean") return value ? "بله" : "خیر";
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value);
+    if (typeof value === "object") {
+      const localize = item => {
+        if (Array.isArray(item)) return item.map(localize);
+        if (item && typeof item === "object") return Object.fromEntries(Object.entries(item).map(([k,v]) => [fieldLabel(k), localize(v)]));
+        return typeof item === "string" ? translateValue(item) : item;
+      };
+      return JSON.stringify(localize(value), null, 2);
+    }
+    return translateValue(value);
   }
   function dataFields(row, omit = []) {
     if (!row) return "";
