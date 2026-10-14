@@ -1123,26 +1123,7 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
    results.querySelectorAll('[data-v67-col]').forEach(ch=>ch.onchange=()=>{let s=sections[+ch.dataset.v67Col];if(ch.checked&&!s.selected.includes(ch.value))s.selected.push(ch.value);if(!ch.checked)s.selected=s.selected.filter(c=>c!==ch.value)});results.querySelectorAll('[data-v67-allcols]').forEach(b=>b.onclick=()=>{let s=sections[+b.dataset.v67Allcols];s.selected=[...s.cols];results.querySelectorAll('[data-v67-col="'+b.dataset.v67Allcols+'"]').forEach(c=>c.checked=true)});results.querySelectorAll('[data-v67-nocols]').forEach(b=>b.onclick=()=>{let s=sections[+b.dataset.v67Nocols];s.selected=[];results.querySelectorAll('[data-v67-col="'+b.dataset.v67Nocols+'"]').forEach(c=>c.checked=false)});status.textContent='گزارش آماده است. ستون‌های دلخواه را علامت بزنید و خروجی بگیرید.';
   };
   $('v67-csv').onclick=()=>{if(!sections.length){status.textContent='ابتدا گزارش را بسازید.';return}let out=[];sections.forEach(s=>{let cols=s.selected||[];if(!cols.length)return;out.push(cell('بخش: '+s.title));out.push([['کد خادم','نام خادم',...cols.map(label)].map(cell).join(','),...s.rows.map(r=>{let k=khadems.find(x=>String(x.id)===String(r.khadem_id)||String(x.id)===String(r.id)||(x.khadem_code&&x.khadem_code===r.khadem_code));return [k?.khadem_code||r.khadem_code||'',k?.full_name||r.khadem_name||r.full_name||'',...cols.map(c=>fmt(c,r[c]))].map(cell).join(',')})].join('\r\n'))});if(out.length)download('گزارش-جامع-خادمین.csv',out.join('\r\n\r\n'));else status.textContent='برای خروجی حداقل یک ستون انتخاب کنید.'};
-  function v67BuildReportHtml(){let content='';sections.forEach(s=>{let cols=s.selected||[];if(!cols.length)return;content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+['کد خادم','نام خادم',...cols.map(label)].map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>{let k=khadems.find(x=>String(x.id)===String(r.khadem_id)||String(x.id)===String(r.id)||(x.khadem_code&&String(x.khadem_code)===String(r.khadem_code)));return '<tr>'+[k?.khadem_code||r.khadem_code||'',k?.full_name||r.khadem_name||r.full_name||'',...cols.map(c=>fmt(c,r[c]))].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>'}).join('')+'</tbody></table>'});return '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش جامع خادمین</title><style>body{font-family:Tahoma,Arial,sans-serif;padding:18px}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}h2,h3{page-break-after:avoid}</style></head><body><h2>گزارش جامع خادمین</h2><p>تاریخ تهیه: '+esc(new Date().toLocaleString('fa-IR'))+'</p>'+content+'<script id="khadem-secure-logout-v165">
-(function(){
-  'use strict';
-  window.khademLogout=function(){
-    var token='';
-    try {
-      var session=JSON.parse(localStorage.getItem('khadem_session')||'{}');
-      token=session.access_token||localStorage.getItem('kj_access_token')||'';
-    } catch(_) { token=localStorage.getItem('kj_access_token')||''; }
-    try {
-      if(token && typeof CFG!=='undefined' && CFG.url && CFG.key) {
-        fetch(CFG.url+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
-      }
-    } catch(_) {}
-    ['khadem_session','kj_access_token','kj_user'].forEach(function(k){try{localStorage.removeItem(k)}catch(_){}});
-    try { sessionStorage.removeItem('khadem_session'); sessionStorage.removeItem('kj_access_token'); sessionStorage.removeItem('kj_user'); } catch(_) {}
-    location.replace('./login.html?reason=logout');
-  };
-})();
-</script>
+  function v67BuildReportHtml(){let content='';sections.forEach(s=>{let cols=s.selected||[];if(!cols.length)return;content+='<h3>'+esc(s.title)+'</h3><table><thead><tr>'+['کد خادم','نام خادم',...cols.map(label)].map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>{let k=khadems.find(x=>String(x.id)===String(r.khadem_id)||String(x.id)===String(r.id)||(x.khadem_code&&String(x.khadem_code)===String(r.khadem_code)));return '<tr>'+[k?.khadem_code||r.khadem_code||'',k?.full_name||r.khadem_name||r.full_name||'',...cols.map(c=>fmt(c,r[c]))].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>'}).join('')+'</tbody></table>'});return '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش جامع خادمین</title><style>body{font-family:Tahoma,Arial,sans-serif;padding:18px}table{border-collapse:collapse;width:100%;font-size:10px;margin-bottom:20px}th,td{border:1px solid #777;padding:5px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}h2,h3{page-break-after:avoid}</style></head><body><h2>گزارش جامع خادمین</h2><p>تاریخ تهیه: '+esc(new Date().toLocaleString('fa-IR'))+'</p>'+content+'
 </body></html>'; }
  }
  window.render=function(p){if(p==='reports:builder'||p==='reports:saved'||p==='reports:exports')return reportPage();return previousRender.apply(this,arguments)};
@@ -2352,6 +2333,26 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
       showControls();
     }
     return result;
+  };
+})();
+</script>
+<script id="khadem-secure-logout-v165">
+(function(){
+  'use strict';
+  window.khademLogout=function(){
+    var token='';
+    try {
+      var session=JSON.parse(localStorage.getItem('khadem_session')||'{}');
+      token=session.access_token||localStorage.getItem('kj_access_token')||'';
+    } catch(_) { token=localStorage.getItem('kj_access_token')||''; }
+    try {
+      if(token && typeof CFG!=='undefined' && CFG.url && CFG.key) {
+        fetch(CFG.url+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
+      }
+    } catch(_) {}
+    ['khadem_session','kj_access_token','kj_user'].forEach(function(k){try{localStorage.removeItem(k)}catch(_){}});
+    try { sessionStorage.removeItem('khadem_session'); sessionStorage.removeItem('kj_access_token'); sessionStorage.removeItem('kj_user'); } catch(_) {}
+    location.replace('./login.html?reason=logout');
   };
 })();
 </script>
