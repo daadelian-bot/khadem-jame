@@ -942,6 +942,82 @@
   function relatedSection(title, tableKey, rows, columns, emptyText) {
     return `<h3 class="kj-section-title">${esc(title)}</h3>${errBox(tableKey)}${tableHtml(rows, columns, state.errors[tableKey] ? "به دلیل خطای دریافت، خالی بودن سوابق قابل تأیید نیست." : emptyText)}`;
   }
+  function khademEditForm(k) {
+    const fields = [
+      ["full_name","نام و نام خانوادگی","text",nameOf(k)],
+      ["khadem_code","کد خادم","text",khademCode(k)],
+      ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
+      ["father_name","نام پدر","text",val(k,["father_name"])],
+      ["national_code","کد ملی","text",val(k,["national_code","national_id"])],
+      ["birth_date","تاریخ تولد","text",val(k,["birth_date"])],
+      ["membership_date","تاریخ عضویت","text",val(k,["membership_date"])],
+      ["occupation","شغل","text",val(k,["occupation","job"])],
+      ["phone","شماره تلفن","tel",val(k,["phone","mobile","phone_number"])],
+      ["residence","محل سکونت","text",val(k,["residence","address","home_address"])],
+      ["primary_responsibility","مسئولیت اصلی","text",val(k,["primary_responsibility","responsibility"])],
+      ["emergency_contact_name","نام تماس اضطراری ۱","text",val(k,["emergency_contact_name","emergency_contact_1_name"])],
+      ["emergency_contact_phone","تلفن تماس اضطراری ۱","tel",val(k,["emergency_contact_phone","emergency_contact_1_phone"])],
+      ["emergency_contact_name_2","نام تماس اضطراری ۲","text",val(k,["emergency_contact_name_2","emergency_contact_2_name"])],
+      ["emergency_contact_phone_2","تلفن تماس اضطراری ۲","tel",val(k,["emergency_contact_phone_2","emergency_contact_2_phone"])],
+      ["notes","توضیحات","text",val(k,["notes","description"])]
+    ];
+    return '<form id="kj-profile-edit-form" novalidate><div class="kj-profile-grid">' +
+      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b><input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off"></label>').join("") +
+      '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
+  }
+  async function saveKhademProfile(form) {
+    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem) || String(khademCode(x)) === String(state.selectedKhadem));
+    const message = $("#kj-profile-edit-message"), button = $("#kj-save-profile");
+    if (!k) { if(message) message.textContent = "پرونده خادم پیدا نشد."; return; }
+    const fd = new FormData(form), known = new Set(Object.keys(k)), payload = {};
+    const put = (aliases, value) => {
+      const key = aliases.find(x => known.has(x));
+      if (key) payload[key] = String(value ?? "").trim() || null;
+    };
+    const fullName = String(fd.get("full_name") || "").trim();
+    if (known.has("full_name")) put(["full_name"], fullName);
+    else if (known.has("name")) put(["name"], fullName);
+    else if (known.has("khadem_name")) put(["khadem_name"], fullName);
+    else {
+      const parts = fullName.split(/\s+/).filter(Boolean);
+      put(["first_name"], parts.shift() || "");
+      put(["last_name","family_name","family"], parts.join(" "));
+    }
+    put(["khadem_code","personnel_code","code"], fd.get("khadem_code"));
+    put(["triple_name","tri_name","full_name_triple"], fd.get("triple_name"));
+    put(["father_name"], fd.get("father_name"));
+    put(["national_code","national_id"], fd.get("national_code"));
+    put(["birth_date"], fd.get("birth_date"));
+    put(["membership_date"], fd.get("membership_date"));
+    put(["occupation","job"], fd.get("occupation"));
+    put(["phone","mobile","phone_number"], fd.get("phone"));
+    put(["residence","address","home_address"], fd.get("residence"));
+    put(["primary_responsibility","responsibility"], fd.get("primary_responsibility"));
+    put(["emergency_contact_name","emergency_contact_1_name"], fd.get("emergency_contact_name"));
+    put(["emergency_contact_phone","emergency_contact_1_phone"], fd.get("emergency_contact_phone"));
+    put(["emergency_contact_name_2","emergency_contact_2_name"], fd.get("emergency_contact_name_2"));
+    put(["emergency_contact_phone_2","emergency_contact_2_phone"], fd.get("emergency_contact_phone_2"));
+    put(["notes","description"], fd.get("notes"));
+    if (!Object.keys(payload).length) { if(message) message.textContent = "ستون‌های قابل ویرایش در ساختار فعلی پیدا نشد."; return; }
+    const id = khademId(k);
+    const filter = id ? "id=eq."+encodeURIComponent(id) : (khademCode(k) ? "khadem_code=eq."+encodeURIComponent(khademCode(k)) : "");
+    if (!filter) { if(message) message.textContent = "شناسه خادم برای ذخیره تغییرات در دسترس نیست."; return; }
+    if (button) { button.disabled = true; button.textContent = "در حال ذخیره…"; }
+    if (message) message.textContent = "در حال ذخیره تغییرات…";
+    try {
+      await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
+      state.profileEditOpen = false;
+      await loadData();
+      state.selectedKhadem = khademId(k) || khademCode(k);
+      render();
+      toast("تغییرات پرونده خادم ذخیره شد.","success");
+    } catch (error) {
+      if (message) message.textContent = "ذخیره انجام نشد: "+(error.message || "خطای نامشخص")+"؛ ممکن است مجوز ویرایش پایگاه داده فعال نباشد.";
+      if (button) { button.disabled = false; button.textContent = "ذخیره تغییرات"; }
+    }
+    $("#kj-cancel-profile-edit")?.addEventListener("click", () => { state.profileEditOpen = false; render(); });
+  }
+
   function khademProfile() {
     const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem) || String(khademCode(x)) === String(state.selectedKhadem));
     if (!k) return `<h1 class="kj-page-title">پرونده خادم</h1>${empty("خادم انتخاب نشده است.")}<button class="kj-secondary" id="kj-back">بازگشت</button>`;
