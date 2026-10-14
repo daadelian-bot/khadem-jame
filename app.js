@@ -459,7 +459,7 @@
           <div class="kj-content-wrap"><main id="kj-main" class="kj-main"></main><footer class="kj-footer">سامانه جامع مدیریت خادمین · رابط فارسی راست‌چین</footer></div>
         </div>
       </div>`;
-    $$$(".kj-group-toggle").forEach(b => b.addEventListener("click", () => {
+    $(".kj-group-toggle").forEach(b => b.addEventListener("click", () => {
       const group=b.closest(".kj-menu-group");const open=!group.classList.contains("open");
       group.classList.toggle("open",open);b.setAttribute("aria-expanded",open?"true":"false");
     }));
@@ -489,8 +489,8 @@
     }));
     $("#kj-menu-search").addEventListener("input", e => {
       const q=e.target.value.trim().toLocaleLowerCase("fa");
-      $$$(".kj-nav [data-tab]").forEach(b=>b.classList.toggle("kj-menu-hidden",!!q&&!b.textContent.toLocaleLowerCase("fa").includes(q)));
-      $$$(".kj-menu-group").forEach(g=>{
+      $(".kj-nav [data-tab]").forEach(b=>b.classList.toggle("kj-menu-hidden",!!q&&!b.textContent.toLocaleLowerCase("fa").includes(q)));
+      $(".kj-menu-group").forEach(g=>{
         const any=[...g.querySelectorAll("[data-tab]")].some(b=>!b.classList.contains("kj-menu-hidden"));
         g.style.display=any?"":"none";
         if(q&&any){g.classList.add("open");g.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded","true");}
@@ -562,7 +562,7 @@
     return `<div class="kj-table-wrap"><table><thead><tr>${columns.map(c => `<th>${esc(c.label)}</th>`).join("")}<th>جزئیات</th></tr></thead><tbody>${rows.map((row,i) => `<tr>${columns.map(c => `<td>${esc(formatValue(c.key, row[c.key]))}</td>`).join("")}<td><button class="kj-link" data-row="${i}">نمایش</button></td></tr>`).join("")}</tbody></table></div>`;
   }
   function attachRowDetails(container, rows, title = "جزئیات") {
-    $$$("[data-row]", container).forEach(button => button.addEventListener("click", () => {
+    $("[data-row]", container).forEach(button => button.addEventListener("click", () => {
       const row = rows[Number(button.dataset.row)];
       if (!row) return;
       modal(title, dataFields(row));
@@ -840,7 +840,7 @@
       settings: settingsPage
     };
     main.innerHTML = (views[state.tab] || dashboard)();
-    $$$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
+    $("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
       state.tab = button.dataset.quickTab; state.selectedKhadem = null;
       render();
       window.scrollTo({top:0,behavior:"smooth"});
@@ -885,7 +885,7 @@
     if (!main) return;
     const q = state.search.trim().toLowerCase();
     const rows = state.khadems.filter(k => !q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(q));
-    $$$("[data-row]", main).forEach(b => b.addEventListener("click", () => {
+    $("[data-row]", main).forEach(b => b.addEventListener("click", () => {
       const k = rows[Number(b.dataset.row)];
       if (!k) return;
       state.selectedKhadem = khademId(k) || khademCode(k);
