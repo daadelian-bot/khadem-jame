@@ -119,7 +119,7 @@
   }
   function jalaliToGregorianText(value) {
     const raw=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replaceAll("-","/");
-    const m=raw.match(/^(13|14)\d{2}\\/(\d{1,2})\\/(\d{1,2})$/);
+    const m=raw.match(/^(13|14)\d{2}[/](\d{1,2})[/](\d{1,2})$/);
     if (!m) return raw;
     let jy=Number(m[1]), jm=Number(m[2]), jd=Number(m[3]);
     if (jm<1||jm>12||jd<1||jd>31) return raw;
