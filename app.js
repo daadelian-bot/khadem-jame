@@ -460,11 +460,29 @@
       const group=b.closest(".kj-menu-group");const open=!group.classList.contains("open");
       group.classList.toggle("open",open);b.setAttribute("aria-expanded",open?"true":"false");
     }));
-    $$(".kj-nav [data-tab]").forEach(b => b.addEventListener("click", () => {
-      state.tab = b.dataset.tab; state.selectedKhadem = null;
-      $$(".kj-nav [data-tab]").forEach(n=>n.classList.toggle("active",n===b));
-      const group=b.closest(".kj-menu-group");if(group){group.classList.add("open");group.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded","true");}
+    $(".kj-nav [data-tab]").forEach(b => b.addEventListener("click", () => {
+      const nextTab = b.dataset.tab;
+      if (!nextTab) return;
+      state.tab = nextTab;
+      state.selectedKhadem = null;
+      $(".kj-nav [data-tab]").forEach(n => {
+        n.classList.toggle("active", n === b);
+        if (n === b) n.setAttribute("aria-current", "page");
+        else n.removeAttribute("aria-current");
+      });
+      const group = b.closest(".kj-menu-group");
+      if (group) {
+        group.classList.add("open");
+        group.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded", "true");
+      }
+      if (window.location.hash !== "#" + nextTab) {
+        history.replaceState(null, "", window.location.pathname + window.location.search + "#" + nextTab);
+      }
       render();
+      const main = document.querySelector("#kj-main");
+      if (main && window.matchMedia("(max-width: 850px)").matches) {
+        main.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }));
     $("#kj-menu-search").addEventListener("input", e => {
       const q=e.target.value.trim().toLocaleLowerCase("fa");
@@ -866,6 +884,9 @@
   }
 
   async function startApp() {
+    const allowedTabs = new Set(["dashboard","khadems","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings"]);
+    const requestedTab = window.location.hash.replace(/^#/, "");
+    if (allowedTabs.has(requestedTab)) state.tab = requestedTab;
     injectStyles();
     if (!token()) { loginPage(); return; }
     const app = ensureRoot();
