@@ -733,7 +733,7 @@
   function formatValue(key, value) {
     if (value === null || value === undefined || value === "") return "—";
     if (/(date|_at|_date|_month)$/.test(key) || key === "birth_date") return dateText(value);
-    if (/(amount|balance|debt|salary|cost|price|paid|refund)/i.test(key) && (typeof value === "number" || /^-?[\\d,.]+$/.test(String(value)))) return money(value);
+    if (/(amount|balance|debt|salary|cost|price|paid|refund)/i.test(key) && (typeof value === "number" || /^-?[\d,.]+$/.test(String(value)))) return money(value);
     if (typeof value === "boolean") return value ? "بله" : "خیر";
     if (typeof value === "object") {
       const localize = item => {
