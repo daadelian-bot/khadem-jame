@@ -1022,7 +1022,11 @@
     const codes = [khademCode(khadem)].filter(v => v !== undefined && v !== null).map(String);
     const rowIds = [row.khadem_id, row.person_id, row.personnel_id].filter(v => v !== undefined && v !== null).map(String);
     const rowCodes = [row.khadem_code, row.personnel_code, row.code].filter(v => v !== undefined && v !== null).map(String);
-    return rowIds.some(x => ids.includes(x)) || rowCodes.some(x => codes.includes(x));
+    // اگر کد خادم در رکورد وجود دارد، همان مرجع قطعی است؛ شناسه داخلی فقط وقتی کد نیست بررسی می‌شود.
+    if (rowCodes.length) return rowCodes.some(x => codes.includes(x));
+    if (rowIds.length) return rowIds.some(x => ids.includes(x));
+    const rowName = val(row, ["khadem_name", "person_name", "full_name"]);
+    return Boolean(rowName && nameOf(khadem).trim().toLocaleLowerCase("fa") === String(rowName).trim().toLocaleLowerCase("fa"));
   }
   function relatedRows(list, khadem) { return list.filter(row => transactionBelongs(row, khadem)); }
   function relatedSection(title, tableKey, rows, columns, emptyText) {
@@ -1198,11 +1202,9 @@
       const rowId = val(row, ["khadem_id", "person_id", "personnel_id"]);
       const rowCode = val(row, ["khadem_code", "personnel_code", "code"]);
       const rowName = val(row, ["khadem_name", "full_name", "person_name"]);
-      const linked = state.khadems.find(k =>
-        (rowCode && String(khademCode(k)) === String(rowCode)) ||
-        (rowId && String(khademId(k)) === String(rowId)) ||
-        (rowName && nameOf(k).trim().toLocaleLowerCase("fa") === String(rowName).trim().toLocaleLowerCase("fa"))
-      );
+      const linked = (rowCode ? khademByCode(rowCode) : null) ||
+        (rowId ? state.khadems.find(k => String(khademId(k)) === String(rowId)) : null) ||
+        (rowName ? state.khadems.find(k => nameOf(k).trim().toLocaleLowerCase("fa") === String(rowName).trim().toLocaleLowerCase("fa")) : null);
       const hasKhademRef = Boolean(rowId || rowCode || rowName || linked);
       return hasKhademRef ? {
         ...row,
