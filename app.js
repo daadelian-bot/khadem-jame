@@ -890,6 +890,11 @@
       <div class="kj-toolbar"><button class="kj-primary" type="submit" id="kj-save-registration">ثبت اطلاعات خادم</button><button class="kj-secondary" type="button" id="kj-cancel-registration">انصراف</button></div>
     </form>`;
   }
+  function bindKhademRegistrationControls() {
+    $("#kj-open-registration")?.addEventListener("click", () => { state.registrationOpen = !state.registrationOpen; render(); });
+    $("#kj-cancel-registration")?.addEventListener("click", () => { state.registrationOpen = false; render(); });
+    $("#kj-registration-form")?.addEventListener("submit", e => { e.preventDefault(); saveKhademFromForm(e.currentTarget); });
+  }
   async function saveKhademFromForm(form) {
     const message = $("#kj-registration-message"), button = $("#kj-save-registration"), fd = new FormData(form);
     const fullName = String(fd.get("full_name") || "").trim();
@@ -913,7 +918,7 @@
     put(["emergency_contact_phone"],String(fd.get("emergency_contact_phone")||"").trim());
     put(["emergency_contact_name_2"],String(fd.get("emergency_contact_name_2")||"").trim());
     put(["emergency_contact_phone_2"],String(fd.get("emergency_contact_phone_2")||"").trim());
-    put(["skills"],fd.getAll("skills")); put(["notes"],String(fd.get("notes")||"").trim()); put(["status"],"فعال");
+    const selectedSkills=fd.getAll("skills"); const skillSample=state.khadems[0]?.skills; put(["skills"],Array.isArray(skillSample)?selectedSkills:selectedSkills.join("، ")); put(["notes"],String(fd.get("notes")||"").trim());
     if(!Object.keys(payload).length){if(message)message.textContent="ستون‌های لازم از اطلاعات فعلی قابل تشخیص نیست؛ هیچ اطلاعاتی ارسال نشد.";return;}
     if(button){button.disabled=true;button.textContent="در حال ثبت…";} if(message)message.textContent="در حال بررسی مجوز و ثبت اطلاعات…";
     try {
@@ -1187,14 +1192,13 @@
       }
     }
     if (state.tab === "khadems") {
-      $("#kj-open-registration")?.addEventListener("click", () => { state.registrationOpen = !state.registrationOpen; render(); });
-      $("#kj-cancel-registration")?.addEventListener("click", () => { state.registrationOpen = false; render(); });
-      $("#kj-registration-form")?.addEventListener("submit", e => { e.preventDefault(); saveKhademFromForm(e.currentTarget); });
+      bindKhademRegistrationControls();
       $("#kj-khadem-search")?.addEventListener("input", e => {
         const pos = e.target.selectionStart;
         state.search = e.target.value;
         const main = $("#kj-main");
         main.innerHTML = khademList();
+        bindKhademRegistrationControls();
         const input = $("#kj-khadem-search");
         input?.focus(); input?.setSelectionRange(pos,pos);
         bindKhademButtons();
