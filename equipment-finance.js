@@ -217,25 +217,7 @@
     }).join('');
     const paidTotal = cache.nonattendance.reduce((s,r) => s + num(r.cost_paid_toman), 0);
     const refundTotal = cache.nonattendance.reduce((s,r) => s + num(r.refund_amount_toman), 0);
-    mountPage(
-      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">' +
-      '<div class="card"><span class="muted">پرونده‌های عدم حضور</span><b style="display:block;font-size:20px">' + esc(fa(cache.nonattendance.length)) + '</b></div>' +
-      '<div class="card"><span class="muted">هزینه پرداخت‌شده ثبت‌شده</span><b style="display:block;font-size:20px">' + esc(money(paidTotal)) + '</b></div>' +
-      '<div class="card"><span class="muted">مبلغ بازپرداخت ثبت‌شده</span><b style="display:block;font-size:20px">' + esc(money(refundTotal)) + '</b></div></div>' +
-      '<div class="card section"><h3>ثبت عدم امکان حضور در خدمت</h3><p class="muted">برای خادمی که مراحل پیش از خدمت را طی کرده اما به دلیل مشکل مرزی، بیماری یا اتفاق دیگری نمی‌تواند حاضر شود. این ثبت، سابقه خدمت انجام‌شده ایجاد نمی‌کند و پرداخت‌ها را خودکار تغییر نمی‌دهد.</p>' +
-      '<form id="eqAbsenceForm"><div class="form-grid">' +
-      '<div class="field"><label>خادم</label><select id="eqAbsKhadem" required><option value="">انتخاب خادم…</option>' + khademOptions + '</select></div>' +
-      '<div class="field"><label>نوع خدمت</label><select id="eqAbsKind" required><option value="official">خدمت رسمی</option><option value="friday_night">خدمت شب جمعه</option></select></div>' +
-      '<div class="field"><label>تاریخ برنامه‌ریزی‌شده خدمت (شمسی)</label><input id="eqAbsDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱" required></div>' +
-      '<div class="field"><label>مراحل پیش از خدمت</label><select id="eqAbsPreparation"><option value="true">کامل شده</option><option value="false">کامل نشده</option></select></div>' +
-      '<div class="field"><label>علت عدم حضور</label><select id="eqAbsReason" required><option value="border_exit_issue">مشکل خروج از مرز</option><option value="illness">بیماری</option><option value="family_emergency">اتفاق یا ضرورت خانوادگی</option><option value="other">سایر موارد</option></select></div>' +
-      '<div class="field"><label>کل هزینه خدمت (تومان)</label><input id="eqAbsTotal" type="number" min="0" step="1" value="0" required></div>' +
-      '<div class="field"><label>هزینه پرداخت‌شده (تومان)</label><input id="eqAbsPaid" type="number" min="0" step="1" value="0" required></div>' +
-      '<div class="field full"><label>شرح علت / توضیحات</label><textarea id="eqAbsDetails" placeholder="اختیاری"></textarea></div>' +
-      '<div class="field full"><label>یادداشت داخلی</label><textarea id="eqAbsNotes" placeholder="اختیاری"></textarea></div></div>' +
-      '<button class="btn primary" type="submit">ثبت پرونده عدم حضور</button> <span id="eqAbsMsg" class="muted"></span></form></div>' +
-      '<div class="card section"><h3>پیگیری پرونده‌های عدم حضور</h3><p class="muted">وضعیت پیگیری یا بازپرداخت را می‌توان تغییر داد. برای جلوگیری از دوباره‌شماری، مبلغ این قسمت به‌صورت خودکار تراکنش جدیدی در دفتر مالی عمومی ایجاد نمی‌کند.</p><div style="overflow:auto"><table class="data-table"><thead><tr><th>خادم</th><th>خدمت</th><th>تاریخ</th><th>آمادگی</th><th>هزینه پرداخت‌شده</th><th>علت</th><th>پیگیری / بازپرداخت</th></tr></thead><tbody>' + (rows || '<tr><td colspan="7">هنوز پرونده عدم حضوری ثبت نشده است.</td></tr>') + '</tbody></table></div></div>'
-    );
+    mountPage('<div class="card"><p class="muted">ثبت و پیگیری عدم حضور از بخش‌های «خدمت رسمی» و «خدمت شب جمعه» انجام می‌شود.</p></div>');
     $('eqAbsenceForm')?.addEventListener('submit', async e => {
       e.preventDefault();
       const msg = 'eqAbsMsg';
