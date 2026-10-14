@@ -60,6 +60,7 @@ var AUTH_URL='https://fxxtyfurdzpzfvweoppo.supabase.co';
 var AUTH_KEY='sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7';
 var $=function(id){return document.getElementById(id)};
 var form=$('login-form'),email=$('email'),password=$('password'),submit=$('submit'),status=$('status');
+try{email.value=localStorage.getItem('khadem_last_email')||'';if(email.value)password.focus()}catch(_){}
 function message(text,type){status.textContent=text;status.className='status show '+(type||'')}
 form.addEventListener('submit',async function(e){
  e.preventDefault();
