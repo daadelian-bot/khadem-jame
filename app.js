@@ -1012,7 +1012,6 @@
       if (message) message.textContent = "ذخیره انجام نشد: "+(error.message || "خطای نامشخص")+"؛ ممکن است مجوز ویرایش پایگاه داده فعال نباشد.";
       if (button) { button.disabled = false; button.textContent = "ذخیره تغییرات"; }
     }
-    $("#kj-cancel-profile-edit")?.addEventListener("click", () => { state.profileEditOpen = false; render(); });
   }
 
   function khademProfile() {
