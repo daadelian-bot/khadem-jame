@@ -106,6 +106,35 @@
     while(gm<=12&&gd>md[gm]){gd-=md[gm];gm++;}
     return `${gy}-${String(gm).padStart(2,"0")}-${String(gd).padStart(2,"0")}`;
   }
+  function jalaliInputDate(value) {
+    if (!value) return "";
+    const raw=String(value).trim();
+    const jm=raw.match(/^(13|14)\\d{2}[/-](\\d{1,2})[/-](\\d{1,2})$/);
+    if (jm) return jm[1]+"/"+jm[2].padStart(2,"0")+"/"+jm[3].padStart(2,"0");
+    const dt=new Date(raw);
+    if (Number.isNaN(dt.getTime())) return raw;
+    const parts=new Intl.DateTimeFormat("en-u-ca-persian",{year:"numeric",month:"2-digit",day:"2-digit",timeZone:"UTC"}).formatToParts(dt);
+    const p=Object.fromEntries(parts.filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+    return p.year+"/"+p.month+"/"+p.day;
+  }
+  function jalaliToGregorianText(value) {
+    const raw=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replaceAll("-","/");
+    const m=raw.match(/^(13|14)\\d{2}\\/(\\d{1,2})\\/(\\d{1,2})$/);
+    if (!m) return raw;
+    let jy=Number(m[1]), jm=Number(m[2]), jd=Number(m[3]);
+    if (jm<1||jm>12||jd<1||jd>31) return raw;
+    jy += 1595;
+    let days = -355668 + 365*jy + Math.floor(jy/33)*8 + Math.floor(((jy%33)+3)/4) + jd + (jm<7?(jm-1)*31:(jm-7)*30+186);
+    let gy = 400*Math.floor(days/146097); days%=146097;
+    if(days>36524){gy+=100*Math.floor(--days/36524);days%=36524;if(days>=365)days++;}
+    gy += 4*Math.floor(days/1461); days%=1461;
+    if(days>365){gy+=Math.floor((days-1)/365);days=(days-1)%365;}
+    let gd=days+1;
+    const leap=(gy%4===0&&gy%100!==0)||gy%400===0;
+    const monthDays=[0,31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+    let gm=1; while(gm<=12&&gd>monthDays[gm]){gd-=monthDays[gm];gm++;}
+    return String(gy)+"-"+String(gm).padStart(2,"0")+"-"+String(gd).padStart(2,"0");
+  }
   function dateText(value) {
     if (!value) return "—";
     const raw = String(value).trim();
@@ -1345,7 +1374,7 @@
     const main = $("#kj-main");
     if (!main) return;
     const q = state.search.trim().toLowerCase();
-    const rows = state.khadems.filter(k => !q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(q));
+    const rows = state.khadems.filter(k => Number(String(khademCode(k)).replace(/[^0-9]/g,"")) >= 1000 && (!q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(q))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
     $$("[data-row]", main).forEach(b => b.addEventListener("click", () => {
       const k = rows[Number(b.dataset.row)];
       if (!k) return;
