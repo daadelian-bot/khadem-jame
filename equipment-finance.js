@@ -117,7 +117,7 @@
     }
     try { if (typeof initOfflineJalaliCalendars === 'function') initOfflineJalaliCalendars(); } catch (_) {}
   }
-  let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [], nonattendance: [] };
+  let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [] };
   async function loadData() {
     const tables = [
       ['khadems', 'khadems', 'select=id,khadem_code,full_name,is_active&order=khadem_code.asc&limit=3000'],
@@ -126,7 +126,6 @@
       ['committeePayments', 'equipment_committee_payments', 'select=*&order=paid_date.desc&limit=5000'],
       ['issues', 'khadem_equipment_issues', 'select=*&order=issue_date.desc&limit=5000'],
       ['khademPayments', 'khadem_equipment_payments', 'select=*&order=paid_date.desc&limit=5000'],
-      ['nonattendance', 'khadem_service_nonattendance', 'select=*&order=planned_service_date.desc,created_at.desc&limit=3000']
     ];
     const loaded = await Promise.all(tables.map(async ([key, table, query]) => [key, await api(table, 'GET', query)]));
     loaded.forEach(([key, value]) => { cache[key] = value; });
@@ -204,55 +203,7 @@
     );
     bindForms();
   }
-  function renderNonattendancePage() {
-    const khademOptions = cache.khadems.map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
-    const kindLabel = v => v === 'friday_night' ? 'خدمت شب جمعه' : 'خدمت رسمی';
-    const reasonLabel = v => ({border_exit_issue:'مشکل خروج از مرز',illness:'بیماری',family_emergency:'اتفاق یا ضرورت خانوادگی',other:'سایر موارد'})[v] || v || '—';
-    const resolutionLabel = v => ({pending:'در انتظار پیگیری',rescheduled:'تغییر تاریخ خدمت',refunded:'هزینه بازپرداخت شد',not_refundable:'هزینه قابل بازپرداخت نیست',closed:'مختومه'})[v] || v || '—';
-    const rows = cache.nonattendance.map(r => {
-      const k = cache.khadems.find(x => x.id === r.khadem_id) || {};
-      return '<tr><td>' + esc(k.khadem_code || '—') + ' — ' + esc(k.full_name || 'خادم حذف‌نشده/نامشخص') + '</td><td>' + esc(kindLabel(r.service_kind)) + '</td><td>' + esc(jdate(r.planned_service_date)) + '</td><td>' + (r.preparation_completed ? 'کامل' : 'ناقص') + '</td><td>' + esc(money(r.cost_paid_toman)) + ' از ' + esc(money(r.cost_total_toman)) + '</td><td>' + esc(reasonLabel(r.reason_code)) + (r.reason_details ? '<br><small>' + esc(r.reason_details) + '</small>' : '') + '</td><td><select class="eq-absence-resolution" data-id="' + esc(r.id) + '">' +
-        ['pending','rescheduled','refunded','not_refundable','closed'].map(s => '<option value="' + s + '"' + (r.resolution_status === s ? ' selected' : '') + '>' + esc(resolutionLabel(s)) + '</option>').join('') +
-        '</select><input class="eq-absence-refund" data-id="' + esc(r.id) + '" type="number" min="0" step="1" value="' + esc(r.refund_amount_toman || 0) + '" aria-label="مبلغ بازپرداخت تومان" placeholder="مبلغ بازپرداخت" style="max-width:130px;margin-top:5px"><button type="button" class="btn secondary eq-save-absence" data-id="' + esc(r.id) + '" style="margin-top:5px">ثبت پیگیری</button></td></tr>';
-    }).join('');
-    const paidTotal = cache.nonattendance.reduce((s,r) => s + num(r.cost_paid_toman), 0);
-    const refundTotal = cache.nonattendance.reduce((s,r) => s + num(r.refund_amount_toman), 0);
-    mountPage('<div class="card"><p class="muted">ثبت و پیگیری عدم حضور از بخش‌های «خدمت رسمی» و «خدمت شب جمعه» انجام می‌شود.</p></div>');
-    $('eqAbsenceForm')?.addEventListener('submit', async e => {
-      e.preventDefault();
-      const msg = 'eqAbsMsg';
-      const total = num($('eqAbsTotal').value), paid = num($('eqAbsPaid').value), date = dateVal('eqAbsDate');
-      const khademId = $('eqAbsKhadem').value, serviceKind = $('eqAbsKind').value;
-      if (!khademId || !date || !Number.isInteger(total) || !Number.isInteger(paid) || total < 0 || paid < 0 || paid > total) { setMsg(msg, 'خادم و تاریخ معتبر لازم است؛ مبالغ باید عدد صحیح تومان باشند و هزینه پرداخت‌شده از کل هزینه بیشتر نباشد.', true); return; }
-      const duplicate = cache.nonattendance.some(r => r.khadem_id === khademId && r.service_kind === serviceKind && String(r.planned_service_date).slice(0,10) === date);
-      if (duplicate) { setMsg(msg, 'برای همین خادم، همین نوع خدمت و همین تاریخ، پرونده عدم حضور ثبت شده است؛ برای جلوگیری از ثبت تکراری، پرونده قبلی را پیگیری کنید.', true); return; }
-      setMsg(msg, 'در حال ثبت پرونده…');
-      try {
-        await api('khadem_service_nonattendance', 'POST', '', {
-          khadem_id: khademId, service_kind: serviceKind, planned_service_date: date,
-          preparation_completed: $('eqAbsPreparation').value === 'true', cost_total_toman: total, cost_paid_toman: paid,
-          reason_code: $('eqAbsReason').value, reason_details: $('eqAbsDetails').value.trim() || null,
-          notes: $('eqAbsNotes').value.trim() || null, resolution_status: 'pending', refund_amount_toman: 0
-        });
-        toast('پرونده عدم حضور ثبت شد؛ سابقه خدمت انجام‌شده به‌صورت خودکار ثبت نشده است.');
-        $('eqAbsenceForm').reset(); $('eqAbsTotal').value = '0'; $('eqAbsPaid').value = '0';
-        await loadData(); renderPage();
-      } catch (err) { setMsg(msg, 'ثبت پرونده ناموفق بود: ' + err.message, true); }
-    });
-    document.querySelectorAll('.eq-save-absence').forEach(button => button.addEventListener('click', async () => {
-      const id = button.dataset.id;
-      const status = document.querySelector('.eq-absence-resolution[data-id="' + id + '"]')?.value;
-      const refund = num(document.querySelector('.eq-absence-refund[data-id="' + id + '"]')?.value);
-      const record = cache.nonattendance.find(x => x.id === id);
-      if (!record) return;
-      if (refund < 0 || refund > num(record.cost_paid_toman)) { toast('مبلغ بازپرداخت نمی‌تواند از مبلغ پرداخت‌شده بیشتر باشد.'); return; }
-      if (status === 'refunded' && refund <= 0) { toast('برای وضعیت بازپرداخت‌شده، مبلغ بازپرداخت را وارد کنید.'); return; }
-      try {
-        await api('khadem_service_nonattendance', 'PATCH', 'id=eq.' + encodeURIComponent(id), {resolution_status:status, refund_amount_toman:refund});
-        toast('وضعیت پیگیری ذخیره شد.'); await loadData(); renderPage();
-      } catch (err) { toast('ذخیره پیگیری ناموفق بود: ' + err.message); }
-    }));
-  }
+
   function setMsg(id, text, bad) {
     const el = $(id); if (!el) return;
     el.textContent = text; el.style.color = bad ? '#b42318' : '#16803c';
