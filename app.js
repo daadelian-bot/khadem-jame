@@ -1056,9 +1056,15 @@
     return `<h3 class="kj-section-title">${esc(title)}</h3>${errBox(tableKey)}${tableHtml(rows, columns, state.errors[tableKey] ? "به دلیل خطای دریافت، خالی بودن سوابق قابل تأیید نیست." : emptyText)}`;
   }
   function khademEditForm(k) {
+    const skillOptions = ["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","مدیریت جمعیت و راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"];
+    const rawSkills = val(k,["skills","skill_list","abilities","special_skills"]);
+    let currentSkills = [];
+    if (Array.isArray(rawSkills)) currentSkills = rawSkills.map(x=>String(x).trim()).filter(Boolean);
+    else if (rawSkills && typeof rawSkills === "object") currentSkills = Object.values(rawSkills).map(x=>String(x).trim()).filter(Boolean);
+    else if (String(rawSkills || "").trim()) currentSkills = String(rawSkills).split(/[,،;؛\\n]+/).map(x=>x.trim()).filter(Boolean);
     const fields = [
       ["full_name","نام و نام خانوادگی","text",nameOf(k)],
-      ["referrer_name","معرف خادم","text",val(k,["referrer_name","introducer_name","referred_by","referrer"])],
+      ["referrer_name","معرف خادم","text",val(k,["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"])],
       ["khadem_code","کد خادم","text",khademCode(k)],
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
@@ -1069,15 +1075,16 @@
       ["phone","شماره تلفن","tel",val(k,["phone","mobile","phone_number"])],
       ["residence","محل سکونت","text",val(k,["residence","address","home_address"])],
       ["primary_responsibility","مسئولیت اصلی","text",val(k,["primary_responsibility","responsibility"])],
-      ["emergency_contact_name","نام تماس اضطراری ۱","text",val(k,["emergency_contact_name","emergency_contact_1_name"])],
-      ["emergency_contact_phone","تلفن تماس اضطراری ۱","tel",val(k,["emergency_contact_phone","emergency_contact_1_phone"])],
-      ["emergency_contact_name_2","نام تماس اضطراری ۲","text",val(k,["emergency_contact_name_2","emergency_contact_2_name"])],
-      ["emergency_contact_phone_2","تلفن تماس اضطراری ۲","tel",val(k,["emergency_contact_phone_2","emergency_contact_2_phone"])],
+      ["emergency_contact_name","نام تماس اضطراری ۱","text",val(k,["emergency_contact_name","emergency_contact_1_name","emergency_name"])],
+      ["emergency_contact_phone","تلفن تماس اضطراری ۱","tel",val(k,["emergency_contact_phone","emergency_contact_1_phone","emergency_phone","emergency_phone_1"])],
+      ["emergency_contact_name_2","نام تماس اضطراری ۲","text",val(k,["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"])],
+      ["emergency_contact_phone_2","تلفن تماس اضطراری ۲","tel",val(k,["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"])],
       ["notes","توضیحات","text",val(k,["notes","description"])],
       ["active","وضعیت فعالیت (فعال/غیرفعال)","select",val(k,["is_active","active","status"])]
     ];
     return '<form id="kj-profile-edit-form" novalidate><div class="kj-profile-grid">' +
-      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="select"?'<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+'>فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+'>غیرفعال</option></select>':'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off">')+'</label>').join("") +
+      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="select"?'<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+'>فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+'>غیرفعال</option></select>':'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off" dir="auto" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;display:block">')+'</label>').join("") +
+      '<fieldset class="kj-edit-skills" style="grid-column:1/-1;min-width:0;border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:8px 0"><legend>مهارت‌ها و توانمندی‌ها — برای انتخاب یا حذف، گزینه‌ها را علامت بزنید</legend><div class="kj-skill-list" style="display:flex;flex-wrap:wrap;gap:8px">'+skillOptions.map(s=>'<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;max-width:100%;white-space:normal;overflow-wrap:anywhere"><input type="checkbox" name="profile_skills" value="'+esc(s)+'" '+(currentSkills.includes(s)?"checked":"")+'>'+esc(s)+'</label>').join("")+'</div><label class="kj-field" style="margin-top:10px"><b>مهارت‌های دیگر (اختیاری؛ با ویرگول جدا کنید)</b><input name="custom_skills" type="text" dir="auto" value="'+esc(currentSkills.filter(s=>!skillOptions.includes(s)).join("، "))+'" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0"></label></fieldset>' +
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
   }
   async function saveKhademProfile(form) {
@@ -1108,11 +1115,19 @@
     put(["phone","mobile","phone_number"], fd.get("phone"));
     put(["residence","address","home_address"], fd.get("residence"));
     put(["primary_responsibility","responsibility"], fd.get("primary_responsibility"));
-    put(["emergency_contact_name","emergency_contact_1_name"], fd.get("emergency_contact_name"));
-    put(["emergency_contact_phone","emergency_contact_1_phone"], fd.get("emergency_contact_phone"));
-    put(["emergency_contact_name_2","emergency_contact_2_name"], fd.get("emergency_contact_name_2"));
-    put(["emergency_contact_phone_2","emergency_contact_2_phone"], fd.get("emergency_contact_phone_2"));
+    put(["emergency_contact_name","emergency_contact_1_name","emergency_name"], fd.get("emergency_contact_name"));
+    put(["emergency_contact_phone","emergency_contact_1_phone","emergency_phone","emergency_phone_1"], fd.get("emergency_contact_phone"));
+    put(["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"], fd.get("emergency_contact_name_2"));
+    put(["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"], fd.get("emergency_contact_phone_2"));
     put(["notes","description"], fd.get("notes"));
+    const selectedSkills = fd.getAll("profile_skills").map(x=>String(x).trim()).filter(Boolean);
+    const customSkills = String(fd.get("custom_skills") || "").split(/[,،;؛\\n]+/).map(x=>x.trim()).filter(Boolean);
+    const allSkills = [...new Set([...selectedSkills, ...customSkills])];
+    const skillsKey = ["skills","skill_list","abilities","special_skills"].find(x=>known.has(x));
+    if (skillsKey) {
+      const existingSkills = k[skillsKey];
+      payload[skillsKey] = Array.isArray(existingSkills) ? allSkills : (existingSkills && typeof existingSkills === "object" ? allSkills : allSkills.join("، "));
+    }
     put(["referrer_name","introducer_name","referred_by","referrer"], fd.get("referrer_name"));
     if (String(fd.get("referrer_name")||"").trim() && !["referrer_name","introducer_name","referred_by","referrer"].some(x=>known.has(x)) && known.has("extra_data")) { const extra=k.extra_data&&typeof k.extra_data==="object"?k.extra_data:{}; payload.extra_data={...extra,referrer_name:String(fd.get("referrer_name")).trim()}; }
     const activeValue = String(fd.get("active") || "").toLowerCase();
