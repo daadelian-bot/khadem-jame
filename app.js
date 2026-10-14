@@ -446,7 +446,7 @@
           <aside class="kj-sidebar" aria-label="منوی سامانه">
             <input class="kj-side-search" id="kj-menu-search" type="search" placeholder="جست‌وجوی منو و زیرمنو…" aria-label="جست‌وجوی منو و زیرمنو">
             <nav class="kj-nav" aria-label="منوی اصلی">
-              ${groups.map(([title,items],i)=>`<section class="kj-menu-group ${i===0?"open":""}">
+              ${groups.map(([title,items],i)=>`<section class="kj-menu-group open">
                 <button type="button" class="kj-group-toggle" aria-expanded="${i===0?"true":"false"}">${title}</button>
                 <div class="kj-group-items">${items.map(([id,label])=>`<button type="button" data-tab="${id}" data-label="${label.replace(/^[^ ]+ /,"")}" class="${state.tab===id?"active":""}">${label}</button>`).join("")}</div>
               </section>`).join("")}
