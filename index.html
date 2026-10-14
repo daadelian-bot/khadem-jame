@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication is retained; the session is validated before app data is shown. -->
 
-<meta name="app-release" content="169">
+<meta name="app-release" content="178">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۶۶</title>
+<title>سامانه جامع مدیریت خدام — طراحی جدید آزمایشی</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -50,6 +50,67 @@ body.kh-dark #khThemePanel{background:#202a35;color:#eaf0f5;border-color:#3b4856
 .login-card-pro #signupEmailWrap{display:none}.login-card-pro.is-signup #signupEmailWrap{display:block}
 
 #tuitionPanelSettings .field input,#tuitionPanelSettings .field select,#tuitionPanelSettings .field textarea,#tuitionPanelReceive .field input,#tuitionPanelReceive .field select,#tuitionPanelReceive .field textarea,#tuitionPanelArchive input{padding:7px 9px;border-radius:9px;font-size:12px}#tuitionPanelSettings .field,#tuitionPanelReceive .field{margin:5px 0}#tuitionPanelSettings h3,#tuitionPanelReceive h3,#tuitionPanelSummary h3,#tuitionPanelArchive h3{margin:2px 0 8px}#tuitionPanelSettings .notice,#tuitionPanelSummary .notice,#tuitionPanelPaid .notice{padding:8px;font-size:11px}#tuitionPanelSettings .actions .btn,#tuitionPanelReceive>.btn{padding:7px 10px;font-size:12px}
+
+/* REDESIGN V178: modern navy, teal and gold theme; preserves existing app DOM and logic */
+:root{--bg:#f3f6fa;--card:#fff;--ink:#1d2b3a;--muted:#748398;--primary:#102b46;--gold:#d4a64d;--line:#e5ebf2;--ok:#138b70;--bad:#b84a55;--shadow:0 8px 28px #152c4410;--navy:#102b46;--navy2:#173b5d;--teal:#138b87;--paper:#f3f6fa;--radius:16px}
+body{background:var(--paper)!important;color:var(--ink)!important;background-image:none!important}
+#app{background:var(--paper)}
+.topbar{height:76px!important;background:#fff!important;color:var(--ink)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 3px 18px #14243a0a!important;padding:10px 22px!important}
+.topbar .top-left strong,.topbar .top-left{color:var(--ink)}
+.topbar .muted,.topbar .top-left .muted{color:var(--muted)!important}
+.top-logo{border-radius:13px;background:#edf2f8;padding:3px}
+.clock{background:#f6f8fb!important;border:1px solid var(--line)!important;color:var(--ink)!important;box-shadow:none!important;backdrop-filter:none!important}
+.clock strong{color:var(--navy)!important}.clock span{color:#9a712d!important}
+.connection-badge{border-radius:999px!important;background:#e8f6f1!important;color:#16775e!important;border:1px solid #d2eee4!important}
+#logoutBtn{background:#fff!important;color:#9f3948!important;border:1px solid #f0dadd!important;border-radius:11px!important}
+.layout{display:grid!important;grid-template-columns:250px minmax(0,1fr)!important;min-height:calc(100vh - 76px)!important}
+.layout>aside,#sidebar{width:auto!important;min-width:0!important;flex:initial!important;background:linear-gradient(180deg,#102b46,#0b2035)!important;color:#e8f0f8!important;border:0!important;padding:18px 12px!important;position:sticky!important;top:76px!important;height:calc(100vh - 76px)!important;overflow:auto!important;box-shadow:none!important}
+#content{min-width:0!important;max-width:1600px;width:100%;margin:0 auto!important;padding:25px!important;color:var(--ink)}
+.nav-group{margin-bottom:7px!important}
+.nav-main{min-height:48px!important;background:transparent!important;color:#c8d6e3!important;border:1px solid transparent!important;border-radius:11px!important;padding:9px 10px!important;font-size:13px!important;box-shadow:none!important}
+.nav-main>span:first-child{gap:10px!important}
+.nav-icon{width:34px!important;height:34px!important;flex:0 0 34px!important;border-radius:10px!important;font-size:20px!important;background:#ffffff0c!important;box-shadow:none!important}
+.nav-arrow{color:#d4a64d!important}
+.nav-main:hover,.nav-main.active,.nav-group.open>.nav-main{background:#ffffff12!important;border-color:#ffffff12!important;color:#fff!important}
+.sub{border-radius:9px!important;margin:2px 0!important;color:#c8d6e3!important;padding:8px 13px 8px 9px!important}
+.sub:hover,.sub.active{background:#ffffff12!important;color:#fff!important}
+.page-title{margin-bottom:20px!important;border-bottom:1px solid var(--line);padding-bottom:14px}
+.page-title h2{color:var(--navy)!important;font-size:23px!important;letter-spacing:-.3px}
+.grid,.stats-grid{gap:14px!important}
+.card,.stat-card,.kpm-card,.kj-head,.kj-grid,.kj-week,.kj-foot{background:#fff!important;border:1px solid var(--line)!important;border-radius:16px!important;box-shadow:var(--shadow)!important;color:var(--ink)!important}
+.card{padding:18px!important}
+.card:hover{box-shadow:0 12px 30px #152c4412!important;transform:translateY(-1px)}
+.stat,.stat-card{border-radius:15px!important}
+.stat .icon{border-radius:12px;background:#eef3f9;color:var(--navy)}
+.stat b,.stat-card b{color:var(--navy)!important}
+.btn,.mini-btn,button.secondary{border-radius:10px!important;transition:background .16s,border-color .16s,transform .16s}
+.btn.primary,.primary{background:var(--navy)!important;border-color:var(--navy)!important;color:#fff!important}
+.btn.primary:hover,.primary:hover{background:var(--navy2)!important}
+.btn.secondary,.secondary{background:#fff!important;color:var(--navy)!important;border:1px solid var(--line)!important}
+.btn.danger,.danger{background:#fff0f1!important;color:#a33d4b!important;border:1px solid #f1d7db!important}
+input,select,textarea,.field input,.field select,.field textarea{border-color:#dce4ed!important;border-radius:10px!important;background:#fff!important;color:var(--ink)!important}
+input:focus,select:focus,textarea:focus,.field input:focus,.field select:focus,.field textarea:focus{outline:3px solid #d4a64d40!important;border-color:#c7a25e!important;box-shadow:none!important}
+.data-table{border-collapse:separate!important;border-spacing:0!important;border:1px solid var(--line)!important;border-radius:12px!important;overflow:hidden;background:#fff}
+.data-table th{background:#f5f8fb!important;color:#5e7187!important;border-bottom:1px solid var(--line)!important}
+.data-table td{border-bottom:1px solid #edf1f5!important}
+.data-table tr:hover td{background:#f8fafc}
+.table-wrap{border:1px solid var(--line)!important;border-radius:13px!important;background:#fff!important}
+.notice{border-radius:12px!important;border-color:#dfe7ef!important;background:#f6f9fc!important}
+.status-pill,.status-on{border-radius:999px!important}
+.profile-head{background:linear-gradient(110deg,#fff,#f6f9fc)!important;border:1px solid var(--line)!important;border-radius:17px!important;box-shadow:var(--shadow)!important}
+.profile-avatar{background:#e8eff7!important;color:var(--navy)!important;border-radius:18px!important}
+.detail-grid{gap:11px!important}
+.detail-item{background:#fff!important;border:1px solid var(--line)!important;border-radius:11px!important;padding:12px!important}
+.detail-item small{color:var(--muted)!important}
+.detail-item strong{color:var(--ink)!important;overflow-wrap:anywhere}
+.toolbar{gap:10px!important}
+.toast{border-radius:12px!important;box-shadow:0 12px 30px #102b4626!important}
+.mobile-menu{background:#fff!important;border-bottom:1px solid var(--line)!important}
+.menu-btn{background:var(--navy)!important;color:#fff!important;border-radius:10px!important}
+#khThemePanel{border:1px solid var(--line)!important;border-radius:16px!important;box-shadow:0 20px 60px #102b4625!important}
+@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)!important}.layout>aside,#sidebar{position:relative!important;top:auto!important;height:auto!important;max-height:48vh!important}.topbar{padding:8px 12px!important}#content{padding:16px!important}}
+@media(max-width:560px){.topbar{height:auto!important;min-height:68px!important;gap:8px!important;flex-wrap:wrap}.clock{font-size:11px!important;padding:5px 8px!important}.clock strong{font-size:12px!important}#content{padding:12px!important}.page-title h2{font-size:20px!important}.card{padding:13px!important}}
+
 </style>
 <style>
 /* Universal offline Jalali date picker v80 */
