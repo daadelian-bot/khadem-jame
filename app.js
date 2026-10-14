@@ -844,7 +844,7 @@
   function formatValue(key, value) {
     if (value === null || value === undefined || value === "") return "—";
     const identity = khademForDisplay(key, value);
-    if (identity) return esc(khademIdentityText(identity));
+    if (identity) return khademIdentityText(identity);
     if (/(date|_at|_date|_month)$/.test(key) || key === "birth_date") return dateText(value);
     if (/(amount|balance|debt|salary|cost|price|paid|refund)/i.test(key) && (typeof value === "number" || /^-?[\d,.]+$/.test(String(value)))) return money(value);
     if (typeof value === "boolean") return value ? "بله" : "خیر";
@@ -1178,7 +1178,7 @@
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
       <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
-      <div class="kj-card"><div class="kj-toolbar" style="justify-content:space-between"><h3 class="kj-section-title" style="margin:0">مشخصات خادم</h3><button type="button" class="kj-primary" id="kj-edit-profile">${state.profileEditOpen?"بستن ویرایش":"✏️ ویرایش مشخصات خادم"}</button></div><div class="kj-profile-details">${state.profileEditOpen ? khademEditForm(k) : fields}</div></div>
+      <div class="kj-card"><div class="kj-toolbar" style="justify-content:space-between"><h3 class="kj-section-title" style="margin:0">پرونده خادم: ${esc(khademIdentityText(k))}</h3><button type="button" class="kj-primary" id="kj-edit-profile">${state.profileEditOpen?"بستن ویرایش":"✏️ ویرایش مشخصات خادم"}</button></div><div class="kj-profile-details">${state.profileEditOpen ? khademEditForm(k) : fields}</div></div>
       <div class="kj-card" style="margin-top:14px"><details class="kj-profile-subsection">
         <summary class="kj-section-title">☎️ تماس‌ها و شماره‌های ضروری</summary>
         ${tableHtml([{contact_type:"شماره تماس اصلی",contact_name:"خود خادم",contact_phone:val(k,["phone","mobile","phone_number"])},{contact_type:"تماس اضطراری ۱",contact_name:val(k,["emergency_contact_name","emergency_contact_1_name"]),contact_phone:val(k,["emergency_contact_phone","emergency_contact_1_phone","emergency_phone"])},{contact_type:"تماس اضطراری ۲",contact_name:val(k,["emergency_contact_name_2","emergency_contact_2_name"]),contact_phone:val(k,["emergency_contact_phone_2","emergency_contact_2_phone"])}],[{key:"contact_type",label:"نوع تماس"},{key:"contact_name",label:"نام مخاطب"},{key:"contact_phone",label:"شماره تلفن"}],"شماره تماسی برای نمایش ثبت نشده است.")}
