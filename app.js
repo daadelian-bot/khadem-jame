@@ -154,13 +154,16 @@
   function apiTable(table, query = "select=*") {
     return request("/rest/v1/" + encodeURIComponent(table) + "?" + query);
   }
-  async function loadTable(table) {
+  async function loadTable(table, stateKey = table) {
     try {
       const rows = await apiTable(table, "select=*&limit=1000");
+      state.errors[stateKey] = "";
       state.errors[table] = "";
       return Array.isArray(rows) ? rows : [];
     } catch (e) {
-      state.errors[table] = e.message || "خطا در دریافت اطلاعات";
+      const message = e.message || "خطا در دریافت اطلاعات";
+      state.errors[stateKey] = message;
+      state.errors[table] = message;
       console.warn("KJ: failed to load table", table, e);
       return [];
     }
@@ -198,7 +201,7 @@
       ["appSettings", "app_settings"],
       ["tuitionPayments", "tuition_payments"]
     ];
-    await Promise.all(tables.map(async ([key, table]) => { state[key] = await loadTable(table); }));
+    await Promise.all(tables.map(async ([key, table]) => { state[key] = await loadTable(table, key); }));
     state.loading = false;
     state.loaded = true;
     render();
@@ -574,6 +577,24 @@
     const cols = preferredColumns || (rows.length ? Object.keys(rows[0]).filter(k => !["id","updated_at","created_at"].includes(k)).slice(0,5).map(k=>({key:k,label:fieldLabel(k)})) : []);
     return `<h1 class="kj-page-title">${esc(title)}</h1>${errBox(key)}${cols.length ? tableHtml(rows, cols, state.errors[key] ? "دریافت اطلاعات ناموفق بود." : "هنوز موردی ثبت نشده است.") : (state.errors[key] ? "" : empty("هنوز موردی ثبت نشده است."))}`;
   }
+  function meetingsPage() {
+    const rows = state.meetings.map(m => {
+      const invited = state.meetingInvitees.filter(i => String(i.meeting_id) === String(m.id));
+      const attendance = state.meetingAttendance.filter(i => String(i.meeting_id) === String(m.id));
+      const statusOf = i => i.attendance_status || i.status || i.invite_status;
+      return {...m, invitee_count: invited.length || val(m,["invite_count"]), present_count: invited.filter(i=>statusOf(i)==="present").length+attendance.filter(i=>i.status==="present").length, absent_count: invited.filter(i=>statusOf(i)==="absent").length+attendance.filter(i=>i.status==="absent").length};
+    });
+    return `<h1 class="kj-page-title">جلسات و حضور و غیاب</h1>${errBox("meetings")}${errBox("meetingInvitees")}${errBox("meetingAttendance")}${tableHtml(rows,[{key:"title",label:"عنوان جلسه"},{key:"meeting_date",label:"تاریخ جلسه"},{key:"meeting_type",label:"نوع جلسه"},{key:"invitee_count",label:"مدعوین"},{key:"present_count",label:"حاضر"},{key:"absent_count",label:"غایب"},{key:"status",label:"وضعیت"}],"جلسه‌ای برای نمایش وجود ندارد.")}<h3 class="kj-section-title">مدعوین و حضور ثبت‌شده</h3>${genericPage("meetingInvitees","فهرست مدعوین",state.meetingInvitees,[{key:"meeting_id",label:"شناسه جلسه"},{key:"khadem_code",label:"کد خادم"},{key:"khadem_name",label:"نام خادم"},{key:"attendance_status",label:"وضعیت حضور"},{key:"invite_status",label:"وضعیت دعوت"}])}<h3 class="kj-section-title">ثبت‌های حضور</h3>${genericPage("meetingAttendance","حضور و غیاب",state.meetingAttendance,[{key:"meeting_id",label:"شناسه جلسه"},{key:"khadem_id",label:"شناسه خادم"},{key:"status",label:"وضعیت"},{key:"reason",label:"توضیحات"}])}`;
+  }
+  function equipmentPage() {
+    return `<h1 class="kj-page-title">وسایل و تجهیزات</h1><p class="kj-muted">این بخش فقط سوابق موجود را می‌خواند؛ هیچ تحویل یا پرداختی ثبت یا ویرایش نمی‌شود.</p><div class="kj-card">${errBox("vehicles")}${genericPage("vehicles","وسایل نقلیه",state.vehicles,[{key:"vehicle_type",label:"نوع وسیله"},{key:"model",label:"مدل"},{key:"plate_number",label:"پلاک"},{key:"capacity",label:"ظرفیت"},{key:"driver_name",label:"راننده"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("drivers")}${genericPage("drivers","رانندگان",state.drivers,[{key:"full_name",label:"نام راننده"},{key:"phone",label:"تلفن"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("equipmentIssues")}${genericPage("equipmentIssues","تحویل وسایل به خادمین",state.equipmentIssues,[{key:"khadem_id",label:"شناسه خادم"},{key:"item_key",label:"قلم وسیله"},{key:"quantity",label:"تعداد"},{key:"total_amount_toman",label:"مبلغ کل"},{key:"issue_status",label:"وضعیت تحویل"},{key:"issue_date",label:"تاریخ"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("equipmentPayments")}${genericPage("equipmentPayments","پرداخت‌های وسایل",state.equipmentPayments,[{key:"issue_id",label:"شناسه تحویل"},{key:"amount_toman",label:"مبلغ پرداخت"},{key:"paid_date",label:"تاریخ پرداخت"},{key:"payment_method",label:"روش پرداخت"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("equipmentReceipts")}${genericPage("equipmentReceipts","دریافت وسایل از هیئت",state.equipmentReceipts,[{key:"received_date",label:"تاریخ دریافت"},{key:"received_from",label:"دریافت از"},{key:"reference_no",label:"شماره رسید"},{key:"notes",label:"توضیحات"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("equipmentReceiptItems")}${genericPage("equipmentReceiptItems","اقلام دریافتی",state.equipmentReceiptItems,[{key:"receipt_id",label:"شناسه رسید"},{key:"item_key",label:"قلم وسیله"},{key:"quantity",label:"تعداد"},{key:"unit_cost_toman",label:"قیمت واحد"},{key:"total_cost_toman",label:"مبلغ کل"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("equipmentCommitteePayments")}${genericPage("equipmentCommitteePayments","پرداخت به هیئت",state.equipmentCommitteePayments,[{key:"receipt_id",label:"شناسه رسید"},{key:"amount_toman",label:"مبلغ"},{key:"paid_date",label:"تاریخ"},{key:"payment_method",label:"روش پرداخت"}])}</div>`;
+  }
+  function usersPage() {
+    return `<h1 class="kj-page-title">کاربران و دسترسی‌ها</h1><p class="kj-muted">اطلاعات فقط طبق مجوز واقعی حساب واردشده نمایش داده می‌شود.</p><div class="kj-card">${errBox("profiles")}${genericPage("profiles","حساب‌های قابل مشاهده",state.profiles,[{key:"display_name",label:"نام نمایشی"},{key:"full_name",label:"نام کامل"},{key:"role",label:"نقش"},{key:"is_active",label:"فعال"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("roles")}${genericPage("roles","نقش‌های تعریف‌شده",state.roles,[{key:"role_key",label:"شناسه نقش"},{key:"title",label:"عنوان"},{key:"is_system",label:"نقش سیستمی"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("permissions")}${genericPage("permissions","مجوزهای تعریف‌شده",state.permissions,[{key:"permission_key",label:"شناسه مجوز"},{key:"title",label:"عنوان مجوز"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("rolePermissions")}${genericPage("rolePermissions","ارتباط نقش و مجوز",state.rolePermissions,[{key:"role_id",label:"شناسه نقش"},{key:"permission_id",label:"شناسه مجوز"}])}</div>`;
+  }
+  function auditPage() {
+    return `<h1 class="kj-page-title">سوابق فعالیت</h1><p class="kj-muted">رویدادهای قابل مشاهده از جدول audit_logs؛ خالی بودن این جدول به معنی ثبت شدن تمام فعالیت‌ها نیست.</p>${errBox("audit")}${genericPage("audit","گزارش رویدادها",state.audit,[{key:"created_at",label:"زمان"},{key:"actor_user_id",label:"شناسه کاربر"},{key:"action",label:"عملیات"},{key:"module_key",label:"بخش"},{key:"record_id",label:"شناسه رکورد"}])}
+  }
   function financePage() {
     const columns = [
       {key:"transaction_type",label:"نوع تراکنش"},
@@ -648,7 +669,13 @@
     ].map(([label,count])=>`<div class="kj-card">${esc(label)}<div class="kj-stat">${fa(count)}</div></div>`).join("")}</div><p class="kj-small">این گزارش بر اساس داده‌های دریافت‌شده تهیه شده است؛ خطاهای دریافت در داشبورد و بخش مربوطه مشخص می‌شوند.</p>`;
   }
   function settingsPage() {
-    return `<h1 class="kj-page-title">تنظیمات</h1><div class="kj-card"><h3>اتصال سامانه</h3><p>نشانی Supabase: <code>${esc(SUPABASE_URL)}</code></p><p>وضعیت: ${state.loaded ? `<span class="kj-pill">تلاش برای دریافت اطلاعات انجام شده</span>` : `<span class="kj-pill">در انتظار دریافت اطلاعات</span>`}</p><p class="kj-small">این صفحه فقط وضعیت کلی اتصال را نشان می‌دهد. تنظیمات امنیتی و پایگاه داده از این بخش تغییر نمی‌کنند.</p><button class="kj-primary" id="kj-settings-refresh">دریافت دوباره اطلاعات</button></div>`;
+    const safeRows = rows => rows.map(r => {
+      const key = val(r,["key","setting_key","name","config_key","id"]);
+      const label = val(r,["title","description","label","notes"]);
+      const sensitive = Object.keys(r).some(k=>/secret|password|token|private|service.?role|api.?key/i.test(k));
+      return {key:String(key||"—"),description:String(label||"تنظیم ثبت‌شده"),status:sensitive?"مقدار حساس پنهان است":"ثبت‌شده"};
+    });
+    return `<h1 class="kj-page-title">مدیریت سامانه و تنظیمات</h1><p class="kj-muted">این صفحه فقط تنظیمات قابل مشاهده را می‌خواند؛ هیچ مقداری را تغییر نمی‌دهد و مقادیر حساس را نمایش نمی‌دهد.</p><div class="kj-card">${errBox("systemSettings")}${genericPage("systemSettings","تنظیمات عمومی",safeRows(state.systemSettings),[{key:"key",label:"کلید تنظیم"},{key:"description",label:"شرح"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("appSettings")}${genericPage("appSettings","تنظیمات برنامه",safeRows(state.appSettings),[{key:"key",label:"کلید تنظیم"},{key:"description",label:"شرح"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px"><h3>اتصال سامانه</h3><p>نشانی پروژه: <code>${esc(SUPABASE_URL)}</code></p><p class="kj-small">تلاش برای دریافت اطلاعات: ${state.loaded ? "انجام شده" : "در انتظار"}؛ موفقیت هر جدول در پیام همان بخش مشخص می‌شود.</p><button class="kj-primary" id="kj-settings-refresh">دریافت دوباره اطلاعات</button></div>`;
   }
 
   function render() {
