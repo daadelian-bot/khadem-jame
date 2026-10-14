@@ -287,7 +287,7 @@
       .kj-group-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:right;border:0;background:transparent;color:#137c68;font-size:12px;font-weight:bold;padding:10px 7px;min-height:40px}
       .kj-group-toggle:after{content:'＋';font-size:16px;color:var(--kj-muted);font-weight:normal}
       .kj-menu-group.open .kj-group-toggle:after{content:'−'}
-      .kj-group-items{display:none}.kj-menu-group.open .kj-group-items{display:grid;gap:4px}
+      .kj-group-items{display:none}.kj-menu-group.open .kj-group-items{display:grid;gap:4px}.kj-menu-hidden{display:none!important}
       .kj-nav{display:flex;flex-direction:column;gap:4px;overflow:visible;padding:0;background:transparent;border:0;position:static}
       .kj-nav button{width:100%;white-space:normal;text-align:right;display:flex;align-items:center;gap:9px;border:1px solid transparent;border-radius:12px;padding:10px 12px;background:#fff;color:#536b66;min-height:44px}
       .kj-nav button.active{background:#e5f5ef;color:#137c68;border-color:transparent;font-weight:bold}
