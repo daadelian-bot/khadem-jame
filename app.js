@@ -846,10 +846,16 @@
     const identity = khademForDisplay(key, value);
     // در ستون‌های بانک خادم، هر فیلد فقط مقدار خودش را نشان دهد؛ کد عددی و نام فقط نام باشد.
     if (["khadem_code","personnel_code","khadem_number","khadem_no"].includes(key)) {
-      const digits = String(value).replace(/[^0-9۰-۹٠-٩]/g, "");
-      return digits ? fa(digits) : translateValue(value);
+      // ستون کد خادم فقط مقدار عددی ثبت‌شده را نمایش می‌دهد؛ هرگز نام یا شناسه متنی را جایگزین نکن.
+      const digits = String(value).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^0-9]/g, "");
+      return digits ? fa(digits) : "—";
     }
-    if (["full_name","khadem_name","fullName"].includes(key)) return identity ? nameOf(identity) : translateValue(value);
+    if (["full_name","khadem_name","fullName"].includes(key)) {
+      // ستون نام و نام خانوادگی فقط متن نام را نشان می‌دهد، نه کد/شناسه خادم.
+      let name = identity ? nameOf(identity) : String(value);
+      name = name.replace(/(?:کد\s*)?[۰-۹0-9]+\s*[—–-]\s*/g, "").replace(/\s*[—–-]\s*(?:کد\s*)?[۰-۹0-9]+/g, "").trim();
+      return name && !/^[۰-۹0-9]+$/.test(name) ? translateValue(name) : "—";
+    }
     if (identity) return khademIdentityText(identity);
     if (/(date|_at|_date|_month)$/.test(key) || key === "birth_date") return dateText(value);
     if (/(amount|balance|debt|salary|cost|price|paid|refund)/i.test(key) && (typeof value === "number" || /^-?[\d,.]+$/.test(String(value)))) return money(value);
