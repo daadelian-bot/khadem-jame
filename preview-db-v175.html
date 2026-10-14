@@ -107,7 +107,8 @@ async function loadLive(){
  getRows("roles","app_roles","id,role_key,title,is_system"),
  getRows("permissions","permissions","id,permission_key,title"),
  getRows("rolePermissions","role_permissions","role_id,permission_id"),
- getRows("presence","user_presence","user_id,last_seen_at,updated_at")
+ getRows("presence","user_presence","user_id,last_seen_at,updated_at"),
+ getRows("audit","audit_logs","id,actor_user_id,action,module_key,record_id,created_at")
  ];
  await Promise.all(jobs);mapLive();
  const dbErrors=Object.entries(live.errors).filter(([k,v])=>v);
@@ -156,6 +157,28 @@ document.getElementById("dbLogin").addEventListener("submit",async e=>{
  try{const r=await api("/auth/v1/token?grant_type=password",{method:"POST",body:{email,password}});if(!r.access_token)throw new Error("توکن ورود دریافت نشد.");localStorage.setItem(DB_TOKEN,r.access_token);localStorage.setItem(DB_USER,JSON.stringify(r.user||{email}));await validateAndLoad();if(document.body.classList.contains("db-ready"))toast("اتصال برقرار شد؛ حالت فقط خواندنی فعال است.");}
  catch(err){gateMsg("ورود یا اتصال ناموفق بود: "+(err.message||"خطای ناشناخته"));}finally{btn.disabled=false;btn.textContent="ورود و اتصال";}
 });
+
+generic=function(p){
+ if(p==="missions"){
+  return head("مدیریت مأموریت‌ها","داده‌های زنده از deployments؛ این صفحه فقط خواندنی است.",button("↻ تازه‌سازی","refresh-live"))+liveErrorPanel(["deployments","khadems"])+(live.deployments.length?table(["تاریخ","مبدأ","مقصد","نوع خدمت","مسئول","وضعیت"],live.deployments.map(d=>'<tr><td>'+safe(dateFa(d.deployment_date))+'</td><td>'+safe(d.origin)+'</td><td>'+safe(d.destination)+'</td><td>'+safe(statusLive(d.service_type))+'</td><td>'+safe(d.responsible)+'</td><td>'+status(statusLive(d.status))+'</td></tr>').join("")):empty("مأموریتی برای نمایش نیست","در صورت موفقیت دریافت، رکوردی در جدول deployments قابل مشاهده نیست."));
+ }
+ if(p==="equipment"){
+  return head("وسایل و تجهیزات","فهرست زنده از vehicles و drivers؛ عملیات تغییر غیرفعال است.",button("↻ تازه‌سازی","refresh-live"))+liveErrorPanel(["vehicles","drivers"])+(live.vehicles.length?table(["نوع وسیله","مدل","پلاک","ظرفیت","راننده","وضعیت"],live.vehicles.map(v=>'<tr><td>'+safe(v.vehicle_type)+'</td><td>'+safe(v.model)+'</td><td>'+safe(v.plate_number||v.plate)+'</td><td>'+safe(v.capacity??"—")+'</td><td>'+safe(v.driver_name||v.owner_name)+'</td><td>'+status(statusLive(v.status))+'</td></tr>').join("")):empty("وسیله‌ای برای نمایش نیست","در صورت موفقیت دریافت، رکوردی در جدول vehicles قابل مشاهده نیست."))+(live.drivers.length?'<div class="panel" style="margin-top:15px"><div class="panel-head"><h3>فهرست رانندگان</h3>'+status(faNum(live.drivers.length)+" نفر")+'</div>'+table(["نام راننده","تلفن","وضعیت"],live.drivers.map(d=>'<tr><td>'+safe(d.full_name)+'</td><td>'+safe(d.phone)+'</td><td>'+status(statusLive(d.status))+'</td></tr>').join(""))+'</div>':'');
+ }
+ if(p==="reports"){
+  return head("گزارش‌ها و آمار","خلاصه فقط از جدول‌هایی که این حساب توانسته بخواند محاسبه می‌شود.",button("↻ تازه‌سازی","refresh-live"))+liveErrorPanel(["khadems","services","finance","dues","meetings","absence"])+ '<div class="grid kpis">'+kpi("♙","خادمین قابل مشاهده",faNum(live.khadems.length),"جدول khadems")+kpi("◷","سوابق خدمت",faNum(live.services.length),"جدول service_records")+kpi("▤","تراکنش مالی",faNum(live.finance.length),"جدول finance_transactions")+kpi("✓","جلسات",faNum(live.meetings.length),"جدول meetings")+'</div><div class="notice">گزارش‌های پیشرفته و خروجی فایل در این مرحله فعال نیستند؛ این نما آمار زنده پایه را نشان می‌دهد.</div>';
+ }
+ if(p==="users"){
+  return head("کاربران و دسترسی‌ها","عرضه اطلاعات حساب‌ها و نقش‌ها براساس مجوزهای واقعی پایگاه داده.",button("↻ تازه‌سازی","refresh-live"))+liveErrorPanel(["profiles","roles","permissions","rolePermissions","presence"])+ '<div class="grid kpis">'+kpi("♧","حساب‌های قابل مشاهده",faNum(live.profiles.length),"جدول profiles")+kpi("◈","نقش‌های تعریف‌شده",faNum(live.roles.length),"جدول app_roles")+kpi("⚿","مجوزهای تعریف‌شده",faNum(live.permissions.length),"جدول permissions")+kpi("◷","ردیف‌های اتصال نقش/مجوز",faNum(live.rolePermissions.length),"جدول role_permissions")+'</div><div class="panel"><div class="panel-head"><h3>حساب‌های قابل مشاهده</h3><span class="status blue">فقط مشاهده</span></div>'+(live.profiles.length?table(["نام نمایشی","شناسه کاربری","نقش","وضعیت"],live.profiles.map(u=>'<tr><td>'+safe(u.display_name||u.full_name||u.username)+'</td><td>'+safe(u.id)+'</td><td>'+safe(u.role)+'</td><td>'+status(u.is_active?"فعال":"غیرفعال")+'</td></tr>').join("")):empty("حسابی برای نمایش نیست","اگر دریافت موفق باشد، حسابی قابل مشاهده نیست."))+'</div><div class="notice" style="margin-top:15px">مجوزها در سمت پایگاه داده بررسی می‌شوند. خالی بودن role_permissions به‌تنهایی به معنی مجوز نداشتن نیست؛ تابع has_app_permission از تنظیمات مدیریتی نیز می‌خواند.</div>';
+ }
+ if(p==="audit"){
+  return head("سوابق فعالیت","سوابق audit_logs قابل مشاهده برای حساب فعلی.",button("↻ تازه‌سازی","refresh-live"))+liveErrorPanel(["audit"])+(live.audit.length?table(["زمان","عملیات","بخش","شناسه رکورد","کاربر"],live.audit.map(a=>'<tr><td>'+safe(a.created_at?dateFa(a.created_at):"—")+'</td><td>'+safe(a.action)+'</td><td>'+safe(a.module_key)+'</td><td>'+safe(a.record_id)+'</td><td>'+safe(a.actor_user_id)+'</td></tr>').join("")):empty("سابقه‌ای برای نمایش نیست","در صورت موفقیت دریافت، برای این حساب سابقه قابل مشاهده‌ای وجود ندارد."));
+ }
+ return '<div class="panel">'+head(titles[p]||"مدیریت سامانه","این بخش از نظر ظاهری آماده است؛ اتصال داده و عملیات آن در مرحله بعد انجام می‌شود.",button("↻ تازه‌سازی","refresh-live"))+'<div class="notice">این صفحه هنوز به جدول‌های واقعی متصل نشده است. کنترل‌های تنظیمات و مدیریت منو در این مرحله فقط نمایشی هستند و چیزی را در پایگاه داده ذخیره نمی‌کنند.</div><div class="empty"><b>مرحله اتصال بعدی</b>ساختار طراحی حفظ شده است؛ تا زمان تکمیل نگاشت و بررسی مجوزها، داده نمونه به‌عنوان داده واقعی نمایش داده نمی‌شود.</div></div>';
+};
+menuAdmin=function(){return head("مدیریت منوها و بخش‌ها","ساختار منوها در پیش‌نمایش طراحی شده؛ ذخیره‌سازی پایدار هنوز متصل نیست.",button("↻ تازه‌سازی","refresh-live"))+'<div class="notice">این صفحه فعلاً نمایشی است. تغییر عنوان یا وضعیت منو فقط در حافظه همین صفحه اعمال می‌شود و در پایگاه داده ذخیره نمی‌شود.</div><div class="panel">'+menus.map((m,i)=>'<div class="setting-row"><div><strong>'+safe(m[1])+'</strong><small>شناسه بخش: '+safe(m[0])+'</small></div><span class="status blue">نمایشی</span></div>').join('')+'</div>'};
+settingsPage=function(){return head("تنظیمات سامانه","ساختار تنظیمات در طراحی حفظ شده؛ هنوز خواندن/نوشتن تنظیمات به جدول‌ها نگاشت نشده است.",button("↻ تازه‌سازی","refresh-live"))+'<div class="notice">اتصال تنظیمات و مدیریت مسئولیت‌ها در مرحله بعد انجام می‌شود. این صفحه در حال حاضر هیچ تغییری را در پایگاه داده ذخیره نمی‌کند.</div><div class="grid settings-grid"><div class="panel"><h3>تنظیمات عمومی</h3><div class="setting-row"><strong>نمایش اعداد فارسی</strong>'+status("طراحی‌شده")+'</div><div class="setting-row"><strong>تقویم شمسی</strong>'+status("طراحی‌شده")+'</div><div class="setting-row"><strong>عنوان سامانه</strong>'+status("طراحی‌شده")+'</div></div><div class="panel"><h3>تنظیمات موجود در پایگاه داده</h3>'+liveErrorPanel(["khadems"])+'<p style="line-height:2;color:var(--muted)">جداول system_settings و app_settings شناسایی شده‌اند. قبل از نمایش یا ویرایش، ساختار کلیدها و مجوزهای مربوطه جداگانه بررسی می‌شود.</p>'+button("بازخوانی اطلاعات","refresh-live")+'</div></div>'};
+
 render();validateAndLoad();
 })();
 </script></body></html>
