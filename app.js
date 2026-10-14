@@ -860,8 +860,31 @@
       <div class="kj-card" style="margin-top:14px"><h3 class="kj-section-title">سوابق مالی خادم</h3>${errBox("finance_transactions")}${errBox("tuition_dues")}${errBox("finance_installments")}${financeLoadError ? empty("به دلیل خطای دریافت، خالی بودن سوابق مالی قابل تأیید نیست.") : tableHtml(financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است")}</div>`;
   }
   function genericPage(key, title, rows, preferredColumns) {
-    const cols = preferredColumns || (rows.length ? Object.keys(rows[0]).filter(k => !["id","updated_at","created_at"].includes(k)).slice(0,5).map(k=>({key:k,label:fieldLabel(k)})) : []);
-    return `<h1 class="kj-page-title">${esc(title)}</h1>${errBox(key)}${cols.length ? tableHtml(rows, cols, state.errors[key] ? "دریافت اطلاعات ناموفق بود." : "هنوز موردی ثبت نشده است.") : (state.errors[key] ? "" : empty("هنوز موردی ثبت نشده است."))}`;
+    // کد خادم مرجع اصلی اتصال رکوردها به پرونده خادم است؛ شناسه داخلی فقط برای تطبیق کمکی استفاده می‌شود.
+    const enrichedRows = rows.map(row => {
+      const rowId = val(row, ["khadem_id", "person_id", "personnel_id"]);
+      const rowCode = val(row, ["khadem_code", "personnel_code", "code"]);
+      const rowName = val(row, ["khadem_name", "full_name", "person_name"]);
+      const linked = state.khadems.find(k =>
+        (rowCode && String(khademCode(k)) === String(rowCode)) ||
+        (rowId && String(khademId(k)) === String(rowId)) ||
+        (rowName && nameOf(k).trim().toLocaleLowerCase("fa") === String(rowName).trim().toLocaleLowerCase("fa"))
+      );
+      const hasKhademRef = Boolean(rowId || rowCode || rowName || linked);
+      return hasKhademRef ? {
+        ...row,
+        khadem_code: rowCode || (linked ? khademCode(linked) : ""),
+        khadem_name: rowName || (linked ? nameOf(linked) : "")
+      } : row;
+    });
+    let cols = preferredColumns || (enrichedRows.length ? Object.keys(enrichedRows[0]).filter(k => !["id","updated_at","created_at"].includes(k)).slice(0,5).map(k=>({key:k,label:fieldLabel(k)})) : []);
+    const hasKhademRef = enrichedRows.some(row => row.khadem_code || row.khadem_name || row.khadem_id || row.person_id || row.personnel_id || row.khadem_name);
+    if (hasKhademRef) {
+      const codeCol = {key:"khadem_code",label:"کد خادم"};
+      const nameCol = {key:"khadem_name",label:"نام خادم"};
+      cols = [codeCol, nameCol, ...cols.filter(c => !["khadem_code","khadem_name"].includes(c.key))];
+    }
+    return `<h1 class="kj-page-title">${esc(title)}</h1>${errBox(key)}${cols.length ? tableHtml(enrichedRows, cols, state.errors[key] ? "دریافت اطلاعات ناموفق بود." : "هنوز موردی ثبت نشده است.") : (state.errors[key] ? "" : empty("هنوز موردی ثبت نشده است."))}`;
   }
   function meetingsPage() {
     const rows = state.meetings.map(m => {
@@ -894,7 +917,7 @@
     const rows = state.finance.map(r => ({
       ...r,
       transaction_type: val(r,["transaction_type","type","kind"]),
-      khadem_code: val(r,["khadem_code","personnel_code"]) || (r.khadem_id ? nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id)) || {}) : ""),
+      khadem_code: val(r,["khadem_code","personnel_code"]) || khademCode(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id)) || {}),
       category: val(r,["category","account_category"]),
       title: val(r,["title","description"]),
       amount: val(r,["amount","total_amount"]),
