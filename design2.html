@@ -9,6 +9,14 @@
 @media(max-width:1100px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.layout{grid-template-columns:220px minmax(0,1fr);gap:14px;padding:14px}.hero h1{font-size:24px}}
 @media(max-width:760px){.top{padding:0 12px;height:60px}.top-left .date{display:none}.layout{display:flex;flex-direction:column;padding:10px}.sidebar{position:static;padding:10px}.sidebar .nav-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}.group-label{grid-column:1/-1}.sidebar .nav-wrap>.nav-group-items{grid-column:1/-1}.side-search{margin-bottom:8px}.hero{padding:22px;min-height:0;display:block}.hero h1{font-size:22px}.hero p{font-size:12px}.hero .actions{margin-top:16px}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.card{padding:14px;min-height:150px}.card h3{font-size:12px}.enter{font-size:15px}.section-head h2{font-size:17px}.status{font-size:11px}.top-left .pill{display:none}}
 @media(max-width:390px){.cards{grid-template-columns:1fr}.sidebar .nav-wrap{grid-template-columns:1fr}.hero h1{font-size:20px}}
+
+.section-preview{display:none;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;margin:18px 0;box-shadow:0 5px 20px rgba(25,70,60,.04)}
+.section-preview.visible{display:block}
+.section-preview h2{margin:0 0 10px;color:var(--ink);font-size:22px}
+.section-preview p{color:var(--muted);line-height:1.9}
+.preview-tag{display:inline-flex;align-items:center;gap:6px;background:#e5f5ef;color:var(--green);padding:7px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.preview-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.nav{cursor:pointer}.card{cursor:pointer}
 </style></head>
 <body>
 <header class="top"><div class="brand"><div class="logo">🕌</div><div>سامانه جامع مدیریت خدام<div class="sub">مرکز مدیریت و عملیات</div></div></div><div class="top-left"><span class="pill">نسخه آزمایشی طرح ۲</span><span class="date">نمایش پیش‌نمایش رابط کاربری</span><button class="logout" onclick="toast('این نسخه پیش‌نمایش است؛ ورود واقعی هنوز متصل نشده است.')">خروج ←</button></div></header>
@@ -55,20 +63,50 @@
 <div class="card" data-title="ساختار مسئولیت‌ها" onclick="selectNav(null,'ساختار مسئولیت‌ها')"><div class="ico">🧩</div><h3>ساختار مسئولیت‌ها</h3><p>نقش‌ها و سطوح دسترسی</p><div class="enter">ورود به بخش ←</div></div>
 <div class="card" data-title="مدیریت سامانه" onclick="selectNav(null,'مدیریت سامانه')"><div class="ico">⚙️</div><h3>مدیریت سامانه</h3><p>کاربران، منوها و تنظیمات</p><div class="enter">ورود به بخش ←</div></div>
 </div>
+<section class="section-preview" id="sectionPreview" aria-live="polite">
+<span class="preview-tag">● پیش‌نمایش بخش</span>
+<h2 id="previewHeading">عنوان بخش</h2>
+<p id="previewDescription"></p>
+<p id="previewStatus">این بخش در نسخه فعلی به پایگاه داده متصل نیست؛ بنابراین اطلاعات واقعی یا عملیات ذخیره‌سازی اجرا نمی‌شود.</p>
+<div class="preview-actions"><button class="btn primary" onclick="showDashboard()">بازگشت به نمای کلی</button></div>
+</section>
 <section class="panel"><h3>⌛ پیگیری آخرین خدمات</h3><p id="selectionHint">برای مشاهده طرح هر بخش، آن را از منو انتخاب کنید. این صفحه پیش‌نمایش ظاهری است و به پایگاه داده متصل نیست؛ اطلاعات واقعی یا ساختگی در این بخش نمایش داده نمی‌شود.</p></section>
 <section class="panel note"><h3>▣ راهنمای کاربری: داشبورد مدیریتی</h3><p>از منوی سمت راست برای رفتن به بخش‌ها استفاده کنید. جست‌وجوی منوها فعال است و انتخاب هر بخش، عنوان انتخاب‌شده را در صفحه نشان می‌دهد. این فایل یک پیش‌نمایش آنلاین است و هنوز فرم‌های عملیاتی را به پایگاه داده متصل نمی‌کند.</p></section>
 <div class="footer">پیش‌نمایش طرح ۲ • رابط فارسی راست‌چین • سازگار با موبایل و رایانه</div>
 </main></div><div id="toast" class="toast"></div>
 <script>
-function toast(s){let t=document.getElementById('toast');if(!t)return;t.textContent=s;t.style.display='block';clearTimeout(window.__tt);window.__tt=setTimeout(()=>t.style.display='none',3200)}
+const sectionInfo={
+'داشبورد':['نمای کلی و عملیات','نمای کلی برای دسترسی سریع به بخش‌های سامانه.'],
+'راهنمای سامانه':['راهنمای سامانه','راهنمای استفاده از منوها، جست‌وجو و مسیرهای اصلی سامانه.'],
+'مرکز عملیات':['مرکز عملیات','نمای تجمیعی برای پیگیری برنامه‌ها و عملیات مجموعه.'],
+'بانک خادمین':['بانک خادمین','پرونده خادمین، اطلاعات تماس، مهارت‌ها و وضعیت فعالیت.'],
+'خدمت':['خدمت و سوابق خدمت','ثبت و مرور سوابق خدمت خادمین و برنامه‌های مرتبط.'],
+'خدمت شب جمعه':['پایش خدمت شب جمعه','برنامه‌ها و سوابق پایش خدمت شب‌های جمعه.'],
+'برنامه‌ریزی':['برنامه‌ریزی','تنظیم برنامه‌ها، نوبت‌ها و زمان‌بندی فعالیت‌ها.'],
+'جلسات':['جلسات و حضور و غیاب','برنامه جلسات و بررسی وضعیت حضور و غیاب.'],
+'ماموریت خدمت':['مأموریت خدمت','پیش‌نمایش مدیریت مأموریت‌ها، رانندگان و خودروها.'],
+'امور مالی':['امور مالی','پرداخت‌ها، بدهی‌ها، اقساط و پیگیری‌های مالی.'],
+'خزانه':['خزانه','پیش‌نمایش گردش صندوق و گزارش موجودی.'],
+'نیکوکاران':['نیکوکاران و خیرین','فهرست حمایتها و کمک‌های نیکوکاران.'],
+'گفت‌وگو':['گفت‌وگو و پیگیری','پیگیری ارتباطات و گفت‌وگوهای ثبت‌شده.'],
+'اسناد':['اسناد و فایل','مدیریت و دسته‌بندی اسناد و فایل‌ها.'],
+'گزارش‌ساز':['گزارش‌ساز','ساخت و مشاهده گزارش‌های مدیریتی.'],
+'مرکز ورود فایل':['مرکز ورود فایل','پیش‌نمایش مسیر ورود و بررسی فایل‌ها.'],
+'ساختار مسئولیت‌ها':['ساختار مسئولیت‌ها','نقش‌ها، مسئولیت‌ها و سطوح دسترسی.'],
+'مدیریت سامانه':['مدیریت سامانه و تنظیمات','تنظیمات سامانه و مدیریت کاربران.']
+};
 function setupGroups(){
  const wrap=document.getElementById('navWrap');
- const labels=[...wrap.querySelectorAll(':scope > .group-label')];
- labels.forEach((label,index)=>{
-   const group=document.createElement('div');group.className='nav-group-items'+(index===0?' open':'');
+ if(!wrap)return;
+ [...wrap.querySelectorAll(':scope > .group-label')].forEach((label,index)=>{
+   const group=document.createElement('div');
+   group.className='nav-group-items'+(index===0?' open':'');
    let next=label.nextElementSibling;
-   while(next&&!next.classList.contains('group-label')){const current=next;next=next.nextElementSibling;group.appendChild(current);}
-   label.setAttribute('role','button');label.setAttribute('tabindex','0');label.setAttribute('aria-expanded',index===0?'true':'false');
+   while(next&&!next.classList.contains('group-label')){
+     const current=next;next=next.nextElementSibling;group.appendChild(current);
+   }
+   label.setAttribute('role','button');label.setAttribute('tabindex','0');
+   label.setAttribute('aria-expanded',index===0?'true':'false');
    label.addEventListener('click',()=>toggleGroup(label,group));
    label.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleGroup(label,group)}});
    label.after(group);
@@ -76,28 +114,55 @@ function setupGroups(){
 }
 function toggleGroup(label,group){
  const opening=!group.classList.contains('open');
- group.classList.toggle('open',opening);label.setAttribute('aria-expanded',opening?'true':'false');
+ group.classList.toggle('open',opening);
+ label.setAttribute('aria-expanded',opening?'true':'false');
 }
 function selectNav(el,name){
+ const key=Object.keys(sectionInfo).find(k=>name===k||name.includes(k)||k.includes(name))||name;
+ const info=sectionInfo[key]||[name,'پیش‌نمایش این بخش از سامانه.'];
  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
  let selected=el;
- if(!selected)selected=[...document.querySelectorAll('.nav')].find(x=>(x.dataset.name||'').includes(name));
- if(selected){selected.classList.add('active');const group=selected.closest('.nav-group-items');if(group){group.classList.add('open');const label=group.previousElementSibling;if(label)label.setAttribute('aria-expanded','true');}}
- document.getElementById('welcome').textContent='بخش «'+name+'»';
- document.getElementById('sectionTitle').textContent='پیش‌نمایش بخش '+name;
- const hint=document.getElementById('selectionHint');
- if(hint)hint.textContent='بخش انتخاب‌شده: '+name+' — این صفحه هنوز پیش‌نمایش است و عملیات واقعی در آن فعال نیست.';
+ if(!selected)selected=[...document.querySelectorAll('.nav')].find(n=>(n.dataset.name||'').includes(name)||name.includes(n.dataset.name||''));
+ if(selected){
+   selected.classList.add('active');
+   const group=selected.closest('.nav-group-items');
+   if(group){group.classList.add('open');const label=group.previousElementSibling;if(label)label.setAttribute('aria-expanded','true');}
+ }
+ document.getElementById('welcome').textContent=info[0];
+ document.getElementById('sectionTitle').textContent=info[0];
+ document.getElementById('previewHeading').textContent=info[0];
+ document.getElementById('previewDescription').textContent=info[1];
+ document.getElementById('selectionHint').textContent='بخش انتخاب‌شده: '+info[0]+' — این صفحه پیش‌نمایش است و عملیات واقعی در آن فعال نیست.';
+ document.getElementById('sectionPreview').classList.add('visible');
+ document.getElementById('cards').style.display='none';
+ document.querySelector('.section-head').style.display='none';
+ document.querySelector('.hero').style.display='none';
+ document.getElementById('sectionPreview').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showDashboard(){
+ document.getElementById('sectionPreview').classList.remove('visible');
+ document.getElementById('cards').style.display='';
+ document.querySelector('.section-head').style.display='';
+ document.querySelector('.hero').style.display='';
+ document.getElementById('welcome').textContent='به سامانه جامع خادمین خوش آمدید';
+ document.getElementById('sectionTitle').textContent='دسترسی سریع به بخش‌ها';
+ document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+ const home=[...document.querySelectorAll('.nav')].find(n=>(n.dataset.name||'')==='داشبورد');
+ if(home)home.classList.add('active');
+ window.scrollTo({top:0,behavior:'smooth'});
 }
 function filterNav(v){
  v=v.trim().toLowerCase();
  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('hidden',!n.dataset.name.toLowerCase().includes(v)));
  document.querySelectorAll('.group-label').forEach(g=>{
-   const group=g.nextElementSibling;const visible=group&&[...group.querySelectorAll('.nav')].some(n=>!n.classList.contains('hidden'));
-   g.classList.toggle('hidden',!visible);if(group)group.classList.toggle('hidden',!visible);
+   const group=g.nextElementSibling;
+   const visible=group&&[...group.querySelectorAll('.nav')].some(n=>!n.classList.contains('hidden'));
+   g.classList.toggle('hidden',!visible);
+   if(group)group.classList.toggle('hidden',!visible);
    if(v&&visible){group.classList.add('open');g.setAttribute('aria-expanded','true');}
    else if(!v&&visible){group.classList.toggle('open',g===document.querySelector('.group-label'));g.setAttribute('aria-expanded',g===document.querySelector('.group-label')?'true':'false');}
  });
  document.querySelectorAll('.card').forEach(c=>c.classList.toggle('hidden',!!v&&!c.dataset.title.toLowerCase().includes(v)));
 }
-setupGroups();}
+setupGroups();
 </script></body></html>
