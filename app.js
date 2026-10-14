@@ -711,7 +711,23 @@
       service_name:"عنوان خدمت", service_status:"وضعیت خدمت", service_days_count:"تعداد روزهای خدمت",
       total_service_count:"مجموع سوابق خدمت", friday_service_days:"روزهای خدمت شب جمعه", main_service_days:"روزهای خدمت اصلی"
     };
-    return labels[key] || "اطلاعات تکمیلی";
+    const extraLabels = {
+      income:"درآمد", expense:"هزینه", expenses:"هزینه‌ها", revenue:"درآمد", deposit:"واریز", withdrawal:"برداشت",
+      debit:"بدهکار", credit:"بستانکار", amount_due:"مبلغ بدهی", due_amount:"مبلغ سررسید", total_paid:"مجموع پرداختی",
+      payer_name:"نام پرداخت‌کننده", recipient_name:"نام دریافت‌کننده", donor_name:"نام نیکوکار", fund_name:"عنوان صندوق",
+      fund_type:"نوع صندوق", source:"منبع", destination:"مقصد", receipt_number:"شماره رسید", invoice_number:"شماره فاکتور",
+      transaction_id:"شناسه تراکنش", user_id:"شناسه کاربر", username:"نام کاربری", last_sign_in_at:"آخرین ورود",
+      permission_name:"نام مجوز", role_name:"نام نقش", module_name:"نام بخش", event_type:"نوع رویداد",
+      error_message:"شرح خطا", message:"پیام", details:"جزئیات", metadata:"اطلاعات تکمیلی",
+      count:"تعداد", total:"مجموع", average:"میانگین", start_date:"تاریخ شروع", end_date:"تاریخ پایان",
+      reason_for_absence:"علت عدم حضور", absence_reason:"علت عدم حضور", exemption_reason:"علت معافیت",
+      tuition_status:"وضعیت شهریه", payment_status:"وضعیت پرداخت", transaction_status:"وضعیت تراکنش",
+      created_by:"ثبت‌کننده", updated_by:"آخرین ویرایش‌کننده", table_name:"نام جدول", field_name:"نام فیلد",
+      amount_toman:"مبلغ (تومان)", total_amount_toman:"مبلغ کل", paid_toman:"مبلغ پرداخت‌شده",
+      remaining_toman:"مانده بدهی", refund_amount_toman:"مبلغ بازپرداخت", vehicle_type:"نوع وسیله نقلیه",
+      attendance_id:"شناسه حضور", deployment_id:"شناسه مأموریت", service_record_id:"شناسه سابقه خدمت"
+    };
+    return labels[key] || extraLabels[key] || "اطلاعات تکمیلی";
   }
   function translateValue(value) {
     const translations = {
@@ -723,11 +739,27 @@
       cash:"نقدی", transfer:"انتقال بانکی", card:"کارت‌به‌کارت", other:"سایر", personal:"شخصی",
       car:"خودرو", personal_car:"اتومبیل شخصی", committee_vehicle:"خودروی مجموعه",
       deferred:"معوق", due:"سررسیدشده", open:"باز", closed:"بسته", refunded:"بازپرداخت‌شده",
-      male:"مرد", single:"مجرد", married:"متأهل", employee:"کارمند"
+      male:"مرد", single:"مجرد", married:"متأهل", employee:"کارمند",
+      income:"درآمد", incoming:"دریافتی", inflow:"ورودی", revenue:"درآمد", deposit:"واریز",
+      expense:"هزینه", expenses:"هزینه‌ها", outgoing:"پرداختی", outflow:"خروجی", debit:"بدهکاری", credit:"بستانکاری", withdrawal:"برداشت",
+      donation:"کمک مالی", donation_income:"درآمد کمک‌های مالی", tuition_payment:"پرداخت شهریه",
+      tuition_due:"بدهی شهریه", equipment:"تجهیزات", clothing:"البسه", uniform:"لباس فرم",
+      fuel:"سوخت", transport:"حمل‌ونقل", salary:"حقوق", fee:"کارمزد", refund:"بازپرداخت",
+      cash_payment:"پرداخت نقدی", online_payment:"پرداخت اینترنتی", bank_transfer:"انتقال بانکی",
+      draft:"پیش‌نویس", submitted:"ارسال‌شده", processing:"در حال پردازش", failed:"ناموفق",
+      success:"موفق", successful:"موفق", enabled:"فعال", disabled:"غیرفعال", unknown:"نامشخص",
+      service_record:"سابقه خدمت", meeting:"جلسه", deployment:"مأموریت", fund:"صندوق",
+      donor:"نیکوکار", charity:"خیریه", vehicle:"وسیله نقلیه", driver:"راننده",
+      service_fee:"هزینه خدمت", membership_fee:"حق عضویت", monthly_tuition:"شهریه ماهانه",
+      miscellaneous:"متفرقه", miscellaneous_income:"سایر درآمدها", miscellaneous_expense:"سایر هزینه‌ها",
+      operating_expense:"هزینه جاری", equipment_purchase:"خرید تجهیزات", clothing_purchase:"خرید البسه",
+      transportation_expense:"هزینه حمل‌ونقل", medical_expense:"هزینه درمان",
+      pending_approval:"در انتظار تأیید", needs_review:"نیازمند بررسی", archived:"بایگانی‌شده"
     };
     const raw = String(value);
     const key = raw.trim().toLowerCase();
     if (Object.prototype.hasOwnProperty.call(translations,key)) return translations[key];
+    if (/^[a-z][a-z0-9_ -]*$/i.test(raw) && /[a-z]/i.test(raw)) return "سایر اطلاعات";
     return raw.replaceAll("_"," ");
   }
   function formatValue(key, value) {
