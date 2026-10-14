@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication is retained; the session is validated before app data is shown. -->
 
-<meta name="app-release" content="164">
+<meta name="app-release" content="165">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۶۵</title>
+<title>سامانه جامع مدیریت خدام — نسخه 165</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -2354,6 +2354,39 @@ img,video,iframe{max-width:100%;border-radius:12px}pre,code{overflow-wrap:anywhe
     try { sessionStorage.removeItem('khadem_session'); sessionStorage.removeItem('kj_access_token'); sessionStorage.removeItem('kj_user'); } catch(_) {}
     location.replace('./login.html?reason=logout');
   };
+})();
+</script>
+<script id="khadem-live-logout-handler-v165">
+(function(){
+  'use strict';
+  function clearLocalSession(){
+    ['khadem_session','kj_access_token','kj_user'].forEach(function(k){
+      try { localStorage.removeItem(k); } catch(_) {}
+      try { sessionStorage.removeItem(k); } catch(_) {}
+    });
+  }
+  window.khademLogout = async function(){
+    var button = document.getElementById('logoutBtn');
+    if(button){ button.disabled=true; button.textContent='در حال خروج…'; }
+    var token='';
+    try {
+      var session=JSON.parse(localStorage.getItem('khadem_session')||'{}');
+      token=session.access_token||localStorage.getItem('kj_access_token')||'';
+    } catch(_) { try { token=localStorage.getItem('kj_access_token')||''; } catch(__) {} }
+    try {
+      if(token && typeof CFG!=='undefined' && CFG.url && CFG.key){
+        var controller=new AbortController();
+        var timeout=setTimeout(function(){controller.abort();},5000);
+        try {
+          await fetch(CFG.url+'/auth/v1/logout',{method:'POST',headers:{apikey:CFG.key,Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store',credentials:'omit',keepalive:true,signal:controller.signal});
+        } finally { clearTimeout(timeout); }
+      }
+    } catch(_) {}
+    clearLocalSession();
+    location.replace('./login.html?reason=logout');
+  };
+  var button=document.getElementById('logoutBtn');
+  if(button) button.addEventListener('click',function(event){event.preventDefault();window.khademLogout();});
 })();
 </script>
 </body>
