@@ -271,24 +271,93 @@
       @media(hover:none){.kj-link{padding:8px;min-height:42px}}
     `;
     document.head.appendChild(style);
+
+    style.textContent += `
+      :root{color-scheme:light;--kj-maroon:#137c68;--kj-gold:#74b8a6;--kj-bg:#f2f6fa;--kj-ink:#244b45;--kj-muted:#718580;--kj-border:#e5ece9}
+      body{background:var(--kj-bg);color:var(--kj-ink)}
+      .kj-shell{max-width:none;min-height:100vh;background:var(--kj-bg)}
+      .kj-top{background:#fff;color:var(--kj-ink);border-bottom:1px solid var(--kj-border);padding:12px 22px;box-shadow:0 3px 14px #244b4508}
+      .kj-brand{font-size:18px;color:var(--kj-ink)}.kj-top small{color:var(--kj-muted)}
+      .kj-top .kj-small{color:var(--kj-ink)!important}
+      .kj-top .kj-secondary{background:#e5f5ef;color:#137c68;border-color:#d2ece3}
+      .kj-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;max-width:1600px;margin:0 auto;padding:18px}
+      .kj-sidebar{background:#fff;border:1px solid var(--kj-border);border-radius:18px;padding:14px;height:max-content;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto}
+      .kj-side-search{width:100%;border:1px solid var(--kj-border);border-radius:12px;padding:11px;background:#fff;margin-bottom:12px}
+      .kj-menu-group{border-top:1px solid #f0f3f2;padding-top:8px;margin-top:7px}
+      .kj-group-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:right;border:0;background:transparent;color:#137c68;font-size:12px;font-weight:bold;padding:10px 7px;min-height:40px}
+      .kj-group-toggle:after{content:'＋';font-size:16px;color:var(--kj-muted);font-weight:normal}
+      .kj-menu-group.open .kj-group-toggle:after{content:'−'}
+      .kj-group-items{display:none}.kj-menu-group.open .kj-group-items{display:grid;gap:4px}
+      .kj-nav{display:flex;flex-direction:column;gap:4px;overflow:visible;padding:0;background:transparent;border:0;position:static}
+      .kj-nav button{width:100%;white-space:normal;text-align:right;display:flex;align-items:center;gap:9px;border:1px solid transparent;border-radius:12px;padding:10px 12px;background:#fff;color:#536b66;min-height:44px}
+      .kj-nav button.active{background:#e5f5ef;color:#137c68;border-color:transparent;font-weight:bold}
+      .kj-nav button:hover{background:#f1f8f5}
+      .kj-main{padding:0;min-height:65vh}
+      .kj-page-title{color:#244b45}
+      .kj-card{border-color:var(--kj-border);border-radius:16px;box-shadow:0 5px 18px #244b4506}
+      .kj-stat{color:#137c68}
+      .kj-pill{background:#e5f5ef;color:#137c68}
+      .kj-link{color:#137c68}
+      .kj-primary,.kj-button{background:#137c68}
+      .kj-table-wrap{border-color:var(--kj-border);border-radius:14px}
+      th{background:#f3f8f6;color:#355f56}
+      .kj-footer{color:#81928d}
+      .kj-side-foot{font-size:11px;color:var(--kj-muted);padding:14px 7px 3px;border-top:1px solid #f0f3f2;margin-top:12px;line-height:1.8}
+      .kj-content-wrap{min-width:0}
+      @media(max-width:850px){.kj-layout{grid-template-columns:1fr;padding:10px;gap:10px}.kj-sidebar{position:static;max-height:none;padding:10px}.kj-top{padding:10px 12px}.kj-brand{font-size:15px}.kj-nav{display:block}.kj-menu-group.open .kj-group-items{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-group-items button{font-size:13px;padding:8px}.kj-side-foot{display:none}}
+      @media(max-width:420px){.kj-menu-group.open .kj-group-items{grid-template-columns:1fr}.kj-top .kj-actions{gap:5px}.kj-top .kj-actions button{padding:7px 9px}}
+    `;
   }
 
   function shell() {
     const app = ensureRoot();
     const user = (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) { return null; } })();
+    const groups = [
+      ["نمای کلی و عملیات", [["dashboard","🏠 داشبورد"],["reports","📊 گزارش‌ها"]]],
+      ["خادمین و عملیات خدمت", [["khadems","👤 بانک خادمین"],["services","📋 خدمت و سوابق خدمت"],["friday","🌙 پایش خدمت شب جمعه"],["nonattendance","🧾 عدم حضور"],["meetings","👥 جلسات و حضور و غیاب"],["deployments","🚐 مأموریت خدمت"]]],
+      ["مالی و پشتیبانی", [["finance","💰 امور مالی"],["fund","🏦 خزانه"],["donors","🤝 نیکوکاران و خیرین"]]],
+      ["مدیریت سامانه", [["settings","⚙️ مدیریت سامانه و تنظیمات"]]]
+    ];
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
-          <div class="kj-brand">سامانه جامع مدیریت خادمین<small>مجموعه السیدة زینب سلام الله علیها</small></div>
-          <div class="kj-actions"><span class="kj-small" style="color:#fff">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی</button><button class="kj-secondary" id="kj-signout">خروج</button></div>
+          <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small></div>
+          <div class="kj-actions"><span class="kj-small">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی اطلاعات</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div>
         </header>
-        <nav class="kj-nav" aria-label="منوی اصلی">${menu.map(([id,title]) => `<button data-tab="${id}" class="${state.tab === id ? "active" : ""}">${title}</button>`).join("")}</nav>
-        <main id="kj-main" class="kj-main"></main>
-        <footer class="kj-footer">سامانه مدیریت خادمین · رابط فارسی</footer>
+        <div class="kj-layout">
+          <aside class="kj-sidebar" aria-label="منوی سامانه">
+            <input class="kj-side-search" id="kj-menu-search" type="search" placeholder="جست‌وجوی منو و زیرمنو…" aria-label="جست‌وجوی منو و زیرمنو">
+            <nav class="kj-nav" aria-label="منوی اصلی">
+              ${groups.map(([title,items],i)=>`<section class="kj-menu-group ${i===0?"open":""}">
+                <button type="button" class="kj-group-toggle" aria-expanded="${i===0?"true":"false"}">${title}</button>
+                <div class="kj-group-items">${items.map(([id,label])=>`<button type="button" data-tab="${id}" data-label="${label.replace(/^[^ ]+ /,"")}" class="${state.tab===id?"active":""}">${label}</button>`).join("")}</div>
+              </section>`).join("")}
+            </nav>
+            <div class="kj-side-foot">اتصال به پایگاه داده پس از تأیید حساب کاربری انجام می‌شود. خطاهای دسترسی در همان بخش نمایش داده می‌شوند.</div>
+          </aside>
+          <div class="kj-content-wrap"><main id="kj-main" class="kj-main"></main><footer class="kj-footer">سامانه جامع مدیریت خادمین · رابط فارسی راست‌چین</footer></div>
+        </div>
       </div>`;
-    $$(".kj-nav button").forEach(b => b.addEventListener("click", () => {
-      state.tab = b.dataset.tab; state.selectedKhadem = null; render();
+    $$(".kj-group-toggle").forEach(b => b.addEventListener("click", () => {
+      const group=b.closest(".kj-menu-group");const open=!group.classList.contains("open");
+      group.classList.toggle("open",open);b.setAttribute("aria-expanded",open?"true":"false");
     }));
+    $$(".kj-nav [data-tab]").forEach(b => b.addEventListener("click", () => {
+      state.tab = b.dataset.tab; state.selectedKhadem = null;
+      $$(".kj-nav [data-tab]").forEach(n=>n.classList.toggle("active",n===b));
+      const group=b.closest(".kj-menu-group");if(group){group.classList.add("open");group.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded","true");}
+      render();
+    }));
+    $("#kj-menu-search").addEventListener("input", e => {
+      const q=e.target.value.trim().toLocaleLowerCase("fa");
+      $$(".kj-nav [data-tab]").forEach(b=>b.classList.toggle("kj-menu-hidden",!!q&&!b.textContent.toLocaleLowerCase("fa").includes(q)));
+      $$(".kj-menu-group").forEach(g=>{
+        const any=[...g.querySelectorAll("[data-tab]")].some(b=>!b.classList.contains("kj-menu-hidden"));
+        g.style.display=any?"":"none";
+        if(q&&any){g.classList.add("open");g.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded","true");}
+        else if(!q){const open=g===document.querySelector(".kj-menu-group");g.classList.toggle("open",open);g.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded",open?"true":"false");}
+      });
+    });
     $("#kj-refresh").addEventListener("click", loadData);
     $("#kj-signout").addEventListener("click", signout);
   }
