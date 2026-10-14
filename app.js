@@ -469,6 +469,27 @@
         #kj-main.kj-main{min-height:calc(100dvh - 130px);width:100%;padding:0}
       }
     `;
+    /* اصلاح نهایی اندازه کادر داخلی: محتوای هر زیرمنو باید کل فضای باقی‌مانده را پر کند */
+    style.textContent += `
+      html,body,#app{width:100%;max-width:100%;margin:0}
+      .kj-shell{width:100%!important;max-width:none!important;margin:0!important;min-height:100vh;min-height:100dvh}
+      .kj-layout{display:grid!important;width:100%!important;max-width:none!important;margin:0!important;grid-template-columns:278px minmax(0,1fr)!important;gap:20px;padding:20px!important;align-items:stretch}
+      .kj-content-wrap{width:100%!important;max-width:none!important;min-width:0!important;flex:1 1 auto}
+      #kj-main.kj-main{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;min-height:calc(100vh - 150px);padding:0!important;margin:0!important}
+      #kj-main>*{max-width:none!important;box-sizing:border-box}
+      #kj-main>.kj-page-title{width:100%!important}
+      #kj-main .kj-card,#kj-main .kj-table-wrap,#kj-main .kj-grid,#kj-main .kj-profile-grid{max-width:100%!important}
+      #kj-main .kj-table-wrap{width:100%!important;overflow-x:auto}
+      #kj-main form,#kj-main .kj-toolbar{max-width:100%!important}
+      .kj-footer{width:100%;max-width:none}
+      @media(max-width:850px){
+        .kj-layout{grid-template-columns:minmax(0,1fr)!important;width:100%!important;padding:10px!important;gap:10px!important}
+        .kj-sidebar{width:100%;max-width:100%}
+        .kj-content-wrap,#kj-main.kj-main{width:100%!important;max-width:none!important;min-width:0!important}
+        #kj-main.kj-main{min-height:calc(100dvh - 120px)}
+      }
+    `;
+
     /* هویت بصری ممتاز v10 — بازطراحی محسوس با سرمه‌ای عمیق، طلایی گرم و سطوح روشن */
     style.textContent += `
       :root{--kj-green-deep:#10283f;--kj-green:#173b58;--kj-green-light:#edf3f8;--kj-canvas:#f3f5f8;--kj-line:#e0e5ed;--kj-text:#1c3045;--kj-gold:#c6a66a}
