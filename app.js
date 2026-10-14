@@ -18,6 +18,7 @@
     tab: "dashboard",
     khadems: [],
     services: [],
+    nonattendance: [],
     meetings: [],
     deployments: [],
     finance: [],
@@ -36,7 +37,8 @@
     ["dashboard", "🏠 داشبورد"],
     ["khadems", "👤 بانک خادمین"],
     ["services", "🕌 ثبت خدمت رسمی"],
-    ["friday", "🌙 ثبت خدمت شب‌های جمعه"],
+    ["friday", "🌙 پایش خدمت شب جمعه"],
+    ["nonattendance", "🧾 ثبت و پیگیری عدم حضور"],
     ["meetings", "📅 جلسات"],
     ["deployments", "🚐 مأموریت‌ها"],
     ["finance", "💰 امور مالی"],
@@ -153,6 +155,7 @@
     const tables = [
       ["khadems", "khadems"],
       ["services", "service_records"],
+      ["nonattendance", "khadem_service_nonattendance"],
       ["meetings", "meetings"],
       ["deployments", "deployments"],
       ["finance", "finance_transactions"],
@@ -489,6 +492,34 @@
     }));
     return genericPage("finance","امور مالی",rows,columns);
   }
+  function nonattendancePage() {
+    const rows = state.nonattendance.map(r => {
+      const k = state.khadems.find(x => String(khademId(x)) === String(r.khadem_id));
+      return {
+        ...r,
+        khadem_code: k ? khademCode(k) : "",
+        khadem_name: k ? nameOf(k) : "",
+        planned_service_date: r.planned_service_date,
+        service_kind: r.service_kind,
+        reason_code: r.reason_code,
+        resolution_status: r.resolution_status,
+        cost_total_toman: r.cost_total_toman,
+        cost_paid_toman: r.cost_paid_toman,
+        refund_amount_toman: r.refund_amount_toman
+      };
+    });
+    return genericPage("nonattendance","ثبت و پیگیری عدم حضور",rows,[
+      {key:"khadem_code",label:"کد خادم"},
+      {key:"khadem_name",label:"نام خادم"},
+      {key:"service_kind",label:"نوع خدمت"},
+      {key:"planned_service_date",label:"تاریخ خدمت"},
+      {key:"reason_code",label:"علت عدم حضور"},
+      {key:"resolution_status",label:"وضعیت پیگیری"},
+      {key:"cost_total_toman",label:"هزینه کل"},
+      {key:"cost_paid_toman",label:"مبلغ پرداخت‌شده"}
+    ]);
+  }
+
   function fridayPage() {
     const rows = state.services.filter(r =>
       /جمعه|friday|night/i.test([r.service_type,r.category,r.title,r.description,r.notes,r.service_name,r.responsibility].join(" "))
@@ -504,7 +535,7 @@
         description: val(r, ["description", "notes", "note"])
       };
     });
-    return `<h1 class="kj-page-title">ثبت خدمت شب‌های جمعه و پایش خدمت</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
+    return `<h1 class="kj-page-title">پایش خدمت شب جمعه</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
   }
   function reportsPage() {
     return `<h1 class="kj-page-title">گزارش‌ها</h1><div class="kj-grid">${[
@@ -531,9 +562,10 @@
       khadems: khademList,
       services: () => genericPage("services","ثبت خدمت رسمی",state.services,[
         {key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},
-        {key:"service_type",label:"نوع خدمت"},{key:"category",label:"دسته‌بندی"},{key:"notes",label:"توضیحات"}
+        {key:"responsibility",label:"مسئولیت خدمت"},{key:"notes",label:"توضیحات"}
       ]),
       friday: fridayPage,
+      nonattendance: nonattendancePage,
       meetings: () => genericPage("meetings","جلسات",state.meetings),
       deployments: () => genericPage("deployments","مأموریت‌ها",state.deployments),
       finance: financePage,
@@ -571,8 +603,8 @@
       });
       bindKhademButtons();
     }
-    if (["services","meetings","deployments","finance","fund","donors"].includes(state.tab)) {
-      const key = ({services:"services",meetings:"meetings",deployments:"deployments",finance:"finance",fund:"fund",donors:"donors"})[state.tab];
+    if (["services","nonattendance","meetings","deployments","finance","fund","donors"].includes(state.tab)) {
+      const key = ({services:"services",nonattendance:"nonattendance",meetings:"meetings",deployments:"deployments",finance:"finance",fund:"fund",donors:"donors"})[state.tab];
       const rows = state[key];
       attachRowDetails(main, rows, "جزئیات رکورد");
     }
