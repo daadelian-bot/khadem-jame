@@ -92,7 +92,7 @@
   }
   function jalaliToGregorian(value) {
     const raw=String(value??"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-    const m=raw.match(/^(13|14)(\\d{2})[/-](\\d{1,2})[/-](\\d{1,2})$/);
+    const m=raw.match(/^(13|14)(\d{2})[/-](\d{1,2})[/-](\d{1,2})$/);
     if(!m) return value;
     let jy=Number(raw.split(/[/-]/)[0]), jm=Number(raw.split(/[/-]/)[1]), jd=Number(raw.split(/[/-]/)[2]);
     if(jm<1||jm>12||jd<1||jd>31) return value;
@@ -109,7 +109,7 @@
   function jalaliInputDate(value) {
     if (!value) return "";
     const raw=String(value).trim();
-    const jm=raw.match(/^(13|14)\\d{2}[/-](\\d{1,2})[/-](\\d{1,2})$/);
+    const jm=raw.match(/^(13|14)\d{2}[/-](\d{1,2})[/-](\d{1,2})$/);
     if (jm) return jm[1]+"/"+jm[2].padStart(2,"0")+"/"+jm[3].padStart(2,"0");
     const dt=new Date(raw);
     if (Number.isNaN(dt.getTime())) return raw;
@@ -119,7 +119,7 @@
   }
   function jalaliToGregorianText(value) {
     const raw=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replaceAll("-","/");
-    const m=raw.match(/^(13|14)\\d{2}\\/(\\d{1,2})\\/(\\d{1,2})$/);
+    const m=raw.match(/^(13|14)\d{2}\\/(\d{1,2})\\/(\d{1,2})$/);
     if (!m) return raw;
     let jy=Number(m[1]), jm=Number(m[2]), jd=Number(m[3]);
     if (jm<1||jm>12||jd<1||jd>31) return raw;
@@ -1123,7 +1123,7 @@
     const tuitionByYear = {};
     tuitionDues.forEach(r => {
       const rawPeriod = String(val(r,["period_month","payment_date","due_date"]) || "");
-      let yearMonth = rawPeriod.match(/^(\\d{4})[-/](\\d{1,2})/);
+      let yearMonth = rawPeriod.match(/^(\d{4})[-/](\d{1,2})/);
       if (!yearMonth) {
         const d = new Date(rawPeriod);
         if (!Number.isNaN(d.getTime())) yearMonth = [rawPeriod,String(d.getFullYear()),String(d.getMonth()+1)];
