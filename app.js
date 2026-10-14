@@ -407,9 +407,12 @@
       .kj-shortcut-card b{color:#167a63}
       .kj-footer{padding:22px;color:#718b81}
       .kj-error{border-radius:13px}
+      .kj-mobile-menu-toggle{display:none}
       @media(max-width:850px){
         .kj-layout{grid-template-columns:1fr;padding:12px;gap:12px}
-        .kj-sidebar{position:static;max-height:none;border-radius:16px}
+        .kj-sidebar{display:none;position:static;max-height:none;border-radius:16px}
+        .kj-sidebar.kj-mobile-open{display:block}
+        .kj-mobile-menu-toggle{display:inline-flex;align-items:center;gap:6px}
         .kj-nav button.active{box-shadow:inset -3px 0 #6ac6a6}
         .kj-hero{padding:22px}
         .kj-hero h1{font-size:22px}
@@ -440,7 +443,7 @@
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
           <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small></div>
-          <div class="kj-actions"><span class="kj-small">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی اطلاعات</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div>
+          <div class="kj-actions"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><span class="kj-small">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی اطلاعات</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div>
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
@@ -478,8 +481,11 @@
       if (window.location.hash !== "#" + nextTab) {
         history.replaceState(null, "", window.location.pathname + window.location.search + "#" + nextTab);
       }
-      // فقط محتوای ناحیه اصلی را عوض کن؛ با کلیک زیرمنو صفحه را به پایین نپرّان.
+      // در موبایل منو بسته شود تا صفحه انتخاب‌شده از ابتدای ناحیه محتوا دیده شود.
       render();
+      if (window.matchMedia("(max-width: 850px)").matches) {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
     }));
     $("#kj-menu-search").addEventListener("input", e => {
       const q=e.target.value.trim().toLocaleLowerCase("fa");
@@ -490,6 +496,13 @@
         if(q&&any){g.classList.add("open");g.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded","true");}
         else if(!q){const open=g===document.querySelector(".kj-menu-group");g.classList.toggle("open",open);g.querySelector(".kj-group-toggle")?.setAttribute("aria-expanded",open?"true":"false");}
       });
+    });
+    $("#kj-mobile-menu-toggle").addEventListener("click", () => {
+      const sidebar = $(".kj-sidebar");
+      if (!sidebar) return;
+      const open = !sidebar.classList.contains("kj-mobile-open");
+      sidebar.classList.toggle("kj-mobile-open", open);
+      $("#kj-mobile-menu-toggle").setAttribute("aria-expanded", open ? "true" : "false");
     });
     $("#kj-refresh").addEventListener("click", loadData);
     $("#kj-signout").addEventListener("click", signout);
