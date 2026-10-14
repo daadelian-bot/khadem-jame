@@ -80,13 +80,13 @@
   }
   let activeSection = 'receipt';
   const EQUIPMENT_SECTIONS = [
-    ['receipt', 'ثبت دریافت وسایل از هیئت'],
-    ['issue', 'ثبت تحویل وسیله به خادم'],
-    ['payment', 'ثبت پرداخت خادم یا مجموعه به هیئت'],
-    ['stock', 'موجودی وسایل مجموعه'],
-    ['khadem-ledger', 'پرونده تحویل و بدهی خدام'],
-    ['committee-ledger', 'دفتر حساب مجموعه با هیئت'],
-    ['khadem-summary', 'خلاصه پرداخت خدام']
+    ['receipt', '۱. دریافت وسایل از هیئت'],
+    ['stock', '۲. موجودی وسایل مجموعه'],
+    ['issue', '۳. تحویل وسیله به خادم'],
+    ['payment', '۴. دریافت از خادم / پرداخت به هیئت'],
+    ['khadem-ledger', '۵. پرونده تحویل و بدهی خدام'],
+    ['committee-ledger', '۶. دفتر حساب مجموعه با هیئت'],
+    ['khadem-summary', '۷. خلاصه پرداخت خدام']
   ];
   function mountPage(html) {
     if (!EQUIPMENT_SECTIONS.some(([id]) => id === activeSection)) activeSection = 'receipt';
@@ -94,18 +94,19 @@
     const tabs = EQUIPMENT_SECTIONS.map(([id, title]) =>
       '<button type="button" class="btn ' + (activeSection === id ? 'primary' : 'secondary') + '" data-eq-tab="' + id + '">' + esc(title) + '</button>'
     ).join('');
-    if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">حساب هیئت، موجودی مجموعه و پرونده مالی خادم</span></div>' +
+    if (content) content.innerHTML = '<div class="page-title"><h2>👕 مدیریت وسایل خدمت و بدهی خدام</h2><span class="muted">فرایند منظم از دریافت از هیئت تا تحویل به خادم و تسویه دوطرفه</span></div>' +
+      '<div class="notice" style="margin-bottom:12px"><b>ترتیب کار:</b> ۱) ثبت رسید و اقلام دریافتی از هیئت؛ ۲) کنترل موجودی؛ ۳) ثبت تحویل هر قلم به خادم با انتخاب رسید منبع؛ ۴) ثبت دریافت وجه از خادم و پرداخت بدهی مجموعه به هیئت در بخش پرداخت‌ها؛ ۵) کنترل پرونده‌ها و دفترهای حساب. <b>تحویل کالا و پرداخت پول دو رویداد جدا هستند</b>؛ فقط پس از ثبت پرداخت واقعی، مانده کم می‌شود.</div>' +
       '<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + tabs + '</div>' + html;
     if (content) content.querySelectorAll('[data-eq-tab]').forEach(button => button.addEventListener('click', () => { activeSection = button.dataset.eqTab; renderPage(); }));
     if (content) {
       const selectors = {
-        receipt: ['۱. ثبت دریافت وسایل از هیئت'],
-        issue: ['۲. ثبت تحویل وسیله به خادم'],
-        payment: ['۳. ثبت پرداخت خادم یا پرداخت مجموعه به هیئت'],
-        stock: ['موجودی وسایل مجموعه'],
-        'khadem-ledger': ['پرونده تحویل و بدهی خدام'],
-        'committee-ledger': ['دفتر حساب مجموعه با هیئت'],
-        'khadem-summary': ['خلاصه پرداخت خدام']
+        receipt: ['۱. دریافت وسایل و تجهیزات از هیئت'],
+        issue: ['۳. تحویل وسیله به خادم'],
+        payment: ['۴. ثبت پرداخت‌ها: دریافت از خادم یا پرداخت به هیئت'],
+        stock: ['۲. موجودی وسایل مجموعه'],
+        'khadem-ledger': ['۵. پرونده تحویل و بدهی خدام'],
+        'committee-ledger': ['۶. دفتر حساب مجموعه با هیئت'],
+        'khadem-summary': ['۷. خلاصه پرداخت خدام']
       };
       const allowed = selectors[activeSection] || [];
       content.querySelectorAll('.card.section').forEach(card => {
@@ -192,21 +193,21 @@
       '<div class="card"><span class="muted">پرداخت به هیئت</span><b style="display:block;font-size:20px">' + esc(money(committeePaid)) + '</b></div>' +
       '<div class="card"><span class="muted">بدهی مجموعه به هیئت</span><b style="display:block;font-size:20px;color:#b42318">' + esc(money(committeeDebt)) + '</b></div>' +
       '<div class="card"><span class="muted">بدهی خدام بابت اقلام تحویل‌شده</span><b style="display:block;font-size:20px;color:#b42318">' + esc(money(deliveredDebt)) + '</b></div></div>' +
-      '<div class="card section"><h3>۱. ثبت دریافت وسایل از هیئت</h3><p class="muted">قیمت در هر رسید جداگانه ثبت می‌شود؛ تغییر قیمت جدید سوابق قبلی را تغییر نمی‌دهد.</p>' +
+      '<div class="card section"><h3>۱. دریافت وسایل و تجهیزات از هیئت</h3><p class="muted">ابتدا رسید دریافت را ثبت کنید. تعداد و قیمت واحد هر قلم در همان رسید نگهداری می‌شود و قیمت‌های رسیدهای قبلی تغییر نمی‌کند. پرداخت هم‌زمان فقط وقتی وارد شود که واقعاً همان لحظه وجهی به هیئت پرداخت شده باشد.</p>' +
       '<form id="eqReceiptForm"><div class="form-grid"><div class="field"><label>تاریخ دریافت (شمسی)</label><input id="eqRDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field"><label>شماره رسید هیئت</label><input id="eqRRef" placeholder="اختیاری"></div>' +
       '<div class="field"><label>تعداد جلیقه</label><input id="eqRQty_vest" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد جلیقه (تومان)</label><input id="eqRPrice_vest" type="number" min="0" step="1" value="0"></div>' +
       '<div class="field"><label>تعداد کلاه سفید</label><input id="eqRQty_white_cap" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد کلاه سفید (تومان)</label><input id="eqRPrice_white_cap" type="number" min="0" step="1" value="0"></div>' +
       '<div class="field"><label>تعداد کلاه کرم</label><input id="eqRQty_cream_cap" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد کلاه کرم (تومان)</label><input id="eqRPrice_cream_cap" type="number" min="0" step="1" value="0"></div>' +
       '<div class="field"><label>تعداد ریشه (پر)</label><input id="eqRQty_fringe" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد ریشه (پر) (تومان)</label><input id="eqRPrice_fringe" type="number" min="0" step="1" value="0"></div>' +
       '<div class="field"><label>پرداخت به هیئت در همین نوبت (تومان)</label><input id="eqRPay" type="number" min="0" step="1" value="0"></div><div class="field"><label>جمع هزینه اقلام این رسید</label><b id="eqRTotal">۰ تومان</b></div><div class="field full"><label>توضیحات</label><textarea id="eqRNotes"></textarea></div></div><button class="btn primary" type="submit">ثبت رسید و همه اقلام</button><span id="eqRMsg" class="muted"></span></form></div>' +
-      '<div class="card section"><h3>۲. ثبت تحویل وسیله به خادم</h3><p class="muted">قیمت هر بار تحویل جداگانه ثبت می‌شود. اگر وسیله تحویل شود و پول پرداخت نشود، بدهی در پرونده خادم باقی می‌ماند.</p>' +
+      '<div class="card section"><h3>۳. تحویل وسیله به خادم</h3><p class="muted">ابتدا موجودی را بررسی کنید؛ سپس خادم، قلم و رسید منبع را انتخاب کنید. سامانه تعداد را از موجودی همان رسید کم می‌کند. تحویل کالا به‌تنهایی به معنی پرداخت نیست؛ بدهی فقط پس از ثبت وجه دریافتی کاهش می‌یابد.</p>' +
       '<form id="eqIssueForm"><div class="form-grid"><div class="field"><label>خادم</label><select id="eqKhadem" required><option value="">انتخاب خادم…</option>' + khademOptions + '</select></div><div class="field"><label>قلم</label><select id="eqItem"><option value="vest">جلیقه</option><option value="white_cap">کلاه سفید</option><option value="cream_cap">کلاه کرم</option><option value="fringe">ریشه (پر)</option><option value="service_shirt">پیراهن خدمت (دوخت خیاط)</option></select></div><div class="field"><label>تعداد</label><input id="eqQty" type="number" min="1" value="1" required></div><div class="field"><label>قیمت واحد هنگام تحویل (تومان)</label><input id="eqPrice" type="number" min="0" step="1" required></div><div class="field"><label>وضعیت تحویل</label><select id="eqStatus"><option value="delivered">تحویل خادم شده</option><option value="pending">هنوز تحویل نشده</option></select></div><div class="field"><label>تاریخ ثبت/تحویل (شمسی)</label><input id="eqIDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field full" id="eqSourceWrap"><label>از کدام رسید موجودی تحویل می‌شود؟</label><select id="eqSource"><option value="">انتخاب رسید موجودی…</option>' + stockOptions + '</select><small class="muted">برای چهار قلم دریافتی از هیئت، رسید منبع انتخاب شود تا موجودی درست کم شود.</small></div><div class="field" id="eqTailorWrap" style="display:none"><label>نام خیاط</label><input id="eqTailor"></div><div class="field" id="eqSizeWrap" style="display:none"><label>اندازه پیراهن</label><input id="eqSize"></div><div class="field" id="eqOrderWrap" style="display:none"><label>تاریخ سفارش دوخت (شمسی)</label><input id="eqOrderDate" data-jalali-date placeholder="اختیاری"></div><div class="field full"><label>توضیحات</label><textarea id="eqINotes"></textarea></div></div><button class="btn primary" type="submit">ثبت تحویل / سفارش وسیله</button><span id="eqIMsg" class="muted"></span></form></div>' +
-      '<div class="card section"><h3>۳. ثبت پرداخت خادم یا پرداخت مجموعه به هیئت</h3><p class="muted">پرداخت جزئی مجاز است؛ سامانه مانده را خودکار حساب می‌کند و تلاش می‌کند تراکنش را هم در دفتر مالی عمومی ثبت کند.</p>' +
+      '<div class="card section"><h3>۴. ثبت پرداخت‌ها: دریافت از خادم یا پرداخت به هیئت</h3><p class="muted">نوع پرداخت را مشخص کنید: «دریافت از خادم» فقط مانده همان قلم تحویل‌شده را کم می‌کند؛ «پرداخت مجموعه به هیئت» فقط بدهی همان رسید دریافت از هیئت را کم می‌کند. پرداخت جزئی مجاز است و مبلغ از مانده بیشتر پذیرفته نمی‌شود.</p>' +
       '<form id="eqPayForm"><div class="form-grid"><div class="field"><label>نوع پرداخت</label><select id="eqPayType"><option value="khadem">دریافت از خادم</option><option value="committee">پرداخت مجموعه به هیئت</option></select></div><div class="field full" id="eqPayIssueWrap"><label>قلم و پرونده خادم</label><select id="eqPayIssue" required>' + issueOptions + '</select></div><div class="field full" id="eqPayReceiptWrap" style="display:none"><label>رسید دریافت از هیئت</label><select id="eqPayReceipt" required>' + committeeReceiptOptions + '</select></div><div class="field"><label>مبلغ پرداخت (تومان)</label><input id="eqPayAmount" type="number" min="1" step="1" required></div><div class="field"><label>تاریخ پرداخت (شمسی)</label><input id="eqPayDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field"><label>روش پرداخت</label><select id="eqPayMethod"><option value="cash">نقدی</option><option value="card">کارت‌به‌کارت / کارت</option><option value="bank">حواله بانکی</option><option value="other">سایر</option></select></div><div class="field"><label>شماره رسید / پیگیری</label><input id="eqPayRef"></div><div class="field full"><label>توضیحات</label><textarea id="eqPayNotes"></textarea></div></div><button class="btn primary" type="submit">ثبت پرداخت</button><span id="eqPMsg" class="muted"></span></form></div>' +
-      '<div class="card section"><h3>موجودی وسایل مجموعه</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>قلم</th><th>دریافت از هیئت</th><th>تحویل‌شده به خدام</th><th>موجودی باقی‌مانده</th></tr></thead><tbody>' + stockRows + '</tbody></table></div></div>' +
-      '<div class="card section"><h3>دفتر حساب مجموعه با هیئت</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>تاریخ</th><th>شماره رسید</th><th>اقلام و قیمت‌های همان نوبت</th><th>کل هزینه</th><th>پرداخت‌شده</th><th>بدهی مجموعه</th></tr></thead><tbody>' + (receiptRows || '<tr><td colspan="6">هنوز دریافتی از هیئت ثبت نشده است.</td></tr>') + '</tbody></table></div></div>' +
-      '<div class="card section"><h3>پرونده تحویل و بدهی خدام</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>قلم</th><th>تعداد</th><th>قیمت واحد</th><th>هزینه کل</th><th>پرداخت خادم</th><th>بدهی خادم</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>' + (issueRows || '<tr><td colspan="11">هنوز وسیله‌ای به خادم تحویل نشده است.</td></tr>') + '</tbody></table></div></div>' +
-      '<div class="card section"><h3>خلاصه پرداخت خدام</h3><p>هزینه ثبت‌شده اقلام: <b>' + esc(money(issueCost)) + '</b> · پرداخت‌های ثبت‌شده: <b>' + esc(money(khademPaid)) + '</b></p><p class="muted">بدهی فقط برای اقلامی محاسبه می‌شود که وضعیت آن‌ها «تحویل خادم شده» باشد.</p></div>'
+      '<div class="card section"><h3>۲. موجودی وسایل مجموعه</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>قلم</th><th>دریافت از هیئت</th><th>تحویل‌شده به خدام</th><th>موجودی باقی‌مانده</th></tr></thead><tbody>' + stockRows + '</tbody></table></div></div>' +
+      '<div class="card section"><h3>۶. دفتر حساب مجموعه با هیئت</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>تاریخ</th><th>شماره رسید</th><th>اقلام و قیمت‌های همان نوبت</th><th>کل هزینه</th><th>پرداخت‌شده</th><th>بدهی مجموعه</th></tr></thead><tbody>' + (receiptRows || '<tr><td colspan="6">هنوز دریافتی از هیئت ثبت نشده است.</td></tr>') + '</tbody></table></div></div>' +
+      '<div class="card section"><h3>۵. پرونده تحویل و بدهی خدام</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>قلم</th><th>تعداد</th><th>قیمت واحد</th><th>هزینه کل</th><th>پرداخت خادم</th><th>بدهی خادم</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>' + (issueRows || '<tr><td colspan="11">هنوز وسیله‌ای به خادم تحویل نشده است.</td></tr>') + '</tbody></table></div></div>' +
+      '<div class="card section"><h3>۷. خلاصه پرداخت خدام</h3><p>هزینه ثبت‌شده اقلام: <b>' + esc(money(issueCost)) + '</b> · پرداخت‌های ثبت‌شده: <b>' + esc(money(khademPaid)) + '</b></p><p class="muted">بدهی فقط برای اقلامی محاسبه می‌شود که وضعیت آن‌ها «تحویل خادم شده» باشد.</p></div>'
     );
     bindForms();
   }
