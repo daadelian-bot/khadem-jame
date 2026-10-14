@@ -340,6 +340,23 @@
       th{background:#f3f8f6;color:#355f56}
       .kj-footer{color:#81928d}
       .kj-side-foot{font-size:11px;color:var(--kj-muted);padding:14px 7px 3px;border-top:1px solid #f0f3f2;margin-top:12px;line-height:1.8}
+      .kj-hero{background:#e6f7f1;border:1px solid #d3eee5;border-radius:20px;padding:26px;margin-bottom:20px}
+      .kj-hero-kicker{font-size:12px;color:#74a99b;font-weight:700;margin-bottom:8px}
+      .kj-hero h1{font-size:25px;color:#244b45;margin:0 0 8px}
+      .kj-hero p{max-width:780px;color:#718580;line-height:2;margin:0}
+      .kj-hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+      .kj-section-title{font-size:17px;color:#244b45;margin:18px 0 12px}
+      .kj-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .kj-shortcuts-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+      .kj-shortcut-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+      .kj-shortcut-card{display:flex;flex-direction:column;align-items:flex-start;text-align:right;gap:8px;min-height:165px;padding:17px;background:#fff;border:1px solid var(--kj-border);border-radius:16px;box-shadow:0 5px 18px #244b4506;color:var(--kj-ink)}
+      .kj-shortcut-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#e5f5ef;font-size:19px}
+      .kj-shortcut-card strong{font-size:13px}.kj-shortcut-card small{font-size:11px;color:var(--kj-muted);line-height:1.7}
+      .kj-shortcut-card b{margin-top:auto;color:#137c68;font-size:13px}
+      .kj-shortcut-card:hover{border-color:#b4dfd3;background:#fcfffd}
+      @media(max-width:1000px){.kj-shortcut-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+      @media(max-width:700px){.kj-hero{padding:18px}.kj-hero h1{font-size:20px}.kj-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-shortcut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-shortcuts-head{align-items:flex-start;flex-direction:column}}
+      @media(max-width:390px){.kj-shortcut-grid{grid-template-columns:1fr}.kj-hero-actions button{width:100%}}
       .kj-content-wrap{min-width:0}
       @media(max-width:850px){.kj-layout{grid-template-columns:1fr;padding:10px;gap:10px}.kj-sidebar{position:static;max-height:none;padding:10px}.kj-top{padding:10px 12px}.kj-brand{font-size:15px}.kj-nav{display:block}.kj-menu-group.open .kj-group-items{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-group-items button{font-size:13px;padding:8px}.kj-side-foot{display:none}}
       @media(max-width:420px){.kj-menu-group.open .kj-group-items{grid-template-columns:1fr}.kj-top .kj-actions{gap:5px}.kj-top .kj-actions button{padding:7px 9px}}
@@ -474,17 +491,35 @@
   function dashboard() {
     const stats = [
       ["تعداد خادمین", state.khadems.length, "👤"],
-      ["سوابق خدمت", state.services.length, "🕌"],
-      ["جلسات", state.meetings.length, "📅"],
+      ["سوابق خدمت", state.services.length, "📋"],
+      ["جلسات", state.meetings.length, "👥"],
       ["مأموریت‌ها", state.deployments.length, "🚐"],
-      ["تراکنش‌های مالی", state.finance.length, "💰"],
+      ["تراکنش‌های مالی", state.finance.length + state.tuitionDues.length, "💰"],
       ["خیرین", state.donors.length, "🤝"]
     ];
-    return `<h1 class="kj-page-title">داشبورد</h1>
+    const shortcuts = [
+      ["khadems","👤","بانک خادمین","پرونده‌ها و اطلاعات خدام"],
+      ["services","📋","خدمت رسمی","ثبت و پیگیری سوابق خدمت"],
+      ["friday","🌙","خدمت شب‌های جمعه","برنامه و سوابق پایش خدمت"],
+      ["meetings","👥","جلسات","جلسات و وضعیت حضور"],
+      ["deployments","🚐","مأموریت خدمت","مأموریت‌ها و مسیرها"],
+      ["finance","💰","امور مالی","پرداخت‌ها و سوابق ثبت‌شده"],
+      ["fund","🏦","خزانه","گردش صندوق و دریافت‌ها"],
+      ["donors","🤝","نیکوکاران","فهرست حمایت‌ها"],
+      ["equipment","👕","وسایل و تجهیزات","تحویل و پرداخت‌های ثبت‌شده"],
+      ["reports","📊","گزارش‌ساز","خلاصه اطلاعات قابل مشاهده"],
+      ["users","🧩","کاربران و دسترسی‌ها","نقش‌ها و مجوزهای قابل مشاهده"],
+      ["settings","⚙️","مدیریت سامانه","تنظیمات قابل مشاهده"]
+    ];
+    const latest = [...state.services].sort((a,b)=>String(val(b,["service_date","date","created_at"])).localeCompare(String(val(a,["service_date","date","created_at"])))).slice(0,5);
+    return `<section class="kj-hero"><div class="kj-hero-kicker">مرکز مدیریت و عملیات</div><h1>به سامانه جامع خادمین خوش آمدید</h1><p>مدیریت پرونده‌ها، برنامه‌های خدمت، حضور و غیاب و امور مالی در یک محیط یکپارچه. اطلاعات بر اساس دسترسی حساب شما از پایگاه داده خوانده می‌شود.</p><div class="kj-hero-actions"><button class="kj-primary" data-quick-tab="khadems">👤 مشاهده بانک خادمین</button><button class="kj-secondary" data-quick-tab="services">▣ مشاهده سوابق خدمت</button><button class="kj-secondary" data-quick-tab="finance">💳 مشاهده امور مالی</button></div></section>
       ${state.loading ? `<div class="kj-card">در حال دریافت اطلاعات از پایگاه داده…</div>` : ""}
-      <div class="kj-grid">${stats.map(([label,value,icon]) => `<div class="kj-card"><div>${icon} ${label}</div><div class="kj-stat">${fa(value)}</div></div>`).join("")}</div>
-      ${Object.entries(state.errors).filter(([,e])=>e).map(([k,e])=>`<div class="kj-error"><b>${esc(fieldLabel(k))}:</b> ${esc(e)}</div>`).join("")}
-      <div class="kj-card"><h3 style="margin-top:0">راهنمای سریع</h3><p>برای دیدن مشخصات خادم، «بانک خادمین» را باز کرده و گزینهٔ نمایش را انتخاب کنید. سوابق مالی و خدمت در پروندهٔ همان خادم نمایش داده می‌شود.</p><p class="kj-small">آمار بالا از داده‌هایی محاسبه می‌شود که با موفقیت از سرور دریافت شده‌اند. در صورت خطای دسترسی، پیام خطا جداگانه نمایش داده می‌شود.</p></div>`;
+      ${Object.entries(state.errors).filter(([,e])=>e).length ? `<div class="kj-error"><b>برخی جدول‌ها با خطا مواجه شدند.</b><p>پیام هر بخش را جداگانه بررسی کنید؛ خطای دسترسی با خالی بودن اطلاعات یکسان نیست.</p>${Object.entries(state.errors).filter(([,e])=>e).map(([k,e])=>`<div>${esc(fieldLabel(k))}: ${esc(e)}</div>`).join("")}</div>` : ""}
+      <h2 class="kj-section-title">نمای کلی و عملیات</h2><div class="kj-grid kj-stats-grid">${stats.map(([label,value,icon]) => `<div class="kj-card"><div>${icon} ${label}</div><div class="kj-stat">${fa(value)}</div></div>`).join("")}</div>
+      <div class="kj-shortcuts-head"><h2 class="kj-section-title">دسترسی سریع به بخش‌ها</h2><span class="kj-small">برای مشاهدهٔ اطلاعات، کارت را انتخاب کنید.</span></div>
+      <div class="kj-shortcut-grid">${shortcuts.map(([tab,icon,title,desc])=>`<button type="button" class="kj-shortcut-card" data-quick-tab="${tab}"><span class="kj-shortcut-icon">${icon}</span><strong>${title}</strong><small>${desc}</small><b>ورود به بخش ←</b></button>`).join("")}</div>
+      <section class="kj-card" style="margin-top:18px"><h3 style="margin-top:0">⌛ پیگیری آخرین خدمات</h3>${state.errors.services||state.errors.service_records?errBox("services"):latest.length?tableHtml(latest.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):"سابقه‌ای برای نمایش نیست."}</section>
+      <section class="kj-card" style="margin-top:14px"><h3 style="margin-top:0">راهنمای کاربری: داشبورد مدیریتی</h3><p>از منوی سمت راست برای رفتن به بخش‌ها استفاده کنید. گروه‌های منو جمع‌شونده هستند و جست‌وجو، زیرمنوهای مرتبط را پیدا می‌کند.</p><p class="kj-small">این نسخه در حال حاضر برای مشاهدهٔ اطلاعات است؛ عملیات ثبت و ویرایش تا بررسی مجوزهای هر بخش غیرفعال نگه داشته شده است.</p></section>`;
   }
 
   function khademList() {
@@ -709,6 +744,11 @@
       settings: settingsPage
     };
     main.innerHTML = (views[state.tab] || dashboard)();
+    $("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
+      state.tab = button.dataset.quickTab; state.selectedKhadem = null;
+      render();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }));
     if (state.tab === "services" || state.tab === "friday") {
       const mountAbsencePanel = () => {
         if ((state.tab === "services" || state.tab === "friday") && window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
