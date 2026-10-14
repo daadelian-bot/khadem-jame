@@ -873,7 +873,7 @@
   function dataFields(row, omit = []) {
     if (!row) return "";
     return `<div class="kj-profile-grid">${Object.entries(row).filter(([k,v]) => !omit.includes(k) && v !== null && v !== "").map(([k,v]) => {
-      if (k === "extra_data" && v && typeof v === "object") { const items=Object.entries(v).filter(([,x])=>x!==null&&x!=="").map(([key,value])=>`<div class="kj-field"><b>${esc(fieldLabel(key))}</b><span>${esc(formatValue(key,value))}</span></div>`).join(""); return `<div class="kj-field kj-extra-data"><b>اطلاعات تکمیلی</b><div class="kj-profile-grid">${items || "<span>اطلاعاتی ثبت نشده است</span>"}</div></div>`; }
+      if (k === "extra_data") { let extra=v; if(typeof extra==="string"){try{extra=JSON.parse(extra)}catch(_){extra={}}} if(!extra||typeof extra!=="object"||Array.isArray(extra))extra={}; const labels={referrer_name:"معرف",introducer_name:"معرف",referred_by:"معرف",referrer:"معرف",referrer_full_name:"معرف",introducer:"معرف",emergency_contact_name_2:"نام تماس اضطراری ۲",emergency_contact_2_name:"نام تماس اضطراری ۲",emergency_name_2:"نام تماس اضطراری ۲",emergency_contact_phone_2:"تلفن تماس اضطراری ۲",emergency_contact_2_phone:"تلفن تماس اضطراری ۲",emergency_phone_2:"تلفن تماس اضطراری ۲",emergency_contact2_phone:"تلفن تماس اضطراری ۲"}; const items=Object.entries(extra).filter(([,x])=>x!==null&&x!=="").map(([key,value])=>`<div class="kj-field"><b>${esc(labels[key]||fieldLabel(key))}</b><span>${esc(formatValue(key,value))}</span></div>`).join(""); return `<div class="kj-field kj-extra-data"><b>اطلاعات تکمیلی</b><div class="kj-profile-grid">${items || "<span>اطلاعاتی ثبت نشده است</span>"}</div></div>`; }
       return `<div class="kj-field"><b>${esc(fieldLabel(k))}</b><span>${esc(formatValue(k,v))}</span></div>`;
     }).join("")}</div>`;
   }
@@ -1138,10 +1138,13 @@
       }
     };
     put(["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"], fd.get("referrer_name"));
-    setExtraFallback(["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"], "referrer_name");
-    setExtraFallback(["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"], "emergency_contact_name_2");
-    setExtraFallback(["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"], "emergency_contact_phone_2");
-    if (extraKey && (Object.keys(extra).length || Object.keys(existingExtra || {}).length)) payload.extra_data = extra;
+    if (extraKey) {
+      const setExtraValue = (key, value) => { const text = String(value || "").trim(); if (text) extra[key] = text; else delete extra[key]; };
+      setExtraValue("referrer_name", fd.get("referrer_name"));
+      setExtraValue("emergency_contact_name_2", fd.get("emergency_contact_name_2"));
+      setExtraValue("emergency_contact_phone_2", fd.get("emergency_contact_phone_2"));
+      if (Object.keys(extra).length || Object.keys(existingExtra || {}).length) payload.extra_data = extra;
+    }
     const activeValue = String(fd.get("active") || "").toLowerCase();
     if (activeValue) { if (known.has("is_active")) payload.is_active = activeValue === "true"; else if (known.has("active")) payload.active = activeValue === "true"; else if (known.has("status")) payload.status = activeValue === "true" ? "active" : "inactive"; }
     if (!Object.keys(payload).length) { if(message) message.textContent = "ستون‌های قابل ویرایش در ساختار فعلی پیدا نشد."; return; }
