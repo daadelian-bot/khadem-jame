@@ -452,6 +452,23 @@
       @media(max-width:850px){.kj-hero-enterprise{padding:22px;gap:12px}.kj-hero-emblem{flex-basis:130px;min-height:130px}.kj-hero-emblem span{font-size:48px}}
       @media(max-width:650px){.kj-hero-enterprise{display:block}.kj-hero-emblem{display:none}.kj-hero-enterprise h1{font-size:23px}.kj-section-heading{align-items:flex-start;flex-direction:column}.kj-data-note{display:none}.kj-stat-card{min-height:125px;padding:13px}.kj-stat-card .kj-stat{font-size:25px}.kj-stat-icon{width:34px;height:34px;flex-basis:34px}.kj-shortcut-card{min-height:158px;padding:14px}}
     `;
+    /* رفع نمایش نیمه‌کاره صفحات زیرمنو: ناحیه محتوا باید تمام فضای قابل استفاده را بگیرد */
+    style.textContent += `
+      .kj-shell{width:100%!important;max-width:none!important;min-height:100vh;min-height:100dvh}
+      .kj-layout{width:100%!important;max-width:none!important;grid-template-columns:270px minmax(0,1fr)!important;align-items:start}
+      .kj-content-wrap{display:block;width:100%;max-width:none;min-width:0}
+      #kj-main.kj-main{display:block;width:100%;max-width:none;min-width:0;min-height:calc(100vh - 160px);padding:0}
+      #kj-main>.kj-page-title{width:100%;margin:0 0 20px;padding:0 0 14px}
+      #kj-main>.kj-card,#kj-main>.kj-table-wrap,#kj-main>.kj-grid,#kj-main>.kj-profile-grid{width:100%;max-width:none}
+      #kj-main>.kj-card{margin-bottom:16px}
+      #kj-main .kj-table-wrap{max-width:100%}
+      #kj-main .kj-grid{width:100%}
+      @media(max-width:850px){
+        .kj-layout{grid-template-columns:minmax(0,1fr)!important}
+        .kj-content-wrap{width:100%;min-width:0}
+        #kj-main.kj-main{min-height:calc(100dvh - 130px);width:100%;padding:0}
+      }
+    `;
     /* هویت بصری ممتاز v10 — بازطراحی محسوس با سرمه‌ای عمیق، طلایی گرم و سطوح روشن */
     style.textContent += `
       :root{--kj-green-deep:#10283f;--kj-green:#173b58;--kj-green-light:#edf3f8;--kj-canvas:#f3f5f8;--kj-line:#e0e5ed;--kj-text:#1c3045;--kj-gold:#c6a66a}
