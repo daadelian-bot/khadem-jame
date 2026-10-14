@@ -860,7 +860,7 @@
       {key:"occupation",label:"شغل"},{key:"phone",label:"شماره تلفن"},{key:"residence",label:"محل سکونت"}
     ];
     const htmlRows = rows.map(k => ({...k, khadem_code:khademCode(k), full_name:nameOf(k),
-      triple_name:val(k,["triple_name","tri_name","full_name_triple","full_name"]), national_code:val(k,["national_code","national_id"]),
+      triple_name:val(k,["triple_name","tri_name","full_name_triple"]), national_code:val(k,["national_code","national_id"]),
       birth_date:val(k,["birth_date"]), membership_date:val(k,["membership_date"]), occupation:val(k,["occupation","job"]),
       phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"])}));
     const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی ثبت نشده است.");
