@@ -478,11 +478,8 @@
       if (window.location.hash !== "#" + nextTab) {
         history.replaceState(null, "", window.location.pathname + window.location.search + "#" + nextTab);
       }
+      // فقط محتوای ناحیه اصلی را عوض کن؛ با کلیک زیرمنو صفحه را به پایین نپرّان.
       render();
-      const main = document.querySelector("#kj-main");
-      if (main && window.matchMedia("(max-width: 850px)").matches) {
-        main.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
     }));
     $("#kj-menu-search").addEventListener("input", e => {
       const q=e.target.value.trim().toLocaleLowerCase("fa");
