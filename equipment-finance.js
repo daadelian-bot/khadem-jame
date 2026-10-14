@@ -146,6 +146,27 @@
     const issued = cache.issues.filter(i => i.source_receipt_item_id === item.id && i.issue_status === 'delivered').reduce((s, i) => s + num(i.quantity), 0);
     return Math.max(0, num(item.quantity) - issued);
   }
+  async function editRecord(table, id, fields, title) {
+    const values = {};
+    for (const field of fields) {
+      const next = prompt(field.label + '\nبرای حفظ مقدار فعلی، همان مقدار را نگه دارید.', String(field.value ?? ''));
+      if (next === null) return;
+      if (field.type === 'date' && next.trim() && !dateValFromText(next)) { toast('تاریخ شمسی یا میلادی معتبر وارد کنید.'); return; }
+      values[field.key] = field.type === 'date' ? (dateValFromText(next) || null) : (next.trim() || null);
+    }
+    try { await api(table, 'PATCH', 'id=eq.' + encodeURIComponent(id), values); toast(title + ' با موفقیت ویرایش شد.'); await loadData(); renderPage(); }
+    catch (e) { toast('ویرایش ناموفق بود: ' + e.message); }
+  }
+  function dateValFromText(value) {
+    const v = digitsAscii(value).trim();
+    if (!v) return null;
+    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(v)) return v;
+    const m = v.match(/^(\\d{4})[\\/.-](\\d{1,2})[\\/.-](\\d{1,2})$/);
+    if (!m) return null;
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    if (mo < 1 || mo > 12 || d < 1 || d > (mo <= 6 ? 31 : 30)) return null;
+    return jalaliToIso(y, mo, d);
+  }
   function renderPage() {
     if (!EQUIPMENT_SECTIONS.some(([id]) => id === activeSection)) activeSection = 'receipt';
     const khademOptions = cache.khadems.filter(k => k.is_active !== false).map(k => '<option value="' + esc(k.id) + '">' + esc(k.khadem_code || '') + ' — ' + esc(k.full_name || 'بدون نام') + '</option>').join('');
@@ -178,13 +199,15 @@
     }).join('');
     const receiptRows = cache.receipts.map(r => {
       const total = receiptTotal(r), paid = paidForReceipt(r.id);
-      const lines = cache.items.filter(i => i.receipt_id === r.id).map(i => label(i.item_key) + ' × ' + fa(i.quantity) + ' (' + money(i.unit_cost_toman) + ')').join('، ');
-      return '<tr><td>' + esc(jdate(r.received_date)) + '</td><td>' + esc(r.reference_no || '—') + '</td><td>' + esc(lines || 'قلمی ثبت نشده') + '</td><td>' + esc(money(total)) + '</td><td>' + esc(money(paid)) + '</td><td><b>' + esc(money(Math.max(0,total-paid))) + '</b></td></tr>';
+      const lines = cache.items.filter(i => i.receipt_id === r.id).map(i =>
+        esc(label(i.item_key)) + ' × ' + fa(i.quantity) + ' (' + esc(money(i.unit_cost_toman)) + ') <button type="button" class="btn secondary eq-edit-item" data-id="' + esc(i.id) + '">ویرایش قلم</button>'
+      ).join('<br>');
+      return '<tr><td>' + esc(jdate(r.received_date)) + '</td><td>' + esc(r.reference_no || '—') + '</td><td>' + (lines || 'قلمی ثبت نشده') + '</td><td>' + esc(money(total)) + '</td><td>' + esc(money(paid)) + '</td><td><b>' + esc(money(Math.max(0,total-paid))) + '</b></td><td><button type="button" class="btn secondary eq-edit-receipt" data-id="' + esc(r.id) + '">ویرایش رسید</button></td></tr>';
     }).join('');
     const issueRows = cache.issues.map(i => {
       const k = issueKhadem(i), paid = paidForIssue(i.id), bal = issueBalance(i);
       const status = i.issue_status === 'delivered' ? 'تحویل شده' : i.issue_status === 'returned' ? 'برگشت خورده' : 'در انتظار تحویل';
-      const action = i.issue_status === 'pending' ? '<button type="button" class="btn secondary eq-mark-delivered" data-id="' + esc(i.id) + '">تأیید تحویل</button>' : '—';
+      const action = (i.issue_status === 'pending' ? '<button type="button" class="btn secondary eq-mark-delivered" data-id="' + esc(i.id) + '">تأیید تحویل</button> ' : '') + '<button type="button" class="btn secondary eq-edit-issue" data-id="' + esc(i.id) + '">ویرایش رکورد</button>';
       return '<tr><td>' + esc(i.khadem_code || k.khadem_code || '—') + '</td><td>' + esc(k.full_name || '—') + '</td><td>' + esc(label(i.item_key)) + '</td><td>' + fa(i.quantity) + '</td><td>' + esc(money(i.unit_price_toman)) + '</td><td>' + esc(money(i.total_amount_toman)) + '</td><td>' + esc(money(paid)) + '</td><td><b>' + esc(money(i.issue_status === 'delivered' ? bal : 0)) + '</b></td><td>' + esc(status) + '</td><td>' + esc(jdate(i.delivery_date || i.issue_date)) + '</td><td>' + action + '</td></tr>';
     }).join('');
     mountPage(
@@ -205,7 +228,7 @@
       '<div class="card section"><h3>۴. ثبت پرداخت‌ها: دریافت از خادم یا پرداخت به هیئت</h3><p class="muted">نوع پرداخت را مشخص کنید: «دریافت از خادم» فقط مانده همان قلم تحویل‌شده را کم می‌کند؛ «پرداخت مجموعه به هیئت» فقط بدهی همان رسید دریافت از هیئت را کم می‌کند. پرداخت جزئی مجاز است و مبلغ از مانده بیشتر پذیرفته نمی‌شود.</p>' +
       '<form id="eqPayForm"><div class="form-grid"><div class="field"><label>نوع پرداخت</label><select id="eqPayType"><option value="khadem">دریافت از خادم</option><option value="committee">پرداخت مجموعه به هیئت</option></select></div><div class="field full" id="eqPayIssueWrap"><label>قلم و پرونده خادم</label><select id="eqPayIssue" required>' + issueOptions + '</select></div><div class="field full" id="eqPayReceiptWrap" style="display:none"><label>رسید دریافت از هیئت</label><select id="eqPayReceipt" required>' + committeeReceiptOptions + '</select></div><div class="field"><label>مبلغ پرداخت (تومان)</label><input id="eqPayAmount" type="number" min="1" step="1" required></div><div class="field"><label>تاریخ پرداخت (شمسی)</label><input id="eqPayDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field"><label>روش پرداخت</label><select id="eqPayMethod"><option value="cash">نقدی</option><option value="card">کارت‌به‌کارت / کارت</option><option value="bank">حواله بانکی</option><option value="other">سایر</option></select></div><div class="field"><label>شماره رسید / پیگیری</label><input id="eqPayRef"></div><div class="field full"><label>توضیحات</label><textarea id="eqPayNotes"></textarea></div></div><button class="btn primary" type="submit">ثبت پرداخت</button><span id="eqPMsg" class="muted"></span></form></div>' +
       '<div class="card section"><h3>۲. موجودی وسایل مجموعه</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>قلم</th><th>دریافت از هیئت</th><th>تحویل‌شده به خدام</th><th>موجودی باقی‌مانده</th></tr></thead><tbody>' + stockRows + '</tbody></table></div></div>' +
-      '<div class="card section"><h3>۶. دفتر حساب مجموعه با هیئت</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>تاریخ</th><th>شماره رسید</th><th>اقلام و قیمت‌های همان نوبت</th><th>کل هزینه</th><th>پرداخت‌شده</th><th>بدهی مجموعه</th></tr></thead><tbody>' + (receiptRows || '<tr><td colspan="6">هنوز دریافتی از هیئت ثبت نشده است.</td></tr>') + '</tbody></table></div></div>' +
+      '<div class="card section"><h3>۶. دفتر حساب مجموعه با هیئت</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>تاریخ</th><th>شماره رسید</th><th>اقلام و قیمت‌های همان نوبت</th><th>کل هزینه</th><th>پرداخت‌شده</th><th>بدهی مجموعه</th><th>عملیات</th></tr></thead><tbody>' + (receiptRows || '<tr><td colspan="7">هنوز دریافتی از هیئت ثبت نشده است.</td></tr>') + '</tbody></table></div></div>' +
       '<div class="card section"><h3>۵. پرونده تحویل و بدهی خدام</h3><div style="overflow:auto"><table class="data-table"><thead><tr><th>کد خادم</th><th>نام خادم</th><th>قلم</th><th>تعداد</th><th>قیمت واحد</th><th>هزینه کل</th><th>پرداخت خادم</th><th>بدهی خادم</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>' + (issueRows || '<tr><td colspan="11">هنوز وسیله‌ای به خادم تحویل نشده است.</td></tr>') + '</tbody></table></div></div>' +
       '<div class="card section"><h3>۷. خلاصه پرداخت خدام</h3><p>هزینه ثبت‌شده اقلام: <b>' + esc(money(issueCost)) + '</b> · پرداخت‌های ثبت‌شده: <b>' + esc(money(khademPaid)) + '</b></p><p class="muted">بدهی فقط برای اقلامی محاسبه می‌شود که وضعیت آن‌ها «تحویل خادم شده» باشد.</p></div>'
     );
@@ -236,6 +259,39 @@
     return {row, ledgerWarning};
   }
   function bindForms() {
+    document.querySelectorAll('.eq-edit-receipt').forEach(button => button.addEventListener('click', async () => {
+      const row=cache.receipts.find(x=>x.id===button.dataset.id); if(!row)return;
+      await editRecord('equipment_committee_receipts',row.id,[
+        {key:'received_date',label:'تاریخ دریافت (شمسی یا میلادی)',value:row.received_date,type:'date'},
+        {key:'reference_no',label:'شماره رسید هیئت',value:row.reference_no||''},
+        {key:'notes',label:'توضیحات',value:row.notes||''}
+      ],'رسید دریافت از هیئت');
+    }));
+    document.querySelectorAll('.eq-edit-item').forEach(button => button.addEventListener('click', async () => {
+      const row=cache.items.find(x=>x.id===button.dataset.id); if(!row)return;
+      const qt=prompt('تعداد قلم',String(row.quantity)); if(qt===null)return;
+      const pt=prompt('قیمت واحد (تومان)',String(row.unit_cost_toman)); if(pt===null)return;
+      const quantity=Number(digitsAscii(qt)),price=Number(digitsAscii(pt));
+      if(!Number.isInteger(quantity)||quantity<1||!Number.isFinite(price)||price<0){toast('تعداد و قیمت معتبر وارد کنید.');return;}
+      const issued=cache.issues.filter(i=>i.source_receipt_item_id===row.id&&i.issue_status==='delivered').reduce((s,i)=>s+num(i.quantity),0);
+      if(quantity<issued){toast('تعداد جدید نمی‌تواند از تعداد تحویل‌شده به خدام کمتر باشد.');return;}
+      const receipt=cache.receipts.find(r=>r.id===row.receipt_id);
+      const total=(receipt?receiptTotal(receipt):0)-num(row.total_cost_toman)+quantity*price;
+      if(receipt&&total<paidForReceipt(receipt.id)){toast('جمع جدید رسید از پرداخت‌های ثبت‌شده کمتر می‌شود؛ ابتدا پرداخت‌ها را بررسی کنید.');return;}
+      try{await api('equipment_committee_receipt_items','PATCH','id=eq.'+encodeURIComponent(row.id),{quantity,unit_cost_toman:price});toast('قلم رسید ویرایش شد.');await loadData();renderPage();}
+      catch(e){toast('ویرایش قلم ناموفق بود: '+e.message);}
+    }));
+    document.querySelectorAll('.eq-edit-issue').forEach(button => button.addEventListener('click', async () => {
+      const row=cache.issues.find(x=>x.id===button.dataset.id); if(!row)return;
+      const pt=prompt('قیمت واحد هنگام تحویل (تومان)',String(row.unit_price_toman)); if(pt===null)return;
+      const dt=prompt('تاریخ ثبت/تحویل (شمسی یا میلادی)',String(row.issue_date||row.delivery_date||'')); if(dt===null)return;
+      const nt=prompt('توضیحات',String(row.notes||'')); if(nt===null)return;
+      const price=Number(digitsAscii(pt)),date=dateValFromText(dt);
+      if(!Number.isFinite(price)||price<0||!date){toast('قیمت و تاریخ معتبر وارد کنید.');return;}
+      if(num(row.quantity)*price<paidForIssue(row.id)){toast('هزینه جدید از مبلغ پرداخت‌شده کمتر می‌شود؛ ابتدا پرداخت‌های پرونده را بررسی کنید.');return;}
+      try{await api('khadem_equipment_issues','PATCH','id=eq.'+encodeURIComponent(row.id),{unit_price_toman:price,issue_date:date,...(row.issue_status==='delivered'?{delivery_date:date}:{}),notes:nt.trim()||null});toast('رکورد تحویل/سفارش ویرایش شد.');await loadData();renderPage();}
+      catch(e){toast('ویرایش رکورد ناموفق بود: '+e.message);}
+    }));
     document.querySelectorAll('.eq-mark-delivered').forEach(button => button.addEventListener('click', async () => {
       const id = button.dataset.id;
       if (!id || !confirm('تحویل این قلم به خادم تأیید شود؟ از این لحظه مانده پرداخت‌نشده به‌عنوان بدهی خادم محاسبه می‌شود.')) return;
