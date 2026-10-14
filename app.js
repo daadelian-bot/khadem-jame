@@ -1129,7 +1129,7 @@
       payload[skillsKey] = Array.isArray(existingSkills) ? allSkills : (existingSkills && typeof existingSkills === "object" ? allSkills : allSkills.join("، "));
     }
     const extraKey = known.has("extra_data") ? "extra_data" : null;
-    const extra = extraKey && k.extra_data && typeof k.extra_data === "object" && !Array.isArray(k.extra_data) ? {...k.extra_data} : {};
+    let existingExtra = k.extra_data; if (typeof existingExtra === "string") { try { existingExtra = JSON.parse(existingExtra); } catch (_) { existingExtra = {}; } } const extra = extraKey && existingExtra && typeof existingExtra === "object" && !Array.isArray(existingExtra) ? {...existingExtra} : {};
     const setExtraFallback = (aliases, formKey) => {
       const value = String(fd.get(formKey) || "").trim();
       if (!aliases.some(x => known.has(x)) && extraKey) {
@@ -1141,7 +1141,7 @@
     setExtraFallback(["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"], "referrer_name");
     setExtraFallback(["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"], "emergency_contact_name_2");
     setExtraFallback(["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"], "emergency_contact_phone_2");
-    if (extraKey && (Object.keys(extra).length || Object.keys(k.extra_data || {}).length)) payload.extra_data = extra;
+    if (extraKey && (Object.keys(extra).length || Object.keys(existingExtra || {}).length)) payload.extra_data = extra;
     const activeValue = String(fd.get("active") || "").toLowerCase();
     if (activeValue) { if (known.has("is_active")) payload.is_active = activeValue === "true"; else if (known.has("active")) payload.active = activeValue === "true"; else if (known.has("status")) payload.status = activeValue === "true" ? "active" : "inactive"; }
     if (!Object.keys(payload).length) { if(message) message.textContent = "ستون‌های قابل ویرایش در ساختار فعلی پیدا نشد."; return; }
@@ -1151,7 +1151,8 @@
     if (button) { button.disabled = true; button.textContent = "در حال ذخیره…"; }
     if (message) message.textContent = "در حال ذخیره تغییرات…";
     try {
-      await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
+      const savedRows = await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
+      if (!Array.isArray(savedRows) || savedRows.length === 0) throw new Error("پایگاه داده هیچ ردیفی را به‌روزرسانی نکرد؛ شناسه خادم یا مجوز ویرایش را بررسی کنید.");
       state.profileEditOpen = false;
       await loadData();
       state.selectedKhadem = "code:" + String(khademCode(k));
