@@ -3,14 +3,14 @@
 <head>
 <!-- Authentication is retained; the session is validated before app data is shown. -->
 
-<meta name="app-release" content="161">
+<meta name="app-release" content="164">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10233e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>سامانه جامع مدیریت خدام — نسخه ۱۶۳</title>
+<title>سامانه جامع مدیریت خدام — نسخه ۱۶۴</title>
 <!-- نسخه برنامه ۱۲۲: راهنمای پایین همه صفحه‌ها، فارسی‌سازی نمایشی، پنهان‌سازی شناسه‌های داخلی و دسترسی کاربران. -->
 <style>
 :root{--bg:#f5efe7;--card:#fff;--ink:#2c211b;--muted:#7c6d63;--primary:#6b3f24;--gold:#c99b55;--line:#eadfd5;--ok:#18865b;--bad:#b43b3b;--shadow:0 10px 30px #3d251512}
@@ -1160,8 +1160,8 @@ function v61CaptureDynamicFields(){const ta=$('k_extra');if(!ta)return;const ext
   window.openKhademPasswordModal=function(){modal.style.setProperty('display','flex','important');modal.classList.add('open');$('kpmStatus').textContent='';$('kpmCurrent').value='';$('kpmNew').value='';$('kpmConfirm').value='';$('kpmCurrent').focus()};
   $('kpmCancel').onclick=()=>{modal.classList.remove('open');modal.style.setProperty('display','none','important')};modal.addEventListener('click',e=>{if(e.target===modal){modal.classList.remove('open');modal.style.setProperty('display','none','important')}});const card=modal.querySelector('.kpm-card');if(card)card.style.cssText='width:min(100%,520px);max-height:90vh;overflow:auto;background:var(--card,#fff);color:var(--text,#172033);border-radius:16px;padding:22px;box-shadow:0 20px 70px rgba(0,0,0,.3);';
   $('kpmSave').onclick=async()=>{const cur=$('kpmCurrent').value,n=$('kpmNew').value,c=$('kpmConfirm').value,st=$('kpmStatus'),save=$('kpmSave'),ses=getSession();if(!ses.access_token){st.textContent='نشست ورود معتبر نیست؛ خارج شوید و دوباره وارد شوید.';return}if(!cur){st.textContent='رمز فعلی را وارد کنید.';return}if(n.length<12){st.textContent='رمز جدید باید حداقل ۱۲ نویسه داشته باشد.';return}if(n===cur){st.textContent='رمز جدید باید با رمز فعلی متفاوت باشد.';return}if(n!==c){st.textContent='تکرار رمز جدید با آن یکسان نیست.';return}save.disabled=true;st.textContent='در حال به‌روزرسانی رمز در سرویس احراز هویت…';try{
-    const loginEmail=String(ses.user?.email||localStorage.getItem('khadem_last_email')||'').trim();const loginPhone=String(ses.user?.phone||'').trim();if(!loginEmail&&!loginPhone)throw Error('ایمیل حساب در نشست پیدا نشد. خارج شوید و با ایمیل حساب دوباره وارد شوید.');const verify=await fetchTimeout(endpoint('/auth/v1/token?grant_type=password'),{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},body:JSON.stringify(loginEmail?{email:loginEmail,password:cur}:{phone:loginPhone,password:cur})});
-    if(!verify.ok){const ve=await verify.json().catch(()=>({}));throw Error(ve.msg||ve.message||ve.error_description||'رمز فعلی تأیید نشد. ایمیل حساب و رمز فعلی را بررسی کنید.');}
+    const loginEmail=String(ses.user?.email||localStorage.getItem('khadem_last_email')||'').trim();const loginPhone=String(ses.user?.phone||'').trim();if(!loginEmail&&!loginPhone)throw Error('ایمیل حساب در نشست پیدا نشد. خارج شوید و با ایمیل حساب دوباره وارد شوید.');const verify=await fetchTimeout(endpoint('/auth/v1/token?grant_type=password'),{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','apikey':CFG.key},body:JSON.stringify(loginEmail?{email:loginEmail,password:cur}:{phone:loginPhone,password:cur}),cache:'no-store',credentials:'omit'});
+    if(!verify.ok){const ve=await verify.json().catch(()=>({}));const authCode=String(ve.code||ve.error||'').toLowerCase();if(authCode==='invalid_credentials'||authCode==='invalid_grant')throw Error('رمز فعلی با حساب واردشده مطابقت ندارد. ایمیل حساب و رمز فعلی را بررسی کنید.');throw Error(ve.msg||ve.message||ve.error_description||ve.error||('تأیید رمز از سرویس احراز هویت ناموفق بود (HTTP '+verify.status+').'));}
     const r=await fetchTimeout(endpoint('/auth/v1/user'),{method:'PUT',headers:{'Content-Type':'application/json','apikey':CFG.key,'Authorization':'Bearer '+ses.access_token},body:JSON.stringify({password:n})});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.message||j.msg||'سرویس احراز هویت رمز را به‌روزرسانی نکرد.');st.textContent='رمز عبور با موفقیت تغییر کرد. از این پس با رمز جدید وارد شوید.';$('kpmCurrent').value='';$('kpmNew').value='';$('kpmConfirm').value='';
    }catch(e){st.textContent='تغییر رمز انجام نشد: '+String(e.message||e)}finally{save.disabled=false}}
  }
