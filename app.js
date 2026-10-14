@@ -90,6 +90,22 @@
     if (value === null || value === undefined || value === "") return "—";
     return fa(num(value).toLocaleString("en-US")) + " تومان";
   }
+  function jalaliToGregorian(value) {
+    const raw=String(value??"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    const m=raw.match(/^(13|14)(\\d{2})[/-](\\d{1,2})[/-](\\d{1,2})$/);
+    if(!m) return value;
+    let jy=Number(raw.split(/[/-]/)[0]), jm=Number(raw.split(/[/-]/)[1]), jd=Number(raw.split(/[/-]/)[2]);
+    if(jm<1||jm>12||jd<1||jd>31) return value;
+    jy += 1595; let days=-355668+365*jy+Math.floor(jy/33)*8+Math.floor((jy%33+3)/4)+jd;
+    days += jm<7?(jm-1)*31:(jm-7)*30+186;
+    let gy=400*Math.floor(days/146097); days%=146097;
+    if(days>36524){gy+=100*Math.floor(--days/36524);days%=36524;if(days>=365)days++;}
+    gy+=4*Math.floor(days/1461);days%=1461;
+    if(days>365){gy+=Math.floor((days-1)/365);days=(days-1)%365;}
+    let gd=days+1; const leap=(gy%4===0&&gy%100!==0)||gy%400===0; const md=[0,31,leap?29:28,31,30,31,30,31,31,30,31,30,31]; let gm=1;
+    while(gm<=12&&gd>md[gm]){gd-=md[gm];gm++;}
+    return `${gy}-${String(gm).padStart(2,"0")}-${String(gd).padStart(2,"0")}`;
+  }
   function dateText(value) {
     if (!value) return "—";
     const raw = String(value).trim();
@@ -870,7 +886,7 @@
     const htmlRows = rows.map(k => ({...k, khadem_code:khademCode(k), full_name:nameOf(k),
       triple_name:val(k,["triple_name","tri_name","full_name_triple"]), national_code:val(k,["national_code","national_id"]),
       birth_date:val(k,["birth_date"]), membership_date:val(k,["membership_date"]), occupation:val(k,["occupation","job"]),
-      phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"]), referrer_name:val(k,["referrer_name","introducer_name","referred_by","referrer"]), active_label:activeLabel(k)}));
+      phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"]), referrer_name:val(k,["referrer_name","introducer_name","referred_by","referrer"]) || val(k?.extra_data||{},["referrer_name","introducer_name","referred_by","referrer"]), active_label:activeLabel(k)}));
     const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی با کد ۱۰۰۰ به بالا ثبت نشده است.");
     const currentJalaliMonth = Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(new Date()).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
     if (!state.birthdayMonth) state.birthdayMonth = currentJalaliMonth;
@@ -924,6 +940,7 @@
     put(["occupation","job"],String(fd.get("occupation")||"").trim());
     put(["primary_responsibility"],String(fd.get("primary_responsibility")||"").trim());
     put(["referrer_name","introducer_name","referred_by","referrer"],String(fd.get("referrer_name")||"").trim());
+    if (String(fd.get("referrer_name")||"").trim() && canInfer && !["referrer_name","introducer_name","referred_by","referrer"].some(x=>known.has(x)) && known.has("extra_data")) { const existing=state.khadems[0].extra_data; payload.extra_data={...(existing&&typeof existing==="object"?existing:{}),referrer_name:String(fd.get("referrer_name")).trim()}; }
     put(["address","residence"],String(fd.get("address")||"").trim());
     put(["emergency_contact_name"],String(fd.get("emergency_contact_name")||"").trim());
     put(["emergency_contact_phone"],String(fd.get("emergency_contact_phone")||"").trim());
@@ -1000,8 +1017,8 @@
     put(["triple_name","tri_name","full_name_triple"], fd.get("triple_name"));
     put(["father_name"], fd.get("father_name"));
     put(["national_code","national_id"], fd.get("national_code"));
-    put(["birth_date"], fd.get("birth_date"));
-    put(["membership_date"], fd.get("membership_date"));
+    put(["birth_date"], jalaliToGregorian(fd.get("birth_date")));
+    put(["membership_date"], jalaliToGregorian(fd.get("membership_date")));
     put(["occupation","job"], fd.get("occupation"));
     put(["phone","mobile","phone_number"], fd.get("phone"));
     put(["residence","address","home_address"], fd.get("residence"));
@@ -1012,6 +1029,7 @@
     put(["emergency_contact_phone_2","emergency_contact_2_phone"], fd.get("emergency_contact_phone_2"));
     put(["notes","description"], fd.get("notes"));
     put(["referrer_name","introducer_name","referred_by","referrer"], fd.get("referrer_name"));
+    if (String(fd.get("referrer_name")||"").trim() && !["referrer_name","introducer_name","referred_by","referrer"].some(x=>known.has(x)) && known.has("extra_data")) { const extra=k.extra_data&&typeof k.extra_data==="object"?k.extra_data:{}; payload.extra_data={...extra,referrer_name:String(fd.get("referrer_name")).trim()}; }
     const activeValue = String(fd.get("active") || "").toLowerCase();
     if (activeValue) { if (known.has("is_active")) payload.is_active = activeValue === "true"; else if (known.has("active")) payload.active = activeValue === "true"; else if (known.has("status")) payload.status = activeValue === "true" ? "active" : "inactive"; }
     if (!Object.keys(payload).length) { if(message) message.textContent = "ستون‌های قابل ویرایش در ساختار فعلی پیدا نشد."; return; }
