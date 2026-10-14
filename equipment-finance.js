@@ -160,8 +160,8 @@
   function dateValFromText(value) {
     const v = digitsAscii(value).trim();
     if (!v) return null;
-    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(v)) return v;
-    const m = v.match(/^(\\d{4})[\\/.-](\\d{1,2})[\\/.-](\\d{1,2})$/);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    const m = v.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})$/);
     if (!m) return null;
     const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
     if (mo < 1 || mo > 12 || d < 1 || d > (mo <= 6 ? 31 : 30)) return null;
