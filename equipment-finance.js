@@ -271,11 +271,19 @@
     }
     itemSel?.addEventListener('change', () => { syncIssueFields(); filterStockOptions(); });
     syncIssueFields(); filterStockOptions();
-    $('eqPayType')?.addEventListener('change', () => {
-      const committee = $('eqPayType').value === 'committee';
-      $('eqPayIssueWrap').style.display = committee ? 'none' : '';
-      $('eqPayReceiptWrap').style.display = committee ? '' : 'none';
-    });
+    function syncPaymentTarget() {
+      const committee = $('eqPayType')?.value === 'committee';
+      const issueWrap = $('eqPayIssueWrap'), receiptWrap = $('eqPayReceiptWrap');
+      const issueSelect = $('eqPayIssue'), receiptSelect = $('eqPayReceipt');
+      if (issueWrap) issueWrap.style.display = committee ? 'none' : '';
+      if (receiptWrap) receiptWrap.style.display = committee ? '' : 'none';
+      // Only the selector for the chosen payment type may be required.
+      // A hidden required selector otherwise blocks the form on mobile browsers.
+      if (issueSelect) issueSelect.required = !committee;
+      if (receiptSelect) receiptSelect.required = !!committee;
+    }
+    $('eqPayType')?.addEventListener('change', syncPaymentTarget);
+    syncPaymentTarget();
     $('eqReceiptForm')?.addEventListener('submit', async e => {
       e.preventDefault();
       const msg = 'eqRMsg'; setMsg(msg, 'در حال ثبت…');
