@@ -44,6 +44,7 @@
     appSettings: [],
     tuitionPayments: [],
     selectedKhadem: null,
+    registrationOpen: false,
     search: "",
     loading: false,
     errors: {},
@@ -866,9 +867,65 @@
       status: val(k,["status","active"]) || "—"
     }));
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
-      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span></div>
+      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
+      ${state.registrationOpen ? khademRegistrationForm() : ""}
       ${tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی ثبت نشده است.")}`;
   }
+
+  function khademRegistrationForm() {
+    const skills = ["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"];
+    const fields = [
+      ["full_name","نام و نام خانوادگی *","text"],["khadem_code","کد خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
+      ["birth_date","تاریخ تولد","text"],["membership_date","تاریخ عضویت","text"],["phone","شماره تلفن خادم","tel"],["occupation","شغل","text"],
+      ["primary_responsibility","مسئولیت اصلی","text"],["address","نشانی محل سکونت","text"],
+      ["emergency_contact_name","تماس اضطراری ۱ — نام","text"],["emergency_contact_phone","تماس اضطراری ۱ — شماره تلفن","tel"],
+      ["emergency_contact_name_2","تماس اضطراری ۲ — نام","text"],["emergency_contact_phone_2","تماس اضطراری ۲ — شماره تلفن","tel"]
+    ];
+    return `<form id="kj-registration-form" class="kj-card" style="margin:14px 0" novalidate>
+      <h2 class="kj-section-title">فرم ثبت خادم جدید</h2>
+      <div class="kj-profile-grid">${fields.map(([name,label,type])=>`<label class="kj-field"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} autocomplete="off"></label>`).join("")}</div>
+      <fieldset style="border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:14px 0"><legend>مهارت‌ها و توانمندی‌ها</legend><div class="kj-skill-list">${skills.map(s=>`<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;margin:4px"><input type="checkbox" name="skills" value="${esc(s)}">${esc(s)}</label>`).join("")}</div></fieldset>
+      <label class="kj-field"><b>توضیحات</b><textarea name="notes" rows="3"></textarea></label>
+      <div id="kj-registration-message" class="kj-muted" role="status" aria-live="polite"></div>
+      <div class="kj-toolbar"><button class="kj-primary" type="submit" id="kj-save-registration">ثبت اطلاعات خادم</button><button class="kj-secondary" type="button" id="kj-cancel-registration">انصراف</button></div>
+    </form>`;
+  }
+  async function saveKhademFromForm(form) {
+    const message = $("#kj-registration-message"), button = $("#kj-save-registration"), fd = new FormData(form);
+    const fullName = String(fd.get("full_name") || "").trim();
+    if (!fullName) { if(message) message.textContent = "لطفاً نام و نام خانوادگی خادم را وارد کنید."; return; }
+    const known = new Set(Object.keys(state.khadems[0] || {})), canInfer = known.size > 0, payload = {};
+    const put = (keys,value) => { if(value===undefined||value===null||value==="") return; const key=keys.find(x=>canInfer?known.has(x):x===keys[0]); if(key) payload[key]=value; };
+    put(["full_name","name","khadem_name"],fullName);
+    if (!["full_name","name","khadem_name"].some(x=>Object.prototype.hasOwnProperty.call(payload,x))) {
+      const parts=fullName.split(/\s+/); put(["first_name"],parts.shift()||fullName); put(["last_name","family_name","family"],parts.join(" "));
+    }
+    put(["khadem_code","personnel_code","code"],String(fd.get("khadem_code")||"").trim());
+    put(["father_name"],String(fd.get("father_name")||"").trim());
+    put(["national_code","national_id"],String(fd.get("national_code")||"").trim());
+    put(["birth_date"],String(fd.get("birth_date")||"").trim());
+    put(["membership_date"],String(fd.get("membership_date")||"").trim());
+    put(["phone","mobile","phone_number"],String(fd.get("phone")||"").trim());
+    put(["occupation","job"],String(fd.get("occupation")||"").trim());
+    put(["primary_responsibility"],String(fd.get("primary_responsibility")||"").trim());
+    put(["address","residence"],String(fd.get("address")||"").trim());
+    put(["emergency_contact_name"],String(fd.get("emergency_contact_name")||"").trim());
+    put(["emergency_contact_phone"],String(fd.get("emergency_contact_phone")||"").trim());
+    put(["emergency_contact_name_2"],String(fd.get("emergency_contact_name_2")||"").trim());
+    put(["emergency_contact_phone_2"],String(fd.get("emergency_contact_phone_2")||"").trim());
+    put(["skills"],fd.getAll("skills")); put(["notes"],String(fd.get("notes")||"").trim()); put(["status"],"فعال");
+    if(!Object.keys(payload).length){if(message)message.textContent="ستون‌های لازم از اطلاعات فعلی قابل تشخیص نیست؛ هیچ اطلاعاتی ارسال نشد.";return;}
+    if(button){button.disabled=true;button.textContent="در حال ثبت…";} if(message)message.textContent="در حال بررسی مجوز و ثبت اطلاعات…";
+    try {
+      const result=await request("/rest/v1/khadems",{method:"POST",headers:{"Prefer":"return=representation"},body:payload});
+      if(!Array.isArray(result)||!result.length)throw new Error("سرور ثبت را تأیید نکرد؛ فهرست را تازه‌سازی و بررسی کنید.");
+      state.registrationOpen=false;state.search="";await loadData();toast("اطلاعات خادم با موفقیت ثبت شد.","success");
+    } catch(e) {
+      if(message)message.textContent="ثبت انجام نشد: "+(e.message||"خطای نامشخص")+"؛ احتمال دارد مجوز ثبت یا نام ستون‌ها متفاوت باشد. اطلاعات قبلی تغییر نکرده است.";
+      if(button){button.disabled=false;button.textContent="ثبت اطلاعات خادم";}
+    }
+  }
+
   function transactionBelongs(row, khadem) {
     const ids = [khademId(khadem), khadem?.khadem_id, khadem?.id].filter(v => v !== undefined && v !== null).map(String);
     const codes = [khademCode(khadem)].filter(v => v !== undefined && v !== null).map(String);
@@ -1130,6 +1187,9 @@
       }
     }
     if (state.tab === "khadems") {
+      $("#kj-open-registration")?.addEventListener("click", () => { state.registrationOpen = !state.registrationOpen; render(); });
+      $("#kj-cancel-registration")?.addEventListener("click", () => { state.registrationOpen = false; render(); });
+      $("#kj-registration-form")?.addEventListener("submit", e => { e.preventDefault(); saveKhademFromForm(e.currentTarget); });
       $("#kj-khadem-search")?.addEventListener("input", e => {
         const pos = e.target.selectionStart;
         state.search = e.target.value;
