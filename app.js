@@ -650,7 +650,13 @@
       transaction_date: val(r,["transaction_date","date","created_at"]),
       description: val(r,["description","notes","note"])
     }));
-    return genericPage("finance","امور مالی",rows,columns);
+    return genericPage("finance","امور مالی",rows,columns)
+      + '<h2 class="kj-section-title">شهریه و سررسیدها</h2>' + errBox("tuitionDues")
+      + genericPage("tuitionDues","پرونده‌های شهریه",state.tuitionDues,[{key:"khadem_id",label:"شناسه خادم"},{key:"period_month",label:"دوره"},{key:"status",label:"وضعیت"},{key:"notes",label:"یادداشت"}])
+      + '<h2 class="kj-section-title">پرداخت‌های شهریه</h2>' + errBox("tuitionPayments")
+      + genericPage("tuitionPayments","پرداخت‌های شهریه",state.tuitionPayments,[{key:"khadem_id",label:"شناسه خادم"},{key:"payment_date",label:"تاریخ پرداخت"},{key:"status",label:"وضعیت"},{key:"notes",label:"یادداشت"}])
+      + '<h2 class="kj-section-title">اقساط</h2>' + errBox("financeInstallments")
+      + genericPage("financeInstallments","اقساط ثبت‌شده",state.financeInstallments,[{key:"khadem_id",label:"شناسه خادم"},{key:"installment_number",label:"شماره قسط"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"},{key:"notes",label:"یادداشت"}]);
   }
   function nonattendancePage() {
     const rows = state.nonattendance.map(r => {
