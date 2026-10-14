@@ -91,6 +91,9 @@
   }
   function dateText(value) {
     if (!value) return "—";
+    const raw = String(value).trim();
+    const jalali = raw.match(/^(13|14)\d{2}[/-](\d{1,2})[/-](\d{1,2})$/);
+    if (jalali) return fa(raw.replaceAll("-","/").split("/").map((part,i)=>i===0?part:part.padStart(2,"0")).join("/"));
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return esc(value);
     try {
@@ -674,6 +677,7 @@
       "بدون نام";
   }
   function khademCode(k) { return val(k, ["khadem_code", "code", "personnel_code", "number", "id"]); }
+  function activeLabel(k) { const v=val(k,["is_active","active","status"]); if(v===true||["true","1","active","فعال","enabled"].includes(String(v).toLowerCase())) return "فعال"; if(v===false||["false","0","inactive","غیرفعال","disabled"].includes(String(v).toLowerCase())) return "غیرفعال"; return "نامشخص"; }
   function khademId(k) { return val(k, ["id", "khadem_id"]); }
   function fieldLabel(key) {
     const labels = {
@@ -781,7 +785,10 @@
   }
   function dataFields(row, omit = []) {
     if (!row) return "";
-    return `<div class="kj-profile-grid">${Object.entries(row).filter(([k,v]) => !omit.includes(k) && v !== null && v !== "").map(([k,v]) => `<div class="kj-field"><b>${esc(fieldLabel(k))}</b><span>${esc(formatValue(k,v))}</span></div>`).join("")}</div>`;
+    return `<div class="kj-profile-grid">${Object.entries(row).filter(([k,v]) => !omit.includes(k) && v !== null && v !== "").map(([k,v]) => {
+      if (k === "extra_data" && v && typeof v === "object") { const items=Object.entries(v).filter(([,x])=>x!==null&&x!=="").map(([key,value])=>`<div class="kj-field"><b>${esc(fieldLabel(key))}</b><span>${esc(formatValue(key,value))}</span></div>`).join(""); return `<div class="kj-field kj-extra-data"><b>اطلاعات تکمیلی</b><div class="kj-profile-grid">${items || "<span>اطلاعاتی ثبت نشده است</span>"}</div></div>`; }
+      return `<div class="kj-field"><b>${esc(fieldLabel(k))}</b><span>${esc(formatValue(k,v))}</span></div>`;
+    }).join("")}</div>`;
   }
   function errBox(key) {
     const e = state.errors[key];
@@ -853,26 +860,29 @@
 
   function khademList() {
     const q = state.search.trim().toLowerCase();
-    const rows = state.khadems.filter(k => !q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_code"])].join(" ").toLowerCase().includes(q));
+    const rows = state.khadems.filter(k => { const code=Number(String(khademCode(k)).replace(/[^0-9]/g,"")); return code>=1000 && (!q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_code"])].join(" ").toLowerCase().includes(q)); }).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
     const columns = [
       {key:"khadem_code",label:"کد خادم"},{key:"full_name",label:"نام و نام خانوادگی"},{key:"triple_name",label:"نام ثلاثی"},
       {key:"national_code",label:"کد ملی"},{key:"birth_date",label:"تاریخ تولد"},{key:"membership_date",label:"تاریخ عضویت"},
-      {key:"occupation",label:"شغل"},{key:"phone",label:"شماره تلفن"},{key:"residence",label:"محل سکونت"}
+      {key:"occupation",label:"شغل"},{key:"phone",label:"شماره تلفن"},{key:"residence",label:"محل سکونت"},{key:"referrer_name",label:"معرف"},{key:"active_label",label:"وضعیت"}
     ];
     const htmlRows = rows.map(k => ({...k, khadem_code:khademCode(k), full_name:nameOf(k),
       triple_name:val(k,["triple_name","tri_name","full_name_triple"]), national_code:val(k,["national_code","national_id"]),
       birth_date:val(k,["birth_date"]), membership_date:val(k,["membership_date"]), occupation:val(k,["occupation","job"]),
-      phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"])}));
-    const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی ثبت نشده است.");
-    return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
+      phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"]), referrer_name:val(k,["referrer_name","introducer_name","referred_by","referrer"]), active_label:activeLabel(k)}));
+    const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی با کد ۱۰۰۰ به بالا ثبت نشده است.");
+    const currentJalaliMonth = Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(new Date()).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+    const birthdayRows = rows.filter(k => { const raw=String(val(k,["birth_date"])||"").trim(); let month=0; const jm=raw.match(/^(?:13|14)\d{2}[/-](\d{1,2})[/-]\d{1,2}$/); if(jm) month=Number(jm[1]); else { const d=new Date(raw); if(!Number.isNaN(d.getTime())) month=Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(d).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))); } return month===currentJalaliMonth; }).map(k=>({full_name:nameOf(k),birth_date:val(k,["birth_date"])}));
+    const birthdays = `<section class="kj-card" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین این ماه</h2><p class="kj-muted">ماه جاری بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
+    return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")
       <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
-      ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>`;
+      ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>${birthdays}`;
   }
 
   function khademRegistrationForm() {
     const skills = ["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"];
     const fields = [
-      ["full_name","نام و نام خانوادگی *","text"],["khadem_code","کد خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
+      ["full_name","نام و نام خانوادگی *","text"],["khadem_code","کد خادم","text"],["referrer_name","معرف خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
       ["birth_date","تاریخ تولد","text"],["membership_date","تاریخ عضویت","text"],["phone","شماره تلفن خادم","tel"],["occupation","شغل","text"],
       ["primary_responsibility","مسئولیت اصلی","text"],["address","نشانی محل سکونت","text"],
       ["emergency_contact_name","تماس اضطراری ۱ — نام","text"],["emergency_contact_phone","تماس اضطراری ۱ — شماره تلفن","tel"],
@@ -910,6 +920,7 @@
     put(["phone","mobile","phone_number"],String(fd.get("phone")||"").trim());
     put(["occupation","job"],String(fd.get("occupation")||"").trim());
     put(["primary_responsibility"],String(fd.get("primary_responsibility")||"").trim());
+    put(["referrer_name","introducer_name","referred_by","referrer"],String(fd.get("referrer_name")||"").trim());
     put(["address","residence"],String(fd.get("address")||"").trim());
     put(["emergency_contact_name"],String(fd.get("emergency_contact_name")||"").trim());
     put(["emergency_contact_phone"],String(fd.get("emergency_contact_phone")||"").trim());
@@ -942,6 +953,7 @@
   function khademEditForm(k) {
     const fields = [
       ["full_name","نام و نام خانوادگی","text",nameOf(k)],
+      ["referrer_name","معرف خادم","text",val(k,["referrer_name","introducer_name","referred_by","referrer"])],
       ["khadem_code","کد خادم","text",khademCode(k)],
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
@@ -956,10 +968,11 @@
       ["emergency_contact_phone","تلفن تماس اضطراری ۱","tel",val(k,["emergency_contact_phone","emergency_contact_1_phone"])],
       ["emergency_contact_name_2","نام تماس اضطراری ۲","text",val(k,["emergency_contact_name_2","emergency_contact_2_name"])],
       ["emergency_contact_phone_2","تلفن تماس اضطراری ۲","tel",val(k,["emergency_contact_phone_2","emergency_contact_2_phone"])],
-      ["notes","توضیحات","text",val(k,["notes","description"])]
+      ["notes","توضیحات","text",val(k,["notes","description"])],
+      ["active","وضعیت فعالیت (فعال/غیرفعال)","select",val(k,["is_active","active","status"])]
     ];
     return '<form id="kj-profile-edit-form" novalidate><div class="kj-profile-grid">' +
-      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b><input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off"></label>').join("") +
+      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="select"?'<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+'>فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+'>غیرفعال</option></select>':'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off">')+'</label>').join("") +
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
   }
   async function saveKhademProfile(form) {
@@ -995,6 +1008,9 @@
     put(["emergency_contact_name_2","emergency_contact_2_name"], fd.get("emergency_contact_name_2"));
     put(["emergency_contact_phone_2","emergency_contact_2_phone"], fd.get("emergency_contact_phone_2"));
     put(["notes","description"], fd.get("notes"));
+    put(["referrer_name","introducer_name","referred_by","referrer"], fd.get("referrer_name"));
+    const activeValue = String(fd.get("active") || "").toLowerCase();
+    if (activeValue) { if (known.has("is_active")) payload.is_active = activeValue === "true"; else if (known.has("active")) payload.active = activeValue === "true"; else if (known.has("status")) payload.status = activeValue === "true" ? "active" : "inactive"; }
     if (!Object.keys(payload).length) { if(message) message.textContent = "ستون‌های قابل ویرایش در ساختار فعلی پیدا نشد."; return; }
     const id = khademId(k);
     const filter = id ? "id=eq."+encodeURIComponent(id) : (khademCode(k) ? "khadem_code=eq."+encodeURIComponent(khademCode(k)) : "");
@@ -1046,19 +1062,13 @@
       [key]
     )]));
     const financeTransactionRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","paid_amount","balance","transaction_date","description"])}));
-    const tuitionRows = tuitionDues.map(r => ({
-      ...r, transaction_type: "شهریه", category: "شهریه ماهانه",
-      title: "شهریه " + dateText(r.period_month), amount: r.amount_toman,
-      paid_amount: r.paid_toman, balance: Math.max(0, num(r.amount_toman) - num(r.paid_toman)),
-      transaction_date: r.period_month, description: val(r, ["notes"]) || r.status
-    }));
     const installmentRows = installments.map(r => ({
       ...r, transaction_type: "قسط", category: "اقساط",
       title: "قسط شماره " + fa(r.installment_number), amount: r.amount,
       paid_amount: r.paid_amount, balance: Math.max(0, num(r.amount) - num(r.paid_amount)),
       transaction_date: r.due_date, description: val(r, ["notes"]) || r.status
     }));
-    const financeRows = [...financeTransactionRows, ...tuitionRows, ...installmentRows];
+    const financeRows = [...financeTransactionRows, ...installmentRows];
     const financeLoadError = state.errors.finance_transactions || state.errors.tuition_dues || state.errors.finance_installments;
     const tuitionByYear = {};
     tuitionDues.forEach(r => {
@@ -1169,10 +1179,6 @@
       description: val(r,["description","notes","note"])
     }));
     return genericPage("finance","امور مالی",rows,columns)
-      + '<h2 class="kj-section-title">شهریه و سررسیدها</h2>' + errBox("tuitionDues")
-      + genericPage("tuitionDues","پرونده‌های شهریه",state.tuitionDues,[{key:"khadem_id",label:"شناسه خادم"},{key:"period_month",label:"دوره"},{key:"status",label:"وضعیت"},{key:"notes",label:"یادداشت"}])
-      + '<h2 class="kj-section-title">پرداخت‌های شهریه</h2>' + errBox("tuitionPayments")
-      + genericPage("tuitionPayments","پرداخت‌های شهریه",state.tuitionPayments,[{key:"khadem_id",label:"شناسه خادم"},{key:"payment_date",label:"تاریخ پرداخت"},{key:"status",label:"وضعیت"},{key:"notes",label:"یادداشت"}])
       + '<h2 class="kj-section-title">اقساط</h2>' + errBox("financeInstallments")
       + genericPage("financeInstallments","اقساط ثبت‌شده",state.financeInstallments,[{key:"khadem_id",label:"شناسه خادم"},{key:"installment_number",label:"شماره قسط"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"},{key:"notes",label:"یادداشت"}]);
   }
