@@ -571,7 +571,6 @@
       {key:"transaction_type",label:"نوع تراکنش"},
       {key:"category",label:"دسته‌بندی"},
       {key:"title",label:"عنوان"},
-      {key:"amount",label:"مبلغ ثبت‌شده"},
       {key:"paid_amount",label:"مبلغ پرداخت‌شده"},
       {key:"balance",label:"مانده / بدهی"},
       {key:"transaction_date",label:"تاریخ تراکنش"},
