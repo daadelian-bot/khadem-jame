@@ -361,6 +361,67 @@
       @media(max-width:850px){.kj-layout{grid-template-columns:1fr;padding:10px;gap:10px}.kj-sidebar{position:static;max-height:none;padding:10px}.kj-top{padding:10px 12px}.kj-brand{font-size:15px}.kj-nav{display:block}.kj-menu-group.open .kj-group-items{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-group-items button{font-size:13px;padding:8px}.kj-side-foot{display:none}}
       @media(max-width:420px){.kj-menu-group.open .kj-group-items{grid-template-columns:1fr}.kj-top .kj-actions{gap:5px}.kj-top .kj-actions button{padding:7px 9px}}
     `;
+
+    /* بازطراحی بصری سازمانی v2: هویت بصری تازه و متمایز */
+    style.textContent += `
+      :root{--kj-green-deep:#103f35;--kj-green:#167a63;--kj-green-light:#e7f5ef;--kj-canvas:#f4f7f6;--kj-line:#e0e9e5;--kj-text:#203a34}
+      body{background:var(--kj-canvas);color:var(--kj-text);font-family:Tahoma,"Segoe UI",Arial,sans-serif}
+      .kj-shell{background:var(--kj-canvas)}
+      .kj-top{background:linear-gradient(110deg,#103f35 0%,#176c58 60%,#23876c 100%);color:#fff;border:0;padding:16px 26px;box-shadow:0 6px 22px #103f351f}
+      .kj-brand,.kj-top .kj-small{color:#fff!important}
+      .kj-brand{font-size:19px;letter-spacing:-.25px}
+      .kj-top small{color:#d2eee4!important;margin-top:5px}
+      .kj-top .kj-secondary{background:#ffffff18;color:#fff;border:1px solid #ffffff45;border-radius:11px}
+      .kj-top .kj-secondary:hover{background:#ffffff28}
+      .kj-layout{grid-template-columns:270px minmax(0,1fr);gap:22px;max-width:1720px;padding:22px}
+      .kj-sidebar{background:#123f36;color:#e8f5f0;border:1px solid #1b5b4e;border-radius:20px;padding:14px;top:18px;max-height:calc(100vh - 36px);box-shadow:0 10px 30px #123f3614}
+      .kj-side-search{background:#1b5146;color:#fff;border:1px solid #397265;border-radius:12px}
+      .kj-side-search::placeholder{color:#b7d5cc}
+      .kj-menu-group{border-top:1px solid #ffffff16}
+      .kj-group-toggle{color:#b9d9cf}
+      .kj-group-toggle:after{color:#b9d9cf}
+      .kj-nav button{background:transparent;color:#d4e8e1;border:1px solid transparent;border-radius:11px;padding:10px 11px}
+      .kj-nav button:hover{background:#ffffff0e;color:#fff}
+      .kj-nav button.active{background:#e1f4eb;color:#115543;border-color:#e1f4eb;box-shadow:inset -3px 0 #6ac6a6}
+      .kj-side-foot{color:#b5d4ca;border-color:#ffffff1c}
+      .kj-content-wrap{min-width:0}
+      .kj-main{padding:0}
+      .kj-hero{position:relative;overflow:hidden;background:linear-gradient(115deg,#e7f6ef 0%,#f8fcfa 72%);border:1px solid #d7ebe2;border-radius:22px;padding:30px;margin-bottom:22px;box-shadow:0 8px 28px #214c3e08}
+      .kj-hero:after{content:"";position:absolute;left:-45px;bottom:-100px;width:250px;height:250px;border:34px solid #cceade66;border-radius:50%;pointer-events:none}
+      .kj-hero-kicker{color:#167a63;text-transform:none;font-size:12px;letter-spacing:.2px}
+      .kj-hero h1{font-size:28px;color:#103f35;line-height:1.7}
+      .kj-hero p{color:#547168;max-width:760px}
+      .kj-primary,.kj-button{background:linear-gradient(110deg,#126c57,#1b8a6c);border-radius:11px;box-shadow:0 4px 10px #167a6320}
+      .kj-secondary{border-color:#dce8e3;border-radius:11px;color:#285348}
+      .kj-card{border:1px solid var(--kj-line);border-radius:17px;box-shadow:0 6px 22px #1c493b08;background:#fff}
+      .kj-stat{color:#167a63}
+      .kj-pill{background:#e4f5ed;color:#14684f}
+      .kj-table-wrap{border-color:var(--kj-line);border-radius:15px;box-shadow:0 5px 18px #1c493b05}
+      th{background:#f0f7f3;color:#365f52}
+      td{border-bottom-color:#edf2ef}
+      .kj-page-title{color:#153f35;font-size:24px;margin-bottom:18px}
+      .kj-section-title{color:#153f35;font-size:17px}
+      .kj-shortcut-card{border-color:#e0ebe6;border-radius:17px;box-shadow:0 6px 20px #1c493b07;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+      .kj-shortcut-card:hover{transform:translateY(-2px);border-color:#9ed6c2;box-shadow:0 10px 24px #1c493b12}
+      .kj-shortcut-icon{background:#e5f5ee;color:#14694f}
+      .kj-shortcut-card b{color:#167a63}
+      .kj-footer{padding:22px;color:#718b81}
+      .kj-error{border-radius:13px}
+      @media(max-width:850px){
+        .kj-layout{grid-template-columns:1fr;padding:12px;gap:12px}
+        .kj-sidebar{position:static;max-height:none;border-radius:16px}
+        .kj-nav button.active{box-shadow:inset -3px 0 #6ac6a6}
+        .kj-hero{padding:22px}
+        .kj-hero h1{font-size:22px}
+      }
+      @media(max-width:520px){
+        .kj-top{padding:13px 15px}
+        .kj-layout{padding:9px}
+        .kj-hero{padding:18px;border-radius:17px}
+        .kj-hero h1{font-size:20px}
+      }
+    `;
+
   }
 
   function shell() {
