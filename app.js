@@ -1060,6 +1060,32 @@
     }));
     const financeRows = [...financeTransactionRows, ...tuitionRows, ...installmentRows];
     const financeLoadError = state.errors.finance_transactions || state.errors.tuition_dues || state.errors.finance_installments;
+    const tuitionByYear = {};
+    tuitionDues.forEach(r => {
+      const rawPeriod = String(val(r,["period_month","payment_date","due_date"]) || "");
+      let yearMonth = rawPeriod.match(/^(\\d{4})[-/](\\d{1,2})/);
+      if (!yearMonth) {
+        const d = new Date(rawPeriod);
+        if (!Number.isNaN(d.getTime())) yearMonth = [rawPeriod,String(d.getFullYear()),String(d.getMonth()+1)];
+      }
+      if (!yearMonth) return;
+      const year = yearMonth[1], month = Number(yearMonth[2]);
+      if (month < 1 || month > 12) return;
+      if (!tuitionByYear[year]) tuitionByYear[year] = {year, first_due:0, first_paid:0, first_balance:0, second_due:0, second_paid:0, second_balance:0};
+      const half = month <= 6 ? "first" : "second";
+      tuitionByYear[year][half+"_due"] += num(val(r,["amount_toman","amount","total_amount_toman"]));
+      tuitionByYear[year][half+"_paid"] += num(val(r,["paid_toman","amount_paid","paid_amount"]));
+      tuitionByYear[year][half+"_balance"] += Math.max(0,num(val(r,["amount_toman","amount","total_amount_toman"]))-num(val(r,["paid_toman","amount_paid","paid_amount"])));
+    });
+    const tuitionHalfRows = Object.values(tuitionByYear).sort((a,b)=>String(b.year).localeCompare(String(a.year))).map(r=>({
+      year:r.year, first_paid:r.first_paid, first_balance:r.first_balance, second_paid:r.second_paid, second_balance:r.second_balance
+    }));
+    const tuitionHalfSummary = tuitionHalfRows.length
+      ? '<h4 class="kj-section-title">خلاصه پرداخت شهریه در دو دوره شش‌ماهه</h4>'+tableHtml(tuitionHalfRows,[
+        {key:"year",label:"سال"},{key:"first_paid",label:"پرداخت ۶ ماه اول"},{key:"first_balance",label:"مانده ۶ ماه اول"},
+        {key:"second_paid",label:"پرداخت ۶ ماه دوم"},{key:"second_balance",label:"مانده ۶ ماه دوم"}
+      ],"اطلاعات شهریه ثبت نشده است")
+      : '<p class="kj-muted">برای نمایش جمع پرداخت شهریه در دو دوره شش‌ماهه، سوابق شهریه باید دارای تاریخ دوره و مبلغ پرداخت باشند.</p>';
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
       <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
@@ -1075,7 +1101,7 @@
       </details></div>
       <div class="kj-card" style="margin-top:14px"><div class="kj-grid" style="margin:0"><div><div class="kj-muted">کد خادم</div><b>${esc(khademCode(k) || "—")}</b></div><div><div class="kj-muted">تعداد سوابق خدمت</div><b>${fa(services.length)}</b></div><div><div class="kj-muted">تعداد تراکنش‌های مالی</div><b>${fa(financeRows.length)}</b></div></div></div>
       <div class="kj-card" style="margin-top:14px">${relatedSection("سوابق خدمت","service_records",serviceRows,serviceCols,"هنوز سابقه خدمتی برای این خادم ثبت نشده است.")}</div>
-      <div class="kj-card" style="margin-top:14px"><h3 class="kj-section-title">سوابق مالی خادم</h3>${errBox("finance_transactions")}${errBox("tuition_dues")}${errBox("finance_installments")}${financeLoadError ? empty("به دلیل خطای دریافت، خالی بودن سوابق مالی قابل تأیید نیست.") : tableHtml(financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است")}</div>`;
+      <div class="kj-card" style="margin-top:14px"><h3 class="kj-section-title">سوابق مالی خادم</h3>${errBox("finance_transactions")}${errBox("tuition_dues")}${errBox("finance_installments")}${financeLoadError ? empty("به دلیل خطای دریافت، خالی بودن سوابق مالی قابل تأیید نیست.") : tuitionHalfSummary + tableHtml(financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است")}</div>`;
   }
   function genericPage(key, title, rows, preferredColumns) {
     // کد خادم مرجع اصلی اتصال رکوردها به پرونده خادم است؛ شناسه داخلی فقط برای تطبیق کمکی استفاده می‌شود.
