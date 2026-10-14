@@ -1064,7 +1064,7 @@
     else if (String(rawSkills || "").trim()) currentSkills = String(rawSkills).split(/[,،;؛\\n]+/).map(x=>x.trim()).filter(Boolean);
     const fields = [
       ["full_name","نام و نام خانوادگی","text",nameOf(k)],
-      ["referrer_name","معرف خادم","text",val(k,["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"])],
+      ["referrer_name","معرف خادم","text",val(k,["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"]) || val(k?.extra_data||{},["referrer_name","introducer_name","referred_by","referrer"])],
       ["khadem_code","کد خادم","text",khademCode(k)],
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
@@ -1077,8 +1077,8 @@
       ["primary_responsibility","مسئولیت اصلی","text",val(k,["primary_responsibility","responsibility"])],
       ["emergency_contact_name","نام تماس اضطراری ۱","text",val(k,["emergency_contact_name","emergency_contact_1_name","emergency_name"])],
       ["emergency_contact_phone","تلفن تماس اضطراری ۱","tel",val(k,["emergency_contact_phone","emergency_contact_1_phone","emergency_phone","emergency_phone_1"])],
-      ["emergency_contact_name_2","نام تماس اضطراری ۲","text",val(k,["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"])],
-      ["emergency_contact_phone_2","تلفن تماس اضطراری ۲","tel",val(k,["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"])],
+      ["emergency_contact_name_2","نام تماس اضطراری ۲","text",val(k,["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"]) || val(k?.extra_data||{},["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"])],
+      ["emergency_contact_phone_2","تلفن تماس اضطراری ۲","tel",val(k,["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"]) || val(k?.extra_data||{},["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"])],
       ["notes","توضیحات","text",val(k,["notes","description"])],
       ["active","وضعیت فعالیت (فعال/غیرفعال)","select",val(k,["is_active","active","status"])]
     ];
@@ -1128,8 +1128,20 @@
       const existingSkills = k[skillsKey];
       payload[skillsKey] = Array.isArray(existingSkills) ? allSkills : (existingSkills && typeof existingSkills === "object" ? allSkills : allSkills.join("، "));
     }
-    put(["referrer_name","introducer_name","referred_by","referrer"], fd.get("referrer_name"));
-    if (String(fd.get("referrer_name")||"").trim() && !["referrer_name","introducer_name","referred_by","referrer"].some(x=>known.has(x)) && known.has("extra_data")) { const extra=k.extra_data&&typeof k.extra_data==="object"?k.extra_data:{}; payload.extra_data={...extra,referrer_name:String(fd.get("referrer_name")).trim()}; }
+    const extraKey = known.has("extra_data") ? "extra_data" : null;
+    const extra = extraKey && k.extra_data && typeof k.extra_data === "object" && !Array.isArray(k.extra_data) ? {...k.extra_data} : {};
+    const setExtraFallback = (aliases, formKey) => {
+      const value = String(fd.get(formKey) || "").trim();
+      if (!aliases.some(x => known.has(x)) && extraKey) {
+        if (value) extra[formKey] = value;
+        else delete extra[formKey];
+      }
+    };
+    put(["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"], fd.get("referrer_name"));
+    setExtraFallback(["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"], "referrer_name");
+    setExtraFallback(["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"], "emergency_contact_name_2");
+    setExtraFallback(["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"], "emergency_contact_phone_2");
+    if (extraKey && (Object.keys(extra).length || Object.keys(k.extra_data || {}).length)) payload.extra_data = extra;
     const activeValue = String(fd.get("active") || "").toLowerCase();
     if (activeValue) { if (known.has("is_active")) payload.is_active = activeValue === "true"; else if (known.has("active")) payload.active = activeValue === "true"; else if (known.has("status")) payload.status = activeValue === "true" ? "active" : "inactive"; }
     if (!Object.keys(payload).length) { if(message) message.textContent = "ستون‌های قابل ویرایش در ساختار فعلی پیدا نشد."; return; }
@@ -1223,7 +1235,7 @@
       <div class="kj-card"><div class="kj-toolbar" style="justify-content:space-between"><h3 class="kj-section-title" style="margin:0">پرونده خادم: ${esc(khademIdentityText(k))}</h3><button type="button" class="kj-primary" id="kj-edit-profile">${state.profileEditOpen?"بستن ویرایش":"✏️ ویرایش مشخصات خادم"}</button></div><div class="kj-profile-details">${state.profileEditOpen ? khademEditForm(k) : fields}</div></div>
       <div class="kj-card" style="margin-top:14px"><details class="kj-profile-subsection">
         <summary class="kj-section-title">☎️ تماس‌ها و شماره‌های ضروری</summary>
-        ${tableHtml([{contact_type:"شماره تماس اصلی",contact_name:"خود خادم",contact_phone:val(k,["phone","mobile","phone_number"])},{contact_type:"تماس اضطراری ۱",contact_name:val(k,["emergency_contact_name","emergency_contact_1_name"]),contact_phone:val(k,["emergency_contact_phone","emergency_contact_1_phone","emergency_phone"])},{contact_type:"تماس اضطراری ۲",contact_name:val(k,["emergency_contact_name_2","emergency_contact_2_name"]),contact_phone:val(k,["emergency_contact_phone_2","emergency_contact_2_phone"])}],[{key:"contact_type",label:"نوع تماس"},{key:"contact_name",label:"نام مخاطب"},{key:"contact_phone",label:"شماره تلفن"}],"شماره تماسی برای نمایش ثبت نشده است.")}
+        ${tableHtml([{contact_type:"شماره تماس اصلی",contact_name:"خود خادم",contact_phone:val(k,["phone","mobile","phone_number"])},{contact_type:"تماس اضطراری ۱",contact_name:val(k,["emergency_contact_name","emergency_contact_1_name"]),contact_phone:val(k,["emergency_contact_phone","emergency_contact_1_phone","emergency_phone"])},{contact_type:"تماس اضطراری ۲",contact_name:val(k,["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"]) || val(k?.extra_data||{},["emergency_contact_name_2","emergency_contact_2_name","emergency_name_2"]),contact_phone:val(k,["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"]) || val(k?.extra_data||{},["emergency_contact_phone_2","emergency_contact_2_phone","emergency_phone_2","emergency_contact2_phone"])}],[{key:"contact_type",label:"نوع تماس"},{key:"contact_name",label:"نام مخاطب"},{key:"contact_phone",label:"شماره تلفن"}],"شماره تماسی برای نمایش ثبت نشده است.")}
         <p class="kj-muted">این بخش اطلاعات تماس موجود در پرونده را نمایش می‌دهد.</p>
       </details></div>
       <div class="kj-card" style="margin-top:14px"><details class="kj-profile-subsection">
