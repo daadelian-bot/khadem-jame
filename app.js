@@ -725,6 +725,33 @@
   function khademCode(k) { return val(k, ["khadem_code", "code", "personnel_code", "number", "id"]); }
   function activeLabel(k) { const v=val(k,["is_active","active","status"]); if(v===true||["true","1","active","فعال","enabled"].includes(String(v).toLowerCase())) return "فعال"; if(v===false||["false","0","inactive","غیرفعال","disabled"].includes(String(v).toLowerCase())) return "غیرفعال"; return "نامشخص"; }
   function khademId(k) { return val(k, ["id", "khadem_id"]); }
+  function khademByCode(code) {
+    const wanted = String(code ?? "").trim();
+    return state.khadems.find(k => String(khademCode(k)).trim() === wanted) || null;
+  }
+  function selectedKhademRecord() {
+    const selected = String(state.selectedKhadem ?? "");
+    if (selected.startsWith("code:")) return khademByCode(selected.slice(5));
+    return state.khadems.find(k => String(khademId(k)) === selected) ||
+      state.khadems.find(k => String(khademCode(k)) === selected) || null;
+  }
+  function khademIdentityText(k) {
+    if (!k) return "";
+    const code = khademCode(k), name = nameOf(k);
+    return [code ? "کد " + fa(code) : "", name].filter(Boolean).join(" — ");
+  }
+  function khademForDisplay(key, value) {
+    const v = String(value ?? "").trim();
+    if (!v) return null;
+    if (["khadem_code","personnel_code","khadem_number","khadem_no"].includes(key)) return khademByCode(v);
+    if (["khadem_id","personnel_id","person_id"].includes(key)) {
+      return state.khadems.find(k => String(khademId(k)) === v) || khademByCode(v) || null;
+    }
+    if (["khadem_name","full_name","fullName"].includes(key)) {
+      return state.khadems.find(k => nameOf(k).trim() === v) || null;
+    }
+    return null;
+  }
   function fieldLabel(key) {
     const labels = {
       id:"شناسه داخلی", khadem_id:"شناسه خادم", person_id:"شناسه شخص", personnel_id:"شناسه پرسنلی",
@@ -816,6 +843,8 @@
   }
   function formatValue(key, value) {
     if (value === null || value === undefined || value === "") return "—";
+    const identity = khademForDisplay(key, value);
+    if (identity) return esc(khademIdentityText(identity));
     if (/(date|_at|_date|_month)$/.test(key) || key === "birth_date") return dateText(value);
     if (/(amount|balance|debt|salary|cost|price|paid|refund)/i.test(key) && (typeof value === "number" || /^-?[\d,.]+$/.test(String(value)))) return money(value);
     if (typeof value === "boolean") return value ? "بله" : "خیر";
@@ -1025,7 +1054,7 @@
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
   }
   async function saveKhademProfile(form) {
-    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem)) || state.khadems.find(x => String(khademCode(x)) === String(state.selectedKhadem));
+    const k = selectedKhademRecord();
     const message = $("#kj-profile-edit-message"), button = $("#kj-save-profile");
     if (!k) { if(message) message.textContent = "پرونده خادم پیدا نشد."; return; }
     const fd = new FormData(form), known = new Set(Object.keys(k)), payload = {};
@@ -1071,7 +1100,7 @@
       await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
       state.profileEditOpen = false;
       await loadData();
-      state.selectedKhadem = khademId(k) || khademCode(k);
+      state.selectedKhadem = "code:" + String(khademCode(k));
       render();
       toast("تغییرات پرونده خادم ذخیره شد.","success");
     } catch (error) {
@@ -1081,7 +1110,7 @@
   }
 
   function khademProfile() {
-    const k = state.khadems.find(x => String(khademId(x)) === String(state.selectedKhadem)) || state.khadems.find(x => String(khademCode(x)) === String(state.selectedKhadem));
+    const k = selectedKhademRecord();
     if (!k) return `<h1 class="kj-page-title">پرونده خادم</h1>${empty("خادم انتخاب نشده است.")}<button class="kj-secondary" id="kj-back">بازگشت</button>`;
     const services = relatedRows(state.services, k);
     const finances = relatedRows(state.finance, k);
@@ -1378,7 +1407,7 @@
     $$("[data-row]", main).forEach(b => b.addEventListener("click", () => {
       const k = rows[Number(b.dataset.row)];
       if (!k) return;
-      state.selectedKhadem = khademId(k) || khademCode(k);
+      state.selectedKhadem = "code:" + String(khademCode(k));
       render();
     }));
   }
