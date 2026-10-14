@@ -423,6 +423,34 @@
         .kj-hero{padding:18px;border-radius:17px}
         .kj-hero h1{font-size:20px}
       }
+      /* داشبورد سازمانی فارسی: سلسله‌مراتب بصری، فضای تنفس و کارت‌های خوانا */
+      .kj-hero-enterprise{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:250px;padding:32px 36px;background:radial-gradient(circle at 12% 15%,#d4efe4 0,transparent 33%),linear-gradient(115deg,#f8fcfa 0%,#e7f5ee 100%);border-color:#d5e9df}
+      .kj-hero-copy{position:relative;z-index:1;max-width:820px}.kj-hero-kicker{display:flex;align-items:center;gap:9px;color:#287c64;font-weight:700;margin-bottom:12px}
+      .kj-live-dot{width:8px;height:8px;border-radius:50%;background:#20a477;box-shadow:0 0 0 4px #20a47720}
+      .kj-hero-enterprise h1{font-size:30px;letter-spacing:-.5px;margin-bottom:2px}.kj-hero-subtitle{font-size:15px!important;color:#287c64!important;font-weight:700;margin:0 0 10px!important}
+      .kj-hero-enterprise p:not(.kj-hero-subtitle){max-width:700px}.kj-hero-emblem{flex:0 0 190px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:1px solid #cde6da;border-radius:24px;background:#ffffff85;color:#17664f}
+      .kj-hero-emblem span{font-size:64px;filter:drop-shadow(0 8px 10px #165b441c)}.kj-hero-emblem small{font-size:11px;font-weight:700;color:#4f8272}
+      .kj-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:24px 0 12px}.kj-section-heading .kj-section-title{margin:2px 0 0}
+      .kj-section-eyebrow{font-size:11px;font-weight:700;color:#7a9389;letter-spacing:.2px}.kj-data-note{font-size:11px;color:#82948d;background:#fff;border:1px solid #e2ebe6;border-radius:20px;padding:5px 10px}
+      .kj-stats-grid{gap:14px}.kj-stat-card{position:relative;overflow:hidden;padding:18px 19px;min-height:142px;transition:transform .18s ease,box-shadow .18s ease}
+      .kj-stat-card:after{content:"";position:absolute;left:-24px;bottom:-42px;width:95px;height:95px;border-radius:50%;background:#e6f4ed;opacity:.8}
+      .kj-stat-top{display:flex;align-items:center;gap:10px;position:relative;z-index:1}.kj-stat-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:13px;background:#e6f5ee;font-size:19px}
+      .kj-stat-label{font-size:12px;color:#5f7770;font-weight:700}.kj-stat-card .kj-stat{font-size:31px;line-height:1.4;margin:9px 0 2px;position:relative;z-index:1}
+      .kj-stat-foot{font-size:10px;color:#94a49e;position:relative;z-index:1}.kj-stat-card:hover{transform:translateY(-2px);box-shadow:0 10px 26px #1c493b12}
+      .kj-shortcuts-head{margin-top:27px}.kj-shortcut-grid{gap:14px}.kj-shortcut-card{min-height:175px;padding:18px;position:relative;overflow:hidden}
+      .kj-shortcut-card strong{font-size:14px;color:#24483e}.kj-shortcut-card small{font-size:12px}.kj-shortcut-card b{display:flex;align-items:center;justify-content:space-between;width:100%;border-top:1px solid #edf2ef;padding-top:10px;font-size:11px}
+      .kj-shortcut-icon{width:42px;height:42px;border-radius:14px}.kj-recent-card{margin-top:22px!important;padding:20px}.kj-card-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+      .kj-card-heading h3{margin:2px 0 0;font-size:17px;color:#23483d}.kj-heading-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#f0f7f3;font-size:20px}
+      .kj-guide-card{display:flex;align-items:flex-start;gap:13px;margin-top:14px!important;background:#f8fbf9;border-style:dashed;box-shadow:none}.kj-guide-card h3{margin:0 0 5px;color:#285548;font-size:14px}.kj-guide-card p{margin:4px 0}.kj-guide-icon{display:grid;place-items:center;flex:0 0 32px;height:32px;border-radius:10px;background:#e5f4ed;color:#26795f;font-weight:bold}
+      .kj-loading-card{display:flex;align-items:center;gap:12px;margin-bottom:14px;color:#58766b}.kj-spinner{width:18px;height:18px;border:2px solid #cce4d8;border-top-color:#167a63;border-radius:50%;animation:kj-spin .8s linear infinite}
+      @keyframes kj-spin{to{transform:rotate(360deg)}}
+      .kj-login-wrap{background:radial-gradient(ellipse at 50% 0%,#e1f2e9 0%,#f3f7f5 52%,#edf2ef 100%)}
+      .kj-login-card{border-radius:24px;border-color:#deebe4;box-shadow:0 24px 70px #143e3015;padding:32px}
+      .kj-login-card h1{color:#103f35;line-height:1.7}.kj-login-card .kj-muted{color:#688279}
+      .kj-login-card input{border-color:#dce8e2;border-radius:12px;padding:13px 14px}.kj-login-card input:focus{border-color:#4eaa89;box-shadow:0 0 0 4px #4eaa891c}
+      .kj-login-card .kj-primary{min-height:48px;border-radius:12px;box-shadow:0 6px 15px #167a6326}
+      @media(max-width:850px){.kj-hero-enterprise{padding:22px;gap:12px}.kj-hero-emblem{flex-basis:130px;min-height:130px}.kj-hero-emblem span{font-size:48px}}
+      @media(max-width:650px){.kj-hero-enterprise{display:block}.kj-hero-emblem{display:none}.kj-hero-enterprise h1{font-size:23px}.kj-section-heading{align-items:flex-start;flex-direction:column}.kj-data-note{display:none}.kj-stat-card{min-height:125px;padding:13px}.kj-stat-card .kj-stat{font-size:25px}.kj-stat-icon{width:34px;height:34px;flex-basis:34px}.kj-shortcut-card{min-height:158px;padding:14px}}
     `;
 
   }
@@ -603,14 +631,21 @@
       ["settings","⚙️","مدیریت سامانه","تنظیمات قابل مشاهده"]
     ];
     const latest = [...state.services].sort((a,b)=>String(val(b,["service_date","date","created_at"])).localeCompare(String(val(a,["service_date","date","created_at"])))).slice(0,5);
-    return `<section class="kj-hero"><div class="kj-hero-kicker">مرکز مدیریت و عملیات</div><h1>به سامانه جامع خادمین خوش آمدید</h1><p>مدیریت پرونده‌ها، برنامه‌های خدمت، حضور و غیاب و امور مالی در یک محیط یکپارچه. اطلاعات بر اساس دسترسی حساب شما از پایگاه داده خوانده می‌شود.</p><div class="kj-hero-actions"><button class="kj-primary" data-quick-tab="khadems">👤 مشاهده بانک خادمین</button><button class="kj-secondary" data-quick-tab="services">▣ مشاهده سوابق خدمت</button><button class="kj-secondary" data-quick-tab="finance">💳 مشاهده امور مالی</button></div></section>
-      ${state.loading ? `<div class="kj-card">در حال دریافت اطلاعات از پایگاه داده…</div>` : ""}
-      ${Object.entries(state.errors).filter(([,e])=>e).length ? `<div class="kj-error"><b>برخی جدول‌ها با خطا مواجه شدند.</b><p>پیام هر بخش را جداگانه بررسی کنید؛ خطای دسترسی با خالی بودن اطلاعات یکسان نیست.</p>${Object.entries(state.errors).filter(([,e])=>e).map(([k,e])=>`<div>${esc(fieldLabel(k))}: ${esc(e)}</div>`).join("")}</div>` : ""}
-      <h2 class="kj-section-title">نمای کلی و عملیات</h2><div class="kj-grid kj-stats-grid">${stats.map(([label,value,icon]) => `<div class="kj-card"><div>${icon} ${label}</div><div class="kj-stat">${fa(value)}</div></div>`).join("")}</div>
-      <div class="kj-shortcuts-head"><h2 class="kj-section-title">دسترسی سریع به بخش‌ها</h2><span class="kj-small">برای مشاهدهٔ اطلاعات، کارت را انتخاب کنید.</span></div>
-      <div class="kj-shortcut-grid">${shortcuts.map(([tab,icon,title,desc])=>`<button type="button" class="kj-shortcut-card" data-quick-tab="${tab}"><span class="kj-shortcut-icon">${icon}</span><strong>${title}</strong><small>${desc}</small><b>ورود به بخش ←</b></button>`).join("")}</div>
-      <section class="kj-card" style="margin-top:18px"><h3 style="margin-top:0">⌛ پیگیری آخرین خدمات</h3>${state.errors.services||state.errors.service_records?errBox("services"):latest.length?tableHtml(latest.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):"سابقه‌ای برای نمایش نیست."}</section>
-      <section class="kj-card" style="margin-top:14px"><h3 style="margin-top:0">راهنمای کاربری: داشبورد مدیریتی</h3><p>از منوی سمت راست برای رفتن به بخش‌ها استفاده کنید. گروه‌های منو جمع‌شونده هستند و جست‌وجو، زیرمنوهای مرتبط را پیدا می‌کند.</p><p class="kj-small">این نسخه در حال حاضر برای مشاهدهٔ اطلاعات است؛ عملیات ثبت و ویرایش تا بررسی مجوزهای هر بخش غیرفعال نگه داشته شده است.</p></section>`;
+    return `<section class="kj-hero kj-hero-enterprise">
+        <div class="kj-hero-copy"><div class="kj-hero-kicker"><span class="kj-live-dot"></span> میزکار مدیریتی مجموعه</div>
+          <h1>سامانه جامع مدیریت خادمین</h1><p class="kj-hero-subtitle">مجموعه السیدة زینب سلام الله علیها</p>
+          <p>نمایی یکپارچه برای مدیریت خادمین، سوابق خدمت، جلسات، مأموریت‌ها و امور مالی؛ اطلاعات این میزکار بر اساس دسترسی حساب کاربری شما نمایش داده می‌شود.</p>
+          <div class="kj-hero-actions"><button class="kj-primary" data-quick-tab="khadems">👤 ورود به بانک خادمین</button><button class="kj-secondary" data-quick-tab="reports">▦ مشاهده گزارش‌ها</button></div>
+        </div><div class="kj-hero-emblem" aria-hidden="true"><span>🕌</span><small>خدمت · نظم · امانت‌داری</small></div>
+      </section>
+      ${state.loading ? `<div class="kj-card kj-loading-card"><span class="kj-spinner"></span> در حال همگام‌سازی اطلاعات سامانه…</div>` : ""}
+      ${Object.entries(state.errors).filter(([,e])=>e).length ? `<div class="kj-error"><b>برخی اطلاعات بارگذاری نشدند.</b><p>پیام هر بخش را جداگانه بررسی کنید؛ خطای دسترسی با خالی بودن اطلاعات یکسان نیست.</p>${Object.entries(state.errors).filter(([,e])=>e).map(([k,e])=>`<div>${esc(fieldLabel(k))}: ${esc(e)}</div>`).join("")}</div>` : ""}
+      <div class="kj-section-heading"><div><span class="kj-section-eyebrow">خلاصه مدیریتی</span><h2 class="kj-section-title">نمای کلی مجموعه</h2></div><span class="kj-data-note">آمار بر اساس اطلاعات دریافت‌شده</span></div>
+      <div class="kj-grid kj-stats-grid">${stats.map(([label,value,icon],i) => `<div class="kj-card kj-stat-card kj-stat-card-${i+1}"><div class="kj-stat-top"><span class="kj-stat-icon">${icon}</span><span class="kj-stat-label">${label}</span></div><div class="kj-stat">${fa(value)}</div><div class="kj-stat-foot">اطلاعات قابل مشاهده در سامانه</div></div>`).join("")}</div>
+      <div class="kj-section-heading kj-shortcuts-head"><div><span class="kj-section-eyebrow">میانبرهای پرکاربرد</span><h2 class="kj-section-title">دسترسی سریع به بخش‌ها</h2></div><span class="kj-small">برای ورود، کارت موردنظر را انتخاب کنید.</span></div>
+      <div class="kj-shortcut-grid">${shortcuts.map(([tab,icon,title,desc])=>`<button type="button" class="kj-shortcut-card" data-quick-tab="${tab}"><span class="kj-shortcut-icon">${icon}</span><strong>${title}</strong><small>${desc}</small><b>باز کردن بخش <span aria-hidden="true">←</span></b></button>`).join("")}</div>
+      <section class="kj-card kj-recent-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">آخرین رویدادها</span><h3>پیگیری آخرین خدمات</h3></div><span class="kj-heading-icon">⌛</span></div>${state.errors.services||state.errors.service_records?errBox("services"):latest.length?tableHtml(latest.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):"سابقه‌ای برای نمایش نیست."}</section>
+      <section class="kj-card kj-guide-card"><span class="kj-guide-icon">ⓘ</span><div><h3>راهنمای میزکار</h3><p>از منوی کناری یا کارت‌های دسترسی سریع برای رفتن به بخش‌های مختلف استفاده کنید. منوها گروه‌بندی شده‌اند و امکان جست‌وجوی بخش‌ها وجود دارد.</p><p class="kj-small">در این نسخه، اطلاعات برای مشاهده ارائه می‌شود؛ ثبت و ویرایش تا بررسی مجوزهای هر بخش غیرفعال است.</p></div></section>`;
   }
 
   function khademList() {
