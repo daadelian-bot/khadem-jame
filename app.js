@@ -26,6 +26,23 @@
     financeInstallments: [],
     fund: [],
     donors: [],
+    meetingInvitees: [],
+    meetingAttendance: [],
+    vehicles: [],
+    drivers: [],
+    equipmentIssues: [],
+    equipmentPayments: [],
+    equipmentReceipts: [],
+    equipmentReceiptItems: [],
+    equipmentCommitteePayments: [],
+    profiles: [],
+    roles: [],
+    permissions: [],
+    rolePermissions: [],
+    audit: [],
+    systemSettings: [],
+    appSettings: [],
+    tuitionPayments: [],
     selectedKhadem: null,
     search: "",
     loading: false,
@@ -162,7 +179,24 @@
       ["tuitionDues", "tuition_dues"],
       ["financeInstallments", "finance_installments"],
       ["fund", "fund_transactions"],
-      ["donors", "donors"]
+      ["donors", "donors"],
+      ["meetingInvitees", "meeting_invitees"],
+      ["meetingAttendance", "meeting_attendance"],
+      ["vehicles", "vehicles"],
+      ["drivers", "drivers"],
+      ["equipmentIssues", "khadem_equipment_issues"],
+      ["equipmentPayments", "khadem_equipment_payments"],
+      ["equipmentReceipts", "equipment_committee_receipts"],
+      ["equipmentReceiptItems", "equipment_committee_receipt_items"],
+      ["equipmentCommitteePayments", "equipment_committee_payments"],
+      ["profiles", "profiles"],
+      ["roles", "app_roles"],
+      ["permissions", "permissions"],
+      ["rolePermissions", "role_permissions"],
+      ["audit", "audit_logs"],
+      ["systemSettings", "system_settings"],
+      ["appSettings", "app_settings"],
+      ["tuitionPayments", "tuition_payments"]
     ];
     await Promise.all(tables.map(async ([key, table]) => { state[key] = await loadTable(table); }));
     state.loading = false;
@@ -315,8 +349,9 @@
     const groups = [
       ["نمای کلی و عملیات", [["dashboard","🏠 داشبورد"],["reports","📊 گزارش‌ها"]]],
       ["خادمین و عملیات خدمت", [["khadems","👤 بانک خادمین"],["services","📋 خدمت و سوابق خدمت"],["friday","🌙 پایش خدمت شب جمعه"],["nonattendance","🧾 عدم حضور"],["meetings","👥 جلسات و حضور و غیاب"],["deployments","🚐 مأموریت خدمت"]]],
-      ["مالی و پشتیبانی", [["finance","💰 امور مالی"],["fund","🏦 خزانه"],["donors","🤝 نیکوکاران و خیرین"]]],
-      ["مدیریت سامانه", [["settings","⚙️ مدیریت سامانه و تنظیمات"]]]
+      ["مالی و پشتیبانی", [["finance","💰 امور مالی"],["fund","🏦 خزانه"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 وسایل و تجهیزات"]]],
+      ["ارتباطات و گزارش‌ها", [["reports","📊 گزارش‌ها"],["audit","📁 سوابق فعالیت"]]],
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ مدیریت سامانه و تنظیمات"]]]
     ];
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
@@ -635,8 +670,11 @@
       ]),
       friday: fridayPage,
       nonattendance: nonattendancePage,
-      meetings: () => genericPage("meetings","جلسات",state.meetings),
+      meetings: meetingsPage,
       deployments: () => genericPage("deployments","مأموریت‌ها",state.deployments),
+      equipment: equipmentPage,
+      users: usersPage,
+      audit: auditPage,
       finance: financePage,
       fund: () => genericPage("fund","صندوق",state.fund),
       donors: () => genericPage("donors","خیرین",state.donors),
