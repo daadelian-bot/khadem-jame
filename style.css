@@ -344,3 +344,11 @@ input[data-jalali-date], input[name="birth_date"], input[name="membership_date"]
 .kj-jalali-calendar-foot{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
 .kj-jalali-calendar-foot button{padding:5px 12px;font-size:12px}
 @media(max-width:420px){.kj-jalali-picker{padding:9px}.kj-jalali-day{min-height:32px}}
+
+/* سوابق خدمت: فهرست تاریخ‌ها و پنجره جزئیات */
+.kj-service-history-dates{display:flex;flex-direction:column;gap:8px;padding:12px}
+.kj-service-history-date{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:13px 16px;border:1px solid var(--kj-border,#e8e1d9);border-radius:10px;background:var(--card,#fff);color:var(--kj-ink,#292522);font:inherit;text-align:right;cursor:pointer;transition:background .15s,border-color .15s}
+.kj-service-history-date:hover,.kj-service-history-date:focus-visible{background:var(--kj-bg,#f5f3f0);border-color:var(--kj-gold,#bd9855);outline:none}
+.kj-service-history-date span:last-child{color:var(--kj-muted,#77716b)}
+.kj-service-history-summary{margin-bottom:14px;line-height:1.9}
+.kj-service-history-summary p{margin:4px 0}
