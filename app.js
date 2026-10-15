@@ -1548,16 +1548,9 @@
         loginPage("درخواست حساب شما ثبت شده اما هنوز توسط مدیر اصلی تأیید نشده است. پس از تأیید، با همین ایمیل و رمز دوباره وارد شوید.");
         return;
       }
-      // مجوزها پیش از ساخت منو و دریافت داده‌ها از سرور بررسی شوند.
-      // اگر بررسی مجوز شکست بخورد، ادامه کار متوقف می‌شود و دسترسی پیش‌فرض باز نمی‌شود.
-      const access = await request("/functions/v1/manage-user-permissions", {
-        method: "POST", body: { action: "my_permissions" }
-      });
-      if (!access || !access.role) throw new Error("نقش و مجوزهای حساب از سرور دریافت نشد؛ دسترسی تا بررسی مجدد بسته ماند.");
-      state.role = access.role;
-      state.isPrimaryAdmin = access.role === "admin";
-      state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
-      state.accessCustom = !!state.accessPermissions;
+      // مجوزها در فراخوانی my_permissions بالا دریافت شده‌اند؛ از تعریف دوباره const access جلوگیری شود.
+      // مدیر اصلی فقط با ایمیل تعیین‌شده در کنترل‌های سمت سرور شناسایی می‌شود.
+      state.isPrimaryAdmin = String(authUser.email || "").trim().toLowerCase() === "da.adelian@gmail.com";
       state.accessLoaded = true;
       if (!canAccess(state.tab)) {
         state.tab = "dashboard";
