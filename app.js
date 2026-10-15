@@ -1452,6 +1452,7 @@
       attachRowDetails(main, rows, "جزئیات رکورد");
     }
     $("#kj-settings-refresh")?.addEventListener("click", loadData);
+    $("#kj-dashboard-refresh")?.addEventListener("click", loadData);
   }
   function bindKhademButtons() {
     const main = $("#kj-main");
