@@ -91,12 +91,12 @@ jobs:
           const fs = require('node:fs');
           const { spawnSync } = require('node:child_process');
           const html = fs.readFileSync('admin-users.html', 'utf8');
-          const re = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+          const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
           let match, checked = 0, failed = 0;
           while ((match = re.exec(html)) !== null) {
             const attrs = match[1] || '';
             const code = (match[2] || '').trim();
-            if (!code || /\\bsrc\\s*=/i.test(attrs)) continue;
+            if (!code || /\bsrc\s*=/i.test(attrs)) continue;
             checked++;
             const result = spawnSync(process.execPath, ['--check', '-'], { input: code, encoding: 'utf8' });
             if (result.status !== 0) {
