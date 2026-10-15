@@ -126,8 +126,9 @@ async function loadUsers(){
    const name=escapeHtml(u.full_name||u.display_name||"بدون نام"),email=escapeHtml(u.email||"—"),id=escapeHtml(u.id),role=String(u.role||"user"),isAdmin=role==="admin",isSelf=u.id===session.user.id;
    const roleLabel=role==="admin"?"مدیر اصلی":role==="manager"?"مدیر":"کاربر";
    const controls=isSelf?'<p>نقش حسابی که اکنون با آن وارد شده‌اید از این بخش قابل تغییر نیست.</p>':'<label for="user-role-'+id+'">تعیین نقش</label><select id="user-role-'+id+'" data-user-role="'+id+'"><option value="user" '+(role==="user"?"selected":"")+'>کاربر</option><option value="manager" '+(role==="manager"?"selected":"")+'>مدیر</option><option value="admin" '+(role==="admin"?"selected":"")+'>مدیر اصلی</option></select><button type="button" data-save-role="'+id+'">ذخیره نقش</button>';
-   const adminNote=isAdmin?'<p>مدیران اصلی می‌توانند نقش مدیر اصلی دیگری را بردارند؛ آخرین مدیر اصلی فعال قابل حذف نیست.</p>':'';
-   return '<article class="notice" style="margin-top:10px"><strong>'+name+'</strong><br>ایمیل: '+email+'<br>وضعیت: '+(u.is_active===true?"فعال":"غیرفعال")+'<br>نقش فعلی: '+roleLabel+adminNote+controls+'</article>';
+   const adminNote=isAdmin?'<p>مدیران اصلی از این بخش قابل حذف نیستند؛ برای حساب مدیر اصلی دیگر می‌توان نقش را تغییر داد.</p>':'';
+   const deleteControl=(!isSelf&&!isAdmin)?'<button type="button" class="secondary" data-delete-user="'+id+'" style="background:#fff0f0;color:#9c2626;border:1px solid #f0caca">حذف کامل حساب و قطع دسترسی</button>':'';
+   return '<article class="notice" style="margin-top:10px"><strong>'+name+'</strong><br>ایمیل: '+email+'<br>وضعیت: '+(u.is_active===true?"فعال":"غیرفعال")+'<br>نقش فعلی: '+roleLabel+adminNote+controls+deleteControl+'</article>';
   }).join("");
   box.querySelectorAll("button[data-save-role]").forEach(btn=>btn.addEventListener("click",async()=>{
    const user_id=btn.dataset.saveRole,select=box.querySelector('[data-user-role="'+btn.dataset.saveRole+'"]'),role=select?.value;
@@ -141,6 +142,26 @@ async function loadUsers(){
     if(data?.error)throw new Error(data.error);
     show("نقش کاربر ذخیره شد.","ok");await loadUsers();
    }catch(e){show("تغییر نقش انجام نشد: "+(e?.message||"خطای نامشخص"),"error");btn.disabled=false;}
+  }));
+  box.querySelectorAll("button[data-delete-user]").forEach(btn=>btn.addEventListener("click",async()=>{
+   const user_id=btn.dataset.deleteUser;
+   const card=btn.closest("article");
+   const userName=card?.querySelector("strong")?.textContent||"این حساب";
+   const userEmail=card?.textContent?.match(/ایمیل:\s*([^\n]+)/)?.[1]||"";
+   if(!user_id)return;
+   if(!confirm("هشدار: حساب «"+userName+"» "+(userEmail?"("+userEmail+") ":"")+"به‌طور کامل از احراز هویت حذف و دسترسی آن قطع می‌شود. این کار برای مدیر اصلیِ واردشده و سایر مدیران اصلی در دسترس نیست. ادامه می‌دهید؟"))return;
+   const typed=prompt("برای تأیید حذف، واژه حذف را وارد کنید:");
+   if(typed!=="حذف"){show("حذف لغو شد؛ عبارت تأیید دقیق وارد نشد.");return;}
+   btn.disabled=true;btn.textContent="در حال حذف حساب…";
+   try{
+    const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error("نشست مدیر پایان یافته است.");
+    const {data,error}=await supabase.functions.invoke("admin-delete-user",{body:{user_id},headers:{Authorization:"Bearer "+session.access_token}});
+    if(error){let detail=error.message;try{const j=await error.context.json();if(j.error)detail=j.error;}catch{}throw new Error(detail);}
+    if(data?.error)throw new Error(data.error);
+    show("حساب «"+userName+"» حذف شد و دسترسی آن برداشته شد.","ok");
+    await loadUsers();
+    await loadRequests();
+   }catch(e){show("حذف حساب انجام نشد: "+(e?.message||"خطای نامشخص"),"error");btn.disabled=false;btn.textContent="حذف کامل حساب و قطع دسترسی";}
   }));
  }catch(e){box.textContent="دریافت کاربران ناموفق بود: "+(e?.message||"خطای نامشخص");}
  finally{button.disabled=false;}
