@@ -393,7 +393,7 @@
     const groups = [
       ["میزکار مدیریتی", [["dashboard","🏠 داشبورد"]]],
       ["مدیریت خادمین", [["khadems","👤 بانک خادمین"]]],
-      ["خدمت و عملیات", [["serviceRegister","📝 ثبت خدمت"],["services","🕌 سوابق خدمت رسمی"],["friday","🌙 ثبت خدمت شب جمعه"],["nonattendance","🧾 ثبت و پیگیری عدم حضور"],["deployments","🚐 مأموریت‌های خدمت"]]],
+      ["خدمت و عملیات", [["serviceRegister","📝 ثبت خدمت"],["services","🕌 سوابق خدمت رسمی"],["friday","🌙 سوابق خدمت شب‌های جمعه"],["nonattendance","🧾 ثبت و پیگیری عدم حضور"],["deployments","🚐 مأموریت‌های خدمت"]]],
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
@@ -1066,10 +1066,39 @@
     return /شب\s*جمعه|friday/i.test(classification) || /شب\s*جمعه|friday/i.test(title) || /نوع ثبت:\s*ثبت خدمت شب جمعه/i.test(details);
   }
 
-  function officialServicesPage() {
-    const rows = [...state.services].filter(r => !isFridayService(r)).sort((a,b)=>String(val(b,["service_date","date","created_at"])).localeCompare(String(val(a,["service_date","date","created_at"]))));
-    const enriched = rows.map(r => ({...r, khadem_name: val(r,["khadem_name","full_name","person_name"]) || nameOf(state.khadems.find(k => String(khademId(k))===String(r.khadem_id) || (r.khadem_code && String(khademCode(k))===String(r.khadem_code))) || {}), khadem_code: val(r,["khadem_code","personnel_code"]) || khademCode(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}), service_title: val(r,["service_title","title","service_name","service_type"]), service_date: val(r,["service_date","date","created_at"]), notes: val(r,["notes","description","note"])}));
-    return `<h1 class="kj-page-title">سوابق خدمت رسمی</h1>${errBox("services")}${tableHtml(enriched,[{key:"khadem_code",label:"کد خادم"},{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_title",label:"عنوان خدمت"},{key:"responsibility",label:"مسئولیت"},{key:"notes",label:"توضیحات"}],state.errors.services?"دریافت سوابق خدمت ناموفق بود.":"هنوز سابقه خدمت رسمی ثبت نشده است.")}`;
+  function serviceHistoryDate(row) {
+    const raw = String(val(row, ["service_date", "date", "created_at"]) || "").trim();
+    return raw ? raw.slice(0, 10) : "بدون تاریخ";
+  }
+  function responsibilityFromNotes(value) {
+    const match = String(value || "").match(/(?:^|\\n)مسئولیت:\\s*([^\\n]+)/);
+    return match ? match[1].trim() : "";
+  }
+  function serviceHistoryRows(kind) {
+    return state.services.filter(r => kind === "friday" ? isFridayService(r) : !isFridayService(r)).map(r => {
+      const linkedKhadem = state.khadems.find(k => String(khademId(k)) === String(r.khadem_id) || (r.khadem_code != null && String(khademCode(k)) === String(r.khadem_code))) || {};
+      return { ...r, khadem_name: val(r, ["khadem_name", "full_name", "person_name"]) || nameOf(linkedKhadem), khadem_code: val(r, ["khadem_code", "personnel_code", "code"]) || khademCode(linkedKhadem), service_date: val(r, ["service_date", "date", "created_at"]), service_title: val(r, ["service_title", "title", "service_name", "service_type"]) || "خدمت ثبت‌شده", shrine_name: val(r, ["shrine_name", "shrine", "holy_site", "destination", "service_location"]), responsibility: val(r, ["responsibility", "role", "service_role"]) || responsibilityFromNotes(val(r, ["notes", "description", "note"])), notes: val(r, ["notes", "description", "note"]) };
+    });
+  }
+  function serviceHistoryPage(kind) {
+    const rows = serviceHistoryRows(kind), groups = new Map();
+    rows.forEach(row => { const date = serviceHistoryDate(row); if (!groups.has(date)) groups.set(date, []); groups.get(date).push(row); });
+    const dates = [...groups.keys()].sort((a,b) => b.localeCompare(a));
+    const title = kind === "friday" ? "سوابق خدمت شب‌های جمعه" : "سوابق خدمت رسمی";
+    const list = dates.length ? '<div class="kj-card kj-service-history-dates" role="list">' + dates.map(date => '<button type="button" class="kj-service-history-date" data-service-date="' + esc(date) + '"><span>' + esc(date === "بدون تاریخ" ? date : jalaliInputDate(date)) + '</span><span aria-hidden="true">←</span></button>').join("") + '</div>' : empty(state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "هنوز سابقه خدمتی ثبت نشده است.");
+    return '<h1 class="kj-page-title">' + title + '</h1>' + errBox("services") + list;
+  }
+  function officialServicesPage() { return serviceHistoryPage("official"); }
+  function fridayPage() { return serviceHistoryPage("friday"); }
+  function openServiceHistoryDate(kind, date) {
+    const rows = serviceHistoryRows(kind).filter(row => serviceHistoryDate(row) === date);
+    if (!rows.length) return;
+    const title = kind === "friday" ? "جزئیات خدمت شب‌های جمعه" : "جزئیات خدمت رسمی";
+    const titles = [...new Set(rows.map(r => r.service_title).filter(Boolean))], shrines = [...new Set(rows.map(r => r.shrine_name).filter(Boolean))];
+    const participants = rows.map((r,i) => "<tr><td>" + fa(i+1) + "</td><td>" + esc(r.khadem_name || "بدون نام") + "</td><td>" + esc(r.khadem_code || "—") + "</td><td>" + esc(r.responsibility || "ثبت نشده") + "</td></tr>").join("");
+    const detailLines = [...new Set(rows.map(r => String(r.notes || "").split("\\n").filter(line => line && !/^(نوع ثبت|عنوان خدمت|حرم محل خدمت|حرکت از مبدأ|حضور در مقصد|شروع خدمت|پایان خدمت|مسئولیت):/.test(line)).join("؛ ")).filter(Boolean))];
+    const body = '<div class="kj-service-history-summary"><p><b>تاریخ خدمت:</b> ' + esc(date === "بدون تاریخ" ? date : jalaliInputDate(date)) + "</p>" + (titles.length ? "<p><b>عنوان خدمت:</b> " + esc(titles.join("، ")) + "</p>" : "") + (shrines.length ? "<p><b>محل خدمت:</b> " + esc(shrines.join("، ")) + "</p>" : "") + (detailLines.length ? "<p><b>توضیحات:</b> " + esc(detailLines.join("؛ ")) + "</p>" : "") + "<p><b>تعداد خادمین:</b> " + fa(rows.length) + " نفر</p></div><div class=\"kj-table-wrap\"><table><thead><tr><th>ردیف</th><th>نام خادم</th><th>کد خادم</th><th>مسئولیت</th></tr></thead><tbody>" + participants + "</tbody></table></div>";
+    modal(title, body);
   }
   function bindOfficialServiceForm() {
     const form=$("#kj-official-service-form"); if(!form)return;
@@ -1265,6 +1294,9 @@
       window.scrollTo({top:0,behavior:"smooth"});
     }));
     if (state.tab === "services" || state.tab === "friday") {
+      $(".kj-service-history-date", main).forEach(button => button.addEventListener("click", () => {
+        openServiceHistoryDate(state.tab === "friday" ? "friday" : "official", button.dataset.serviceDate);
+      }));
       const mountAbsencePanel = () => {
         if ((state.tab === "services" || state.tab === "friday") && window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
           window.KhademEquipmentFinance.appendNonattendanceToServicePage(state.tab);
@@ -1295,8 +1327,8 @@
       bindKhademButtons();
       $("#kj-birthday-month")?.addEventListener("change", e => { state.birthdayMonth = Number(e.target.value); const main=$("#kj-main"); if(main){main.innerHTML=khademList(); bindKhademRegistrationControls(); bindKhademButtons(); $("#kj-birthday-month")?.addEventListener("change", ev=>{state.birthdayMonth=Number(ev.target.value);render();});} });
     }
-    if (["services","nonattendance","meetings","deployments","finance","fund","donors"].includes(state.tab)) {
-      const key = ({services:"services",nonattendance:"nonattendance",meetings:"meetings",deployments:"deployments",finance:"finance",fund:"fund",donors:"donors"})[state.tab];
+    if (["nonattendance","meetings","deployments","finance","fund","donors"].includes(state.tab)) {
+      const key = ({nonattendance:"nonattendance",meetings:"meetings",deployments:"deployments",finance:"finance",fund:"fund",donors:"donors"})[state.tab];
       const rows = state[key];
       attachRowDetails(main, rows, "جزئیات رکورد");
     }
