@@ -317,3 +317,43 @@ input[data-jalali-date], input[name="birth_date"], input[name="membership_date"]
 
 /* متغیرهای واحد پوستهٔ جاری */
 :root{color-scheme:light;--kj-primary-dark:#10283f;--kj-primary-color:#173b58;--kj-gold:#c6a66a;--kj-surface:#edf2f7;--kj-bg:#f3f5f8;--kj-border:#dfe6ed;--kj-ink:#1c3045;--kj-muted:#65798a;--kj-card:#fff}
+
+
+/* داشبورد تحلیلی و منوهای جمع‌شونده */
+.kj-menu-group{border-bottom:1px solid #ffffff12;padding-bottom:8px}
+.kj-group-toggle{border-radius:10px;transition:background .18s ease,color .18s ease}
+.kj-group-toggle:hover,.kj-menu-group.open>.kj-group-toggle{background:#ffffff0c;color:#e6c98d}
+.kj-group-toggle:focus-visible,.kj-nav [data-tab]:focus-visible{outline:2px solid #c6a66a;outline-offset:2px}
+.kj-group-items{padding:3px 0 2px}
+.kj-group-items [data-tab]{border-radius:10px;transition:background .16s ease,transform .16s ease}
+.kj-group-items [data-tab].active{background:linear-gradient(100deg,#c6a66a25,#c6a66a08);border-right:3px solid #c6a66a;font-weight:800}
+.kj-analytics-section{margin:24px 0}
+.kj-analytics-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.kj-chart-card{min-width:0;padding:18px;border-radius:17px;box-shadow:0 8px 26px #10283f08}
+.kj-chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:18px}
+.kj-chart-head h3{font-size:15px;line-height:1.8;margin:3px 0 0;color:#1c3045}
+.kj-chart-eyebrow{font-size:11px;color:#8290a0;font-weight:700}
+.kj-chart-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:12px;background:#c6a66a1c;color:#9b793d;font-size:20px}
+.kj-chart-columns{height:210px;display:flex;align-items:stretch;justify-content:space-around;gap:9px;padding:10px 4px 0;border-bottom:1px solid #e7edf2}
+.kj-chart-column{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px}
+.kj-chart-value{font-size:12px;font-weight:800;color:#173b58}
+.kj-chart-bar-track{height:145px;width:min(34px,72%);display:flex;align-items:flex-end;background:#eef2f6;border-radius:8px 8px 3px 3px;overflow:hidden}
+.kj-chart-bar{width:100%;min-height:4px;background:linear-gradient(180deg,#d9bd83,#b58c49);border-radius:7px 7px 2px 2px;transition:height .35s ease}
+.kj-chart-label{font-size:11px;color:#738295;white-space:nowrap}
+.kj-chart-empty{display:flex;align-items:center;justify-content:center;text-align:center;color:#738295;font-size:12px;line-height:2;min-height:150px;padding:12px}
+.kj-chart-foot{font-size:11px;color:#8491a0;line-height:1.8;margin:12px 0 0}
+.kj-horizontal-chart{display:grid;gap:18px;min-height:185px;align-content:start;padding-top:7px}
+.kj-horizontal-row{display:grid;grid-template-columns:minmax(70px,1.1fr) minmax(30px,1.4fr) 25px;gap:9px;align-items:center}
+.kj-horizontal-label{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#526579}
+.kj-horizontal-track,.kj-status-track{height:8px;background:#eef2f6;border-radius:20px;overflow:hidden}
+.kj-horizontal-track span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#173b58,#4d7894)}
+.kj-horizontal-row b{font-size:12px;text-align:left;color:#173b58}
+.kj-status-list{display:grid;gap:19px;min-height:185px;align-content:start;padding-top:7px}
+.kj-status-row{display:grid;grid-template-columns:9px 1fr auto;align-items:center;gap:8px;font-size:12px;color:#526579}
+.kj-status-row strong{color:#173b58;font-size:13px}
+.kj-status-track{grid-column:1/-1;height:7px}
+.kj-status-track span{display:block;height:100%;border-radius:20px}
+.kj-status-track .active{background:#3d9675}.kj-status-track .inactive{background:#d17d73}.kj-status-track .unknown{background:#b6c0ca}
+.kj-status-dot{width:8px;height:8px;border-radius:50%}.kj-status-dot.active{background:#3d9675}.kj-status-dot.inactive{background:#d17d73}.kj-status-dot.unknown{background:#b6c0ca}
+@media(max-width:1120px){.kj-analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-status-chart{grid-column:1/-1}.kj-status-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-height:0}.kj-status-row{align-content:start}}
+@media(max-width:700px){.kj-analytics-grid{grid-template-columns:1fr}.kj-status-chart{grid-column:auto}.kj-status-list{grid-template-columns:1fr;gap:17px}.kj-chart-card{padding:15px}.kj-chart-columns{height:190px}.kj-chart-bar-track{height:125px}.kj-horizontal-chart,.kj-status-list{min-height:0}}
