@@ -412,9 +412,11 @@
   function canAccess(tab) {
     // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
     if (state.isPrimaryAdmin) return true;
-    if (tab === "dashboard") return true;
+    if (tab === "dashboard" || tab === "changePassword") return true;
     if (!state.accessLoaded) return false;
-    if (!state.accessCustom) return true;
+    // Fail closed: users/managers without an explicitly saved permission profile
+    // must not inherit unrestricted access by default.
+    if (!state.accessCustom) return false;
     return state.accessPermissions?.[tab] === true;
   }
   function shell() {
