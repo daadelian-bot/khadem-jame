@@ -301,7 +301,7 @@ input[data-jalali-date], input[name="birth_date"], input[name="membership_date"]
   .kj-action-buttons button{min-width:0;padding:7px 6px;font-size:12px}
 }
 
-/* پوستهٔ مرجع نهایی: سرمه‌ای و طلایی. متغیرهای باقی‌مانده از پوسته‌های قدیمی به این پالت نگاشت می‌شوند. */
+/* رنگ‌بندی یکپارچهٔ پوستهٔ جاری: سرمه‌ای و طلایی */
 
 .kj-registration-grid .kj-code-field{background:linear-gradient(135deg,#10283f,#245975);border-color:#c6a66a}
 .kj-registration-grid .kj-code-field b{color:#fff}
