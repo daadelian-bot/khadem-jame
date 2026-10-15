@@ -1085,14 +1085,22 @@
     rows.forEach(row => { const date = serviceHistoryDate(row); if (!groups.has(date)) groups.set(date, []); groups.get(date).push(row); });
     const dates = [...groups.keys()].sort((a,b) => b.localeCompare(a));
     const title = kind === "friday" ? "سوابق خدمت شب‌های جمعه" : "سوابق خدمت رسمی";
-    const list = dates.length ? '<div class="kj-card kj-service-history-dates" role="list">' + dates.map(date => '<button type="button" class="kj-service-history-date" data-service-date="' + esc(date) + '"><span>' + esc(date === "بدون تاریخ" ? date : jalaliInputDate(date)) + '</span><span aria-hidden="true">←</span></button>').join("") + '</div>' : empty(state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "هنوز سابقه خدمتی ثبت نشده است.");
+    const list = dates.length ? '<div class="kj-card kj-service-history-dates" role="list">' + dates.map(date => '<button type="button" class="kj-service-history-date" data-service-kind="' + esc(kind) + '" data-service-date="' + esc(date) + '"><span>' + esc(date === "بدون تاریخ" ? date : jalaliInputDate(date)) + '</span><span aria-hidden="true">←</span></button>').join("") + '</div>' : empty(state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "هنوز سابقه خدمتی ثبت نشده است.");
     return '<h1 class="kj-page-title">' + title + '</h1>' + errBox("services") + list;
   }
   function officialServicesPage() { return serviceHistoryPage("official"); }
   function fridayPage() { return serviceHistoryPage("friday"); }
   function openServiceHistoryDate(kind, date) {
-    const rows = serviceHistoryRows(kind).filter(row => serviceHistoryDate(row) === date);
-    if (!rows.length) return;
+    const normalizeDate = value => {
+      const raw = String(value || "").trim().replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replaceAll("/", "-");
+      if (raw === "بدون تاریخ") return raw;
+      return raw.slice(0, 10);
+    };
+    const rows = serviceHistoryRows(kind).filter(row => normalizeDate(serviceHistoryDate(row)) === normalizeDate(date));
+    if (!rows.length) {
+      modal(kind === "friday" ? "جزئیات خدمت شب‌های جمعه" : "جزئیات خدمت رسمی", '<div class="kj-empty">جزئیات این تاریخ پیدا نشد. لطفاً صفحه را تازه‌سازی کنید و دوباره تلاش کنید.</div>');
+      return;
+    }
     const title = kind === "friday" ? "جزئیات خدمت شب‌های جمعه" : "جزئیات خدمت رسمی";
     const titles = [...new Set(rows.map(r => r.service_title).filter(Boolean))], shrines = [...new Set(rows.map(r => r.shrine_name).filter(Boolean))];
     const participants = rows.map((r,i) => "<tr><td>" + fa(i+1) + "</td><td>" + esc(r.khadem_name || "بدون نام") + "</td><td>" + esc(r.khadem_code || "—") + "</td><td>" + esc(r.responsibility || "ثبت نشده") + "</td></tr>").join("");
@@ -1279,9 +1287,14 @@
       window.scrollTo({top:0,behavior:"smooth"});
     }));
     if (state.tab === "services" || state.tab === "friday") {
-      $(".kj-service-history-date", main).forEach(button => button.addEventListener("click", () => {
-        openServiceHistoryDate(state.tab === "friday" ? "friday" : "official", button.dataset.serviceDate);
-      }));
+      main.addEventListener("click", event => {
+        const button = event.target.closest(".kj-service-history-date");
+        if (!button || !main.contains(button)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const kind = button.dataset.serviceKind || (state.tab === "friday" ? "friday" : "official");
+        openServiceHistoryDate(kind, button.dataset.serviceDate || "");
+      });
       const mountAbsencePanel = () => {
         if ((state.tab === "services" || state.tab === "friday") && window.KhademEquipmentFinance && typeof window.KhademEquipmentFinance.appendNonattendanceToServicePage === "function") {
           window.KhademEquipmentFinance.appendNonattendanceToServicePage(state.tab);
