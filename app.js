@@ -964,8 +964,8 @@
     const rows = [...state.services].sort((a,b)=>String(val(b,["service_date","date","created_at"])).localeCompare(String(val(a,["service_date","date","created_at"]))));
     const q=String($("#kj-service-khadem-search")?.value||"").trim().toLocaleLowerCase("fa");
     const matches=state.khadems.filter(k=>(String(khademCode(k)||"")+" "+nameOf(k)).toLocaleLowerCase("fa").includes(q));
-    const people=matches.map(k=>\`<label class="kj-service-participant"><input type="checkbox" name="service_participants" value="\${esc(khademCode(k))}"><span><b>\${esc(nameOf(k))}</b><small>کد خادم: \${esc(fa(khademCode(k)||"—"))}</small></span></label>\`).join("")||empty("خادمی با این نام یا کد پیدا نشد.");
-    return \`<h1 class="kj-page-title">ثبت خدمت رسمی</h1>\${errBox("services")}
+    const people=matches.map(k=>`<label class="kj-service-participant"><input type="checkbox" name="service_participants" value="${esc(khademCode(k))}"><span><b>${esc(nameOf(k))}</b><small>کد خادم: ${esc(fa(khademCode(k)||"—"))}</small></span></label>`).join("")||empty("خادمی با این نام یا کد پیدا نشد.");
+    return `<h1 class="kj-page-title">ثبت خدمت رسمی</h1>${errBox("services")}
     <section class="kj-card kj-official-service-card"><h2 class="kj-section-title">ثبت خدمت رسمی جدید</h2>
     <p class="kj-muted">اطلاعات برنامه را وارد کنید و همه خادمین شرکت‌کننده را انتخاب کنید؛ برای هر خادم یک سابقه خدمت ثبت می‌شود.</p>
     <form id="kj-official-service-form"><div class="kj-official-service-grid">
@@ -980,9 +980,9 @@
     <label class="kj-service-notes-label">توضیحات تکمیلی<textarea name="notes" rows="3" placeholder="مسیر، محل اسکان یا هماهنگی‌ها"></textarea></label>
     <div class="kj-service-participants-heading"><h3>انتخاب خادمین شرکت‌کننده</h3><span id="kj-service-selected-count" class="kj-service-count">۰ خادم انتخاب شده</span></div>
     <input id="kj-service-khadem-search" type="search" placeholder="جست‌وجوی کد یا نام خادم" autocomplete="off">
-    <div class="kj-service-participant-list" id="kj-service-participant-list">\${people}</div>
+    <div class="kj-service-participant-list" id="kj-service-participant-list">${people}</div>
     <div class="kj-service-form-actions"><button type="submit" class="kj-primary" id="kj-save-official-service">ثبت خدمت و خادمین</button><span id="kj-official-service-message" class="kj-muted" role="status"></span></div></form></section>
-    <section class="kj-card"><h2 class="kj-section-title">سوابق خدمات رسمی</h2>\${genericPage("services","سوابق خدمت",rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"},{key:"notes",label:"توضیحات"}])}</section>\`;
+    <section class="kj-card"><h2 class="kj-section-title">سوابق خدمات رسمی</h2>${genericPage("services","سوابق خدمت",rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"},{key:"notes",label:"توضیحات"}])}</section>`;
   }
 
   function bindOfficialServiceForm() {
