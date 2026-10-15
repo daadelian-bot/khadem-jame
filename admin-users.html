@@ -33,6 +33,12 @@ h1{font-size:1.35rem;margin:0 0 8px}p{margin:8px 0;color:var(--muted)}label{disp
 <button id="refreshRequestsBtn" class="secondary" type="button">بارگذاری درخواست‌های در انتظار</button>
 <div id="requestsList" aria-live="polite"></div>
 </div>
+<div id="userRolesBox" class="hidden" style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
+<h2 style="font-size:1.1rem;margin:0">مدیریت نقش کاربران</h2>
+<p>نقش کاربران عادی و مدیران قابل تنظیم است. نقش مدیر اصلی از این بخش قابل تغییر نیست.</p>
+<button id="refreshUsersBtn" class="secondary" type="button">بارگذاری کاربران و نقش‌ها</button>
+<div id="usersList" aria-live="polite"></div>
+</div>
 <div id="message" class="notice" role="status" aria-live="polite">برای ادامه با حساب مدیر اصلی وارد شوید.</div>
 <p class="small">نکته: ایمیل دعوت باید به نشانی درست برسد. اگر دعوت‌نامه ارسال نشد، تنظیمات ایمیل و نشانی‌های مجاز تغییر مسیر در Supabase باید بررسی شود. این صفحه هیچ رمز کاربری را ذخیره نمی‌کند.</p>
 </section></main>
@@ -48,7 +54,7 @@ async function refreshSession(){
  const {data:{session}}=await supabase.auth.getSession();
  $("loginBox").classList.toggle("hidden",!!session);
  $("createBox").classList.toggle("hidden",!session);
- if(session) { show("نشست برقرار است. سرور مجوز مدیر اصلی را برای هر عملیات بررسی می‌کند.","ok"); $("approvalBox").classList.remove("hidden"); } else { $("approvalBox").classList.add("hidden"); $("requestsList").textContent=""; }
+ if(session) { show("نشست برقرار است. سرور مجوز مدیر اصلی را برای هر عملیات بررسی می‌کند.","ok"); $("approvalBox").classList.remove("hidden"); $("userRolesBox").classList.remove("hidden"); } else { $("approvalBox").classList.add("hidden"); $("userRolesBox").classList.add("hidden"); $("requestsList").textContent=""; $("usersList").textContent=""; }
 }
 $("loginBtn").addEventListener("click",async()=>{
  const b=$("loginBtn");setBusy(b,true,"ورود مدیر اصلی");
@@ -86,16 +92,18 @@ async function loadRequests(){
   if(data?.error)throw new Error(data.error);
   const rows=Array.isArray(data?.requests)?data.requests:[];
   if(!rows.length){box.innerHTML='<div class="notice">درخواست تأییدنشده‌ای وجود ندارد.</div>';return;}
-  box.innerHTML=rows.map(r=>'<article class="notice" style="margin-top:10px"><strong>'+escapeHtml(r.full_name||"بدون نام")+'</strong><br>ایمیل: '+escapeHtml(r.email||"—")+'<br>تاریخ درخواست: '+escapeHtml(r.created_at||"—")+'<div class="row"><button type="button" data-approval="approve" data-user="'+escapeHtml(r.user_id)+'">تأیید حساب</button><button type="button" class="secondary" data-approval="reject" data-user="'+escapeHtml(r.user_id)+'">رد درخواست</button></div></article>').join("");
+  box.innerHTML=rows.map(r=>'<article class="notice" style="margin-top:10px"><strong>'+escapeHtml(r.full_name||"بدون نام")+'</strong><br>ایمیل: '+escapeHtml(r.email||"—")+'<br>تاریخ درخواست: '+escapeHtml(r.created_at||"—")+'<label for="approval-role-'+escapeHtml(r.user_id)+'">نقش پس از تأیید</label><select id="approval-role-'+escapeHtml(r.user_id)+'" data-approval-role="'+escapeHtml(r.user_id)+'"><option value="user" '+(r.requested_role==="manager"?"":"selected")+'>کاربر</option><option value="manager" '+(r.requested_role==="manager"?"selected":"")+'>مدیر</option></select><div class="row"><button type="button" data-approval="approve" data-user="'+escapeHtml(r.user_id)+'">تأیید حساب و ثبت نقش</button><button type="button" class="secondary" data-approval="reject" data-user="'+escapeHtml(r.user_id)+'">رد درخواست</button></div></article>').join("");
   box.querySelectorAll("button[data-approval]").forEach(btn=>btn.addEventListener("click",async()=>{
    const action=btn.dataset.approval,user_id=btn.dataset.user;
    if(!user_id)return;
-   const label=action==="approve"?"تأیید حساب":"رد درخواست";
+   const roleSelect=box.querySelector('[data-approval-role="'+user_id+'"]');
+   const role=roleSelect?.value||"user";
+   const label=action==="approve"?"تأیید حساب با نقش "+(role==="manager"?"مدیر":"کاربر"):"رد درخواست";
    if(!confirm("آیا از "+label+" اطمینان دارید؟"))return;
    btn.disabled=true;
    try{
     const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error("نشست مدیر پایان یافته است.");
-    const {data,error}=await supabase.functions.invoke("registration-approval",{body:{action,user_id},headers:{Authorization:"Bearer "+session.access_token}});
+    const {data,error}=await supabase.functions.invoke("registration-approval",{body:{action,user_id,...(action==="approve"?{role}:{})},headers:{Authorization:"Bearer "+session.access_token}});
     if(error){let detail=error.message;try{const j=await error.context.json();if(j.error)detail=j.error;}catch{}throw new Error(detail);}
     if(data?.error)throw new Error(data.error);
     show(action==="approve"?"حساب تأیید شد؛ کاربر اکنون می‌تواند وارد سامانه شود.":"درخواست رد شد.","ok");
@@ -105,7 +113,38 @@ async function loadRequests(){
  }catch(e){box.textContent="دریافت درخواست‌ها ناموفق بود: "+(e?.message||"خطای نامشخص");}
  finally{button.disabled=false;}
 }
+async function loadUsers(){
+ const box=$("usersList"),button=$("refreshUsersBtn");button.disabled=true;box.textContent="در حال دریافت کاربران…";
+ try{
+  const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error("ابتدا وارد حساب مدیر شوید.");
+  const {data,error}=await supabase.functions.invoke("registration-approval",{body:{action:"list_users"},headers:{Authorization:"Bearer "+session.access_token}});
+  if(error){let detail=error.message;try{const j=await error.context.json();if(j.error)detail=j.error;}catch{}throw new Error(detail);}
+  if(data?.error)throw new Error(data.error);
+  const users=Array.isArray(data?.users)?data.users:[];
+  if(!users.length){box.innerHTML='<div class="notice">کاربری برای نمایش پیدا نشد.</div>';return;}
+  box.innerHTML=users.map(u=>{
+   const name=escapeHtml(u.full_name||u.display_name||"بدون نام"),email=escapeHtml(u.email||"—"),id=escapeHtml(u.id),role=String(u.role||"user"),isAdmin=role==="admin";
+   return '<article class="notice" style="margin-top:10px"><strong>'+name+'</strong><br>ایمیل: '+email+'<br>وضعیت: '+(u.is_active===true?"فعال":"غیرفعال")+'<br>نقش فعلی: '+(isAdmin?"مدیر اصلی":role==="manager"?"مدیر":"کاربر")+(isAdmin?'<p>نقش مدیر اصلی در این بخش قابل تغییر نیست.</p>':'<label for="user-role-'+id+'">تعیین نقش</label><select id="user-role-'+id+'" data-user-role="'+id+'"><option value="user" '+(role==="user"?"selected":"")+'>کاربر</option><option value="manager" '+(role==="manager"?"selected":"")+'>مدیر</option></select><button type="button" data-save-role="'+id+'">ذخیره نقش</button>')+'</article>';
+  }).join("");
+  box.querySelectorAll("button[data-save-role]").forEach(btn=>btn.addEventListener("click",async()=>{
+   const user_id=btn.dataset.saveRole,select=box.querySelector('[data-user-role="'+btn.dataset.saveRole+'"]'),role=select?.value;
+   if(!user_id||!role)return;
+   if(!confirm("نقش این کاربر به «"+(role==="manager"?"مدیر":"کاربر")+"» تغییر کند؟"))return;
+   btn.disabled=true;
+   try{
+    const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error("نشست مدیر پایان یافته است.");
+    const {data,error}=await supabase.functions.invoke("registration-approval",{body:{action:"set_role",user_id,role},headers:{Authorization:"Bearer "+session.access_token}});
+    if(error){let detail=error.message;try{const j=await error.context.json();if(j.error)detail=j.error;}catch{}throw new Error(detail);}
+    if(data?.error)throw new Error(data.error);
+    show("نقش کاربر ذخیره شد.","ok");await loadUsers();
+   }catch(e){show("تغییر نقش انجام نشد: "+(e?.message||"خطای نامشخص"),"error");btn.disabled=false;}
+  }));
+ }catch(e){box.textContent="دریافت کاربران ناموفق بود: "+(e?.message||"خطای نامشخص");}
+ finally{button.disabled=false;}
+}
+$("refreshUsersBtn").addEventListener("click",loadUsers);
 $("refreshRequestsBtn").addEventListener("click",loadRequests);
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();await refreshSession();show("از حساب خارج شدید.");});
 await refreshSession();
+if(!$("userRolesBox").classList.contains("hidden")){loadRequests();loadUsers();}
 </script></body></html>
