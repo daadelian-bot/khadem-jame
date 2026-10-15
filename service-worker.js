@@ -1,4 +1,4 @@
-/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۷۲ */
+/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۷۴ */
 const CACHE_NAME = 'khadem-jame-shell-v174';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
 
