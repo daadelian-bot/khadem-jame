@@ -367,8 +367,8 @@
           <label for="kj-password">رمز عبور</label>
           <input id="kj-password" type="password" autocomplete="current-password" required placeholder="رمز عبور">
           <button id="kj-login-btn" class="kj-primary" type="submit">ورود به سامانه</button>
-          <p class="kj-small" style="text-align:center;margin-top:12px"><a href="./forgot-password.html" style="color:#781f32;font-weight:bold;text-decoration:none">فراموشی رمز عبور؟ بازیابی از طریق ایمیل</a></p>
-          <p class="kj-small" style="text-align:center;margin-top:8px"><a href="./create-account.html" style="color:#781f32;font-weight:bold;text-decoration:none">حساب کاربری ندارید؟ ایجاد حساب جدید</a></p>
+          <p class="kj-small" style="text-align:center;margin-top:12px"><a href="./forgot-password.html" style="color:#173b58;font-weight:bold;text-decoration:none">فراموشی رمز عبور؟ بازیابی از طریق ایمیل</a></p>
+          <p class="kj-small" style="text-align:center;margin-top:8px"><a href="./create-account.html" style="color:#173b58;font-weight:bold;text-decoration:none">حساب کاربری ندارید؟ ایجاد حساب جدید</a></p>
           <p class="kj-small">برای ورود، حساب کاربری معتبر Supabase لازم است.</p>
         </form>
       </div>`;
@@ -1336,7 +1336,7 @@
         window.setTimeout(mountAbsencePanel, 0);
       } else if (!document.querySelector("script[data-kj-absence-loader]")) {
         const script = document.createElement("script");
-        script.src = "./equipment-finance.js?v=158";
+        script.src = "./equipment-finance.js?v=20261016-42";
         script.dataset.kjAbsenceLoader = "1";
         script.onload = () => window.setTimeout(mountAbsencePanel, 0);
         document.head.appendChild(script);
