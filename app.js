@@ -18,6 +18,7 @@
     tab: "dashboard",
     role: "user",
     accessPermissions: null,
+    isPrimaryAdmin: false,
     accessCustom: false,
     khadems: [],
     services: [],
@@ -403,7 +404,7 @@
     return app;
   }
   function canAccess(tab) {
-    if (state.role === "admin") return true;
+    if (state.isPrimaryAdmin) return true;
     if (!state.accessCustom || !state.accessPermissions) return true;
     if (tab === "dashboard") return true; // داشبورد پایه همیشه برای ورود و مسیریابی در دسترس است.
     return state.accessPermissions[tab] === true;
@@ -1035,6 +1036,7 @@
       state.role = access.role || approvedProfile.role || "user";
       state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
       state.accessCustom = !!state.accessPermissions;
+      if (!canAccess(state.tab)) state.tab = "dashboard";
       if (!canAccess(state.tab)) state.tab = "dashboard";
       await loadData();
       state.selectedKhadem = "code:" + String(khademCode(k));
