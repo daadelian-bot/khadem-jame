@@ -1526,6 +1526,11 @@
         throw error;
       }
       localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+      const access = await request("/functions/v1/manage-user-permissions", { method: "POST", body: { action: "my_permissions" } });
+      if (!access || !access.role) throw new Error("بررسی نقش و دسترسی حساب ناموفق بود.");
+      state.role = access.role;
+      state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
+      state.accessCustom = !!state.accessPermissions;
       // حساب ثبت‌نامی تا تأیید مدیر اصلی اجازه دریافت هیچ داده‌ای از سامانه را ندارد.
       const profileRows = await request("/rest/v1/profiles?select=is_active,role&id=eq." + encodeURIComponent(authUser.id) + "&limit=1");
       const approvedProfile = Array.isArray(profileRows) ? profileRows[0] : null;
