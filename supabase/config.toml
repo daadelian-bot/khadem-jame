@@ -1,0 +1,15 @@
+# Supabase Edge Function gateway settings.
+# Public registration is intentionally unauthenticated at the gateway;
+# the function itself creates an inactive profile and pending approval request.
+[functions.public-registration]
+verify_jwt = false
+
+# Admin-only functions keep the default JWT verification enabled.
+[functions.registration-approval]
+verify_jwt = true
+
+[functions.admin-create-user]
+verify_jwt = true
+
+[functions.password-recovery]
+verify_jwt = false
