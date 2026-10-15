@@ -34,8 +34,8 @@ h1{font-size:1.35rem;margin:0 0 8px}p{margin:8px 0;color:var(--muted)}label{disp
 <div id="requestsList" aria-live="polite"></div>
 </div>
 <div id="userRolesBox" class="hidden" style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
-<h2 style="font-size:1.1rem;margin:0">مدیریت نقش کاربران</h2>
-<p>نقش کاربران عادی و مدیران قابل تنظیم است. نقش مدیر اصلی از این بخش قابل تغییر نیست.</p>
+<h2 style="font-size:1.1rem;margin:0">مدیریت نقش کاربران و مدیران اصلی</h2>
+<p>می‌توانید حساب فعال دیگری را مدیر اصلی کنید یا سمت مدیر اصلی را از مدیر دیگری بردارید. تغییر نقش حساب خودتان و حذف آخرین مدیر اصلی فعال مجاز نیست.</p>
 <button id="refreshUsersBtn" class="secondary" type="button">بارگذاری کاربران و نقش‌ها</button>
 <div id="usersList" aria-live="polite"></div>
 </div>
@@ -123,8 +123,11 @@ async function loadUsers(){
   const users=Array.isArray(data?.users)?data.users:[];
   if(!users.length){box.innerHTML='<div class="notice">کاربری برای نمایش پیدا نشد.</div>';return;}
   box.innerHTML=users.map(u=>{
-   const name=escapeHtml(u.full_name||u.display_name||"بدون نام"),email=escapeHtml(u.email||"—"),id=escapeHtml(u.id),role=String(u.role||"user"),isAdmin=role==="admin";
-   return '<article class="notice" style="margin-top:10px"><strong>'+name+'</strong><br>ایمیل: '+email+'<br>وضعیت: '+(u.is_active===true?"فعال":"غیرفعال")+'<br>نقش فعلی: '+(isAdmin?"مدیر اصلی":role==="manager"?"مدیر":"کاربر")+(isAdmin?'<p>نقش مدیر اصلی در این بخش قابل تغییر نیست.</p>':'<label for="user-role-'+id+'">تعیین نقش</label><select id="user-role-'+id+'" data-user-role="'+id+'"><option value="user" '+(role==="user"?"selected":"")+'>کاربر</option><option value="manager" '+(role==="manager"?"selected":"")+'>مدیر</option></select><button type="button" data-save-role="'+id+'">ذخیره نقش</button>')+'</article>';
+   const name=escapeHtml(u.full_name||u.display_name||"بدون نام"),email=escapeHtml(u.email||"—"),id=escapeHtml(u.id),role=String(u.role||"user"),isAdmin=role==="admin",isSelf=u.id===session.user.id;
+   const roleLabel=role==="admin"?"مدیر اصلی":role==="manager"?"مدیر":"کاربر";
+   const controls=isSelf?'<p>نقش حسابی که اکنون با آن وارد شده‌اید از این بخش قابل تغییر نیست.</p>':'<label for="user-role-'+id+'">تعیین نقش</label><select id="user-role-'+id+'" data-user-role="'+id+'"><option value="user" '+(role==="user"?"selected":"")+'>کاربر</option><option value="manager" '+(role==="manager"?"selected":"")+'>مدیر</option><option value="admin" '+(role==="admin"?"selected":"")+'>مدیر اصلی</option></select><button type="button" data-save-role="'+id+'">ذخیره نقش</button>';
+   const adminNote=isAdmin?'<p>مدیران اصلی می‌توانند نقش مدیر اصلی دیگری را بردارند؛ آخرین مدیر اصلی فعال قابل حذف نیست.</p>':'';
+   return '<article class="notice" style="margin-top:10px"><strong>'+name+'</strong><br>ایمیل: '+email+'<br>وضعیت: '+(u.is_active===true?"فعال":"غیرفعال")+'<br>نقش فعلی: '+roleLabel+adminNote+controls+'</article>';
   }).join("");
   box.querySelectorAll("button[data-save-role]").forEach(btn=>btn.addEventListener("click",async()=>{
    const user_id=btn.dataset.saveRole,select=box.querySelector('[data-user-role="'+btn.dataset.saveRole+'"]'),role=select?.value;
