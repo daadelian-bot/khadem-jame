@@ -304,3 +304,22 @@
       }
       @media(prefers-reduced-motion:reduce){.kj-shortcut-card,.kj-nav button,.kj-stat-card{transition:none!important}}
     
+
+/* ثبت خدمت رسمی: فرم برنامه و انتخاب چند خادم */
+.kj-official-service-card,.kj-official-service-history{margin-bottom:16px}
+.kj-official-service-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.kj-official-service-grid label,.kj-service-notes-label{display:flex;flex-direction:column;gap:6px;font-weight:600}
+.kj-official-service-grid input,.kj-service-notes-label textarea,#kj-service-khadem-search{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--kj-border,#e8e1d9);border-radius:10px;background:#fff;color:inherit;padding:11px 12px;font:inherit}
+.kj-service-notes-label{margin-top:14px}
+.kj-service-participants-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0 10px}
+.kj-service-participants-heading h3{margin:0}
+.kj-service-count{font-size:13px;font-weight:700;color:var(--kj-maroon,#781f32)}
+.kj-service-participant-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:310px;overflow:auto;margin-top:10px;padding:2px}
+.kj-service-participant{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--kj-border,#e8e1d9);border-radius:10px;cursor:pointer;background:var(--kj-card,#fff)}
+.kj-service-participant[hidden]{display:none}
+.kj-service-participant input{flex:0 0 auto;width:18px;height:18px;accent-color:var(--kj-maroon,#781f32)}
+.kj-service-participant span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kj-service-participant small{color:var(--kj-muted,#77716b);font-size:12px}
+.kj-service-form-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+#kj-official-service-message{overflow-wrap:anywhere}
+@media(max-width:700px){.kj-official-service-grid,.kj-service-participant-list{grid-template-columns:minmax(0,1fr)}.kj-service-form-actions .kj-primary{width:100%;justify-content:center}}
