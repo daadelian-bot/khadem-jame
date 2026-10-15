@@ -53,21 +53,6 @@
     loaded: false
   };
 
-  const menu = [
-    ["dashboard", "🏠 داشبورد"],
-    ["khadems", "👤 بانک خادمین"],
-    ["services", "🕌 ثبت خدمت رسمی"],
-    ["friday", "🌙 پایش خدمت شب جمعه"],
-    ["nonattendance", "🧾 ثبت و پیگیری عدم حضور"],
-    ["meetings", "📅 جلسات"],
-    ["deployments", "🚐 مأموریت‌ها"],
-    ["finance", "💰 امور مالی"],
-    ["fund", "🏦 صندوق"],
-    ["donors", "🤝 خیرین"],
-    ["reports", "📊 گزارش‌ها"],
-    ["settings", "⚙️ تنظیمات"]
-  ];
-
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -323,7 +308,7 @@
     const style = document.createElement("link");
     style.id = "kj-style";
     style.rel = "stylesheet";
-    style.href = "./style.css?v=20261015-20";
+    style.href = "./style.css?v=20261015-22";
     document.head.appendChild(style);
   }
   function shell() {
@@ -332,7 +317,7 @@
     const groups = [
       ["میزکار مدیریتی", [["dashboard","🏠 داشبورد"]]],
       ["مدیریت خادمین", [["khadems","👤 بانک خادمین"]]],
-      ["خدمت و عملیات", [["services","🕌 خدمت و سوابق خدمت"],["friday","🌙 پایش خدمت شب جمعه"],["nonattendance","🧾 عدم حضور و پیگیری"],["deployments","🚐 مأموریت‌های خدمت"]]],
+      ["خدمت و عملیات", [["services","🕌 ثبت خدمت رسمی"],["friday","🌙 پایش ثبت خدمت شب‌های جمعه"],["nonattendance","🧾 ثبت و پیگیری عدم حضور"],["deployments","🚐 مأموریت‌های خدمت"]]],
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
