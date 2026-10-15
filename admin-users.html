@@ -52,9 +52,22 @@ function show(message, kind=""){ $("message").textContent=message; $("message").
 function setBusy(button,busy,label){button.disabled=busy;if(busy)button.dataset.old=button.textContent;button.textContent=busy?"لطفاً صبر کنید…":(button.dataset.old||label);}
 async function refreshSession(){
  const {data:{session}}=await supabase.auth.getSession();
- $("loginBox").classList.toggle("hidden",!!session);
- $("createBox").classList.toggle("hidden",!session);
- if(session) { show("نشست برقرار است. سرور مجوز مدیر اصلی را برای هر عملیات بررسی می‌کند.","ok"); $("approvalBox").classList.remove("hidden"); $("userRolesBox").classList.remove("hidden"); } else { $("approvalBox").classList.add("hidden"); $("userRolesBox").classList.add("hidden"); $("requestsList").textContent=""; $("usersList").textContent=""; }
+ let authorized=false;
+ if(session){
+  const {data:profile,error}=await supabase.from("profiles").select("role,is_active").eq("id",session.user.id).maybeSingle();
+  authorized=!error&&profile?.role==="admin"&&profile?.is_active===true;
+ }
+ // این صفحه فقط برای مدیر اصلی نمایش داده می‌شود؛ کنترل اصلی عملیات نیز در Edge Function است.
+ $("loginBox").classList.toggle("hidden",authorized);
+ $("createBox").classList.toggle("hidden",!authorized);
+ $("approvalBox").classList.toggle("hidden",!authorized);
+ $("userRolesBox").classList.toggle("hidden",!authorized);
+ if(authorized){
+  show("دسترسی مدیر اصلی تأیید شد. مجوز هر عملیات در سرور نیز دوباره بررسی می‌شود.","ok");
+ }else{
+  $("requestsList").textContent="";$("usersList").textContent="";
+  show(session?"این صفحه فقط برای مدیر اصلی فعال مجاز است. از حساب فعلی خارج شوید و با حساب مدیر اصلی وارد شوید.":"برای ادامه با حساب مدیر اصلی وارد شوید.",session?"error":"");
+ }
 }
 $("loginBtn").addEventListener("click",async()=>{
  const b=$("loginBtn");setBusy(b,true,"ورود مدیر اصلی");
