@@ -383,14 +383,6 @@
     }
     return app;
   }
-  function injectStyles() {
-    if ($("#kj-style")) return;
-    const style = document.createElement("link");
-    style.id = "kj-style";
-    style.rel = "stylesheet";
-    style.href = "./style.css?v=20261015-40";
-    document.head.appendChild(style);
-  }
   function shell() {
     const app = ensureRoot();
     const user = (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) { return null; } })();
@@ -1344,7 +1336,7 @@
         window.setTimeout(mountAbsencePanel, 0);
       } else if (!document.querySelector("script[data-kj-absence-loader]")) {
         const script = document.createElement("script");
-        script.src = "./equipment-finance.js?v=157";
+        script.src = "./equipment-finance.js?v=158";
         script.dataset.kjAbsenceLoader = "1";
         script.onload = () => window.setTimeout(mountAbsencePanel, 0);
         document.head.appendChild(script);
@@ -1389,7 +1381,6 @@
     const allowedTabs = new Set(["dashboard","khadems","serviceRegister","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings","changePassword"]);
     const requestedTab = window.location.hash.replace(/^#/, "");
     if (allowedTabs.has(requestedTab)) state.tab = requestedTab;
-    injectStyles();
     if (!token()) { loginPage(); return; }
     const app = ensureRoot();
     app.innerHTML = `<div dir="rtl" style="padding:40px;text-align:center">در حال بررسی اعتبار ورود…</div>`;
@@ -1423,7 +1414,6 @@
     }
   }
 
-  injectStyles();
   window.KJ = {
     start: startApp,
     refresh: loadData,
