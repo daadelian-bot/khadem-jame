@@ -368,6 +368,7 @@
           <input id="kj-password" type="password" autocomplete="current-password" required placeholder="رمز عبور">
           <button id="kj-login-btn" class="kj-primary" type="submit">ورود به سامانه</button>
           <p class="kj-small" style="text-align:center;margin-top:12px"><a href="./forgot-password.html" style="color:#781f32;font-weight:bold;text-decoration:none">فراموشی رمز عبور؟ بازیابی از طریق ایمیل</a></p>
+          <p class="kj-small" style="text-align:center;margin-top:8px"><a href="./create-account.html" style="color:#781f32;font-weight:bold;text-decoration:none">حساب کاربری ندارید؟ ایجاد حساب جدید</a></p>
           <p class="kj-small">برای ورود، حساب کاربری معتبر Supabase لازم است.</p>
         </form>
       </div>`;
@@ -387,7 +388,7 @@
     const style = document.createElement("link");
     style.id = "kj-style";
     style.rel = "stylesheet";
-    style.href = "./style.css?v=20261015-38";
+    style.href = "./style.css?v=20261015-39";
     document.head.appendChild(style);
   }
   function shell() {
