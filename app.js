@@ -445,7 +445,7 @@
       emergency_contact_name_2:"نام تماس اضطراری دوم", emergency_contact_name_3:"نام تماس اضطراری سوم",
       emergency_contact_phone_2:"تلفن تماس اضطراری دوم", emergency_contact_phone_3:"تلفن تماس اضطراری سوم",
       created_at:"تاریخ ثبت", updated_at:"آخرین به‌روزرسانی", notes:"توضیحات", description:"شرح", title:"عنوان",
-      service_date:"تاریخ خدمت", date:"تاریخ", service_type:"نوع خدمت", service_kind:"نوع خدمت", category:"دسته‌بندی",
+      service_date:"تاریخ شروع خدمت", service_end_date:"تاریخ پایان خدمت", departure_date:"تاریخ حرکت از مبدأ", arrival_date:"تاریخ حضور در مقصد", shrine_name:"حرم محل خدمت", shrine:"حرم محل خدمت", holy_site:"حرم محل خدمت", destination:"مقصد / حرم", service_title:"عنوان خدمت", group_name:"گروه / کاروان", date:"تاریخ", service_type:"نوع خدمت", service_kind:"نوع خدمت", category:"دسته‌بندی",
       amount:"مبلغ", amount_toman:"مبلغ (تومان)", total_amount:"مبلغ کل", total_amount_toman:"مبلغ کل",
       paid_amount:"مبلغ پرداخت‌شده", paid_toman:"مبلغ پرداخت‌شده", balance:"مانده", debt:"بدهی",
       remaining_amount:"مانده بدهی", remaining_toman:"مانده بدهی", cost_total_toman:"هزینه کل", cost_paid_toman:"هزینه پرداخت‌شده",
