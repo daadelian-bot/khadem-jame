@@ -1011,7 +1011,8 @@
       const idCol=infer?["khadem_id","person_id","personnel_id"].find(x=>known.has(x)):null;
       if(codeCol)p[codeCol]=khademCode(k);if(nameCol)p[nameCol]=nameOf(k);if(idCol&&khademId(k))p[idCol]=khademId(k);
       const typeCol=infer?["service_type","service_kind","category","type"].find(x=>known.has(x)):"service_type";if(typeCol)p[typeCol]=f.service_title||"خدمت رسمی";
-      Object.keys(aliases).forEach(key=>put(key,f[key]));
+      if(infer) Object.keys(aliases).forEach(key=>put(key,f[key]));
+      else { if(f.service_date)p.service_date=f.service_date; if(f.responsibility)p.responsibility=f.responsibility; }
       const notesCol=infer?["notes","description","details"].find(x=>known.has(x)):"notes";
       if(notesCol)p[notesCol]=details;else if(infer){const extra= ["extra_data","metadata","details_json"].find(x=>known.has(x));if(extra)p[extra]=f;}
       return p;
