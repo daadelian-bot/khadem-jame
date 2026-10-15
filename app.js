@@ -16,6 +16,9 @@
 
   const state = {
     tab: "dashboard",
+    role: "user",
+    accessPermissions: null,
+    accessCustom: false,
     khadems: [],
     services: [],
     nonattendance: [],
@@ -383,6 +386,12 @@
     }
     return app;
   }
+  function canAccess(tab) {
+    if (state.role === "admin") return true;
+    if (!state.accessCustom || !state.accessPermissions) return true;
+    if (tab === "changePassword" || tab === "dashboard") return state.accessPermissions[tab] === true;
+    return state.accessPermissions[tab] === true;
+  }
   function shell() {
     const app = ensureRoot();
     const user = (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) { return null; } })();
@@ -395,6 +404,10 @@
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
       ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["changePassword","🔐 تغییر رمز عبور"]]]
     ];
+    for (let i = groups.length - 1; i >= 0; i--) {
+      groups[i][1] = groups[i][1].filter(([id]) => canAccess(id));
+      if (!groups[i][1].length) groups.splice(i, 1);
+    }
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
@@ -1002,6 +1015,11 @@
       const savedRows = await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
       if (!Array.isArray(savedRows) || savedRows.length === 0) throw new Error("پایگاه داده هیچ ردیفی را به‌روزرسانی نکرد؛ شناسه خادم یا مجوز ویرایش را بررسی کنید.");
       state.profileEditOpen = false;
+      const access = await request("/functions/v1/manage-user-permissions", { method: "POST", body: { action: "my_permissions" } });
+      state.role = access.role || approvedProfile.role || "user";
+      state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
+      state.accessCustom = !!state.accessPermissions;
+      if (!canAccess(state.tab)) state.tab = "dashboard";
       await loadData();
       state.selectedKhadem = "code:" + String(khademCode(k));
       render();
@@ -1262,6 +1280,11 @@
     return `<h1 class="kj-page-title">کاربران و دسترسی‌ها</h1>
       <p class="kj-muted">مدیریت تأیید ثبت‌نام و تعیین نقش از پنل امن مدیر اصلی انجام می‌شود؛ سرور مجوز مدیر را پیش از هر عملیات بررسی می‌کند.</p>
       <div class="kj-card" style="margin-bottom:14px">
+        <h2 class="kj-section-title">دسترسی اختصاصی هر مدیر و کاربر</h2>
+        <p>برای هر حساب می‌توانید منوهای قابل مشاهده و قابل ورود را جداگانه تنظیم کنید؛ این تنظیمات به همان حساب اختصاص دارد.</p>
+        <a class="kj-primary" href="./admin-permissions.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">مدیریت جزئی دسترسی‌ها ←</a>
+      </div>
+      <div class="kj-card" style="margin-bottom:14px">
         <h2 class="kj-section-title">تأیید ثبت‌نام و تعیین نقش کاربران</h2>
         <p>در این بخش می‌توانید درخواست‌های ثبت‌نام را بررسی کنید، حساب را تأیید یا رد کنید و برای کاربران تأییدشده نقش «کاربر» یا «مدیر» تعیین کنید. نقش «مدیر اصلی» از این پنل قابل تغییر نیست.</p>
         <a class="kj-primary" href="./admin-users.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">باز کردن پنل امن مدیریت کاربران ←</a>
@@ -1369,6 +1392,10 @@
   }
   function render() {
     if (!token()) { loginPage(); return; }
+    if (!canAccess(state.tab)) {
+      state.tab = "dashboard";
+      state.selectedKhadem = null;
+    }
     shell();
     const main = $("#kj-main");
     if (!main) return;
