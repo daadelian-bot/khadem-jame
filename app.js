@@ -959,6 +959,71 @@
     }
     return `<h1 class="kj-page-title">${esc(title)}</h1>${errBox(key)}${cols.length ? tableHtml(enrichedRows, cols, state.errors[key] ? "دریافت اطلاعات ناموفق بود." : "هنوز موردی ثبت نشده است.") : (state.errors[key] ? "" : empty("هنوز موردی ثبت نشده است."))}`;
   }
+
+  function officialServicesPage() {
+    const rows = [...state.services].sort((a,b)=>String(val(b,["service_date","date","created_at"])).localeCompare(String(val(a,["service_date","date","created_at"]))));
+    const q=String($("#kj-service-khadem-search")?.value||"").trim().toLocaleLowerCase("fa");
+    const matches=state.khadems.filter(k=>(String(khademCode(k)||"")+" "+nameOf(k)).toLocaleLowerCase("fa").includes(q));
+    const people=matches.map(k=>\`<label class="kj-service-participant"><input type="checkbox" name="service_participants" value="\${esc(khademCode(k))}"><span><b>\${esc(nameOf(k))}</b><small>کد خادم: \${esc(fa(khademCode(k)||"—"))}</small></span></label>\`).join("")||empty("خادمی با این نام یا کد پیدا نشد.");
+    return \`<h1 class="kj-page-title">ثبت خدمت رسمی</h1>\${errBox("services")}
+    <section class="kj-card kj-official-service-card"><h2 class="kj-section-title">ثبت خدمت رسمی جدید</h2>
+    <p class="kj-muted">اطلاعات برنامه را وارد کنید و همه خادمین شرکت‌کننده را انتخاب کنید؛ برای هر خادم یک سابقه خدمت ثبت می‌شود.</p>
+    <form id="kj-official-service-form"><div class="kj-official-service-grid">
+    <label>عنوان / نوع خدمت<input name="service_title" required placeholder="مثلاً خدمت رسمی اربعین"></label>
+    <label>حرم محل خدمت<input name="shrine_name" required placeholder="مثلاً حرم امام حسین (ع)"></label>
+    <label>تاریخ حرکت از مبدأ<input name="departure_date" required placeholder="۱۴۰۵/۰۴/۲۲"></label>
+    <label>تاریخ حضور در مقصد<input name="arrival_date" required placeholder="۱۴۰۵/۰۴/۲۳"></label>
+    <label>تاریخ شروع خدمت<input name="service_date" required placeholder="۱۴۰۵/۰۴/۲۵"></label>
+    <label>تاریخ پایان خدمت<input name="service_end_date" required placeholder="۱۴۰۵/۰۴/۳۰"></label>
+    <label>مسئولیت خادمین<input name="responsibility" required placeholder="مثلاً خادم سالن یا آشپزخانه"></label>
+    <label>نام گروه / کاروان<input name="group_name" placeholder="اختیاری"></label></div>
+    <label class="kj-service-notes-label">توضیحات تکمیلی<textarea name="notes" rows="3" placeholder="مسیر، محل اسکان یا هماهنگی‌ها"></textarea></label>
+    <div class="kj-service-participants-heading"><h3>انتخاب خادمین شرکت‌کننده</h3><span id="kj-service-selected-count" class="kj-service-count">۰ خادم انتخاب شده</span></div>
+    <input id="kj-service-khadem-search" type="search" placeholder="جست‌وجوی کد یا نام خادم" autocomplete="off">
+    <div class="kj-service-participant-list" id="kj-service-participant-list">\${people}</div>
+    <div class="kj-service-form-actions"><button type="submit" class="kj-primary" id="kj-save-official-service">ثبت خدمت و خادمین</button><span id="kj-official-service-message" class="kj-muted" role="status"></span></div></form></section>
+    <section class="kj-card"><h2 class="kj-section-title">سوابق خدمات رسمی</h2>\${genericPage("services","سوابق خدمت",rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"},{key:"notes",label:"توضیحات"}])}</section>\`;
+  }
+
+  function bindOfficialServiceForm() {
+    const form=$("#kj-official-service-form"); if(!form)return;
+    const search=$("#kj-service-khadem-search"), list=$("#kj-service-participant-list");
+    const count=()=>{const n=$('input[name="service_participants"]:checked',form).length;const el=$("#kj-service-selected-count");if(el)el.textContent=fa(n)+" خادم انتخاب شده";};
+    search?.addEventListener("input",()=>{const q=String(search.value||"").trim().toLocaleLowerCase("fa");$(".kj-service-participant",list).forEach(el=>el.hidden=Boolean(q&&!el.textContent.toLocaleLowerCase("fa").includes(q)));});
+    list?.addEventListener("change",count);
+    form.addEventListener("submit",e=>{e.preventDefault();saveOfficialService(form);}); count();
+  }
+
+  async function saveOfficialService(form) {
+    const msg=$("#kj-official-service-message"),btn=$("#kj-save-official-service"),fd=new FormData(form);
+    const codes=fd.getAll("service_participants").map(v=>String(v).trim()).filter(Boolean),get=k=>String(fd.get(k)||"").trim();
+    if(!codes.length){if(msg)msg.textContent="حداقل یک خادم را انتخاب کنید.";return;}
+    const f={service_title:get("service_title"),shrine_name:get("shrine_name"),departure_date:get("departure_date"),arrival_date:get("arrival_date"),service_date:get("service_date"),service_end_date:get("service_end_date"),responsibility:get("responsibility"),group_name:get("group_name"),notes:get("notes")};
+    const people=codes.map(code=>state.khadems.find(k=>String(khademCode(k))===code)).filter(Boolean);
+    if(people.length!==codes.length){if(msg)msg.textContent="یکی از خادمین انتخاب‌شده پیدا نشد؛ اطلاعات را تازه‌سازی کنید.";return;}
+    const known=new Set(Object.keys(state.services[0]||{})),infer=known.size>0;
+    const aliases={service_title:["service_title","title","service_name","program_name"],shrine_name:["shrine_name","shrine","holy_site","destination","service_location"],departure_date:["departure_date","move_date","departure_at"],arrival_date:["arrival_date","arrived_at","arrival_at"],service_date:["service_date","date","start_date"],service_end_date:["service_end_date","end_date","finish_date"],responsibility:["responsibility","role","service_role"],group_name:["group_name","caravan_name","team_name"]};
+    const details=["عنوان خدمت: "+f.service_title,"حرم محل خدمت: "+f.shrine_name,"حرکت از مبدأ: "+f.departure_date,"حضور در مقصد: "+f.arrival_date,"شروع خدمت: "+f.service_date,"پایان خدمت: "+f.service_end_date,"مسئولیت: "+f.responsibility,f.group_name?"گروه/کاروان: "+f.group_name:"",f.notes?"توضیحات: "+f.notes:""].filter(Boolean).join("\n");
+    const payloads=people.map(k=>{
+      const p={},put=(key,v)=>{if(!v)return;const col=infer?aliases[key].find(x=>known.has(x)):aliases[key][0];if(col)p[col]=v;};
+      const codeCol=infer?["khadem_code","personnel_code","code"].find(x=>known.has(x)):"khadem_code";
+      const nameCol=infer?["khadem_name","full_name","person_name"].find(x=>known.has(x)):null;
+      const idCol=infer?["khadem_id","person_id","personnel_id"].find(x=>known.has(x)):null;
+      if(codeCol)p[codeCol]=khademCode(k);if(nameCol)p[nameCol]=nameOf(k);if(idCol&&khademId(k))p[idCol]=khademId(k);
+      const typeCol=infer?["service_type","service_kind","category","type"].find(x=>known.has(x)):"service_type";if(typeCol)p[typeCol]=f.service_title||"خدمت رسمی";
+      Object.keys(aliases).forEach(key=>put(key,f[key]));
+      const notesCol=infer?["notes","description","details"].find(x=>known.has(x)):"notes";
+      if(notesCol)p[notesCol]=details;else if(infer){const extra= ["extra_data","metadata","details_json"].find(x=>known.has(x));if(extra)p[extra]=f;}
+      return p;
+    });
+    if(btn){btn.disabled=true;btn.textContent="در حال ثبت…";}if(msg)msg.textContent="در حال ثبت خدمت برای "+fa(people.length)+" خادم…";
+    try{
+      const result=await request("/rest/v1/service_records",{method:"POST",headers:{"Prefer":"return=representation"},body:payloads});
+      if(!Array.isArray(result)||result.length!==payloads.length)throw new Error("تأیید کامل ثبت از پایگاه داده دریافت نشد.");
+      await loadData();state.tab="services";render();toast("خدمت رسمی برای "+fa(result.length)+" خادم ثبت شد.","success");
+    }catch(e){if(msg)msg.textContent="ثبت انجام نشد: "+(e.message||"خطای نامشخص")+"؛ ساختار پایگاه داده تغییر داده نشده است.";if(btn){btn.disabled=false;btn.textContent="ثبت خدمت و خادمین";}}
+  }
+
   function meetingsPage() {
     const rows = state.meetings.map(m => {
       const invited = state.meetingInvitees.filter(i => String(i.meeting_id) === String(m.id));
@@ -1078,10 +1143,7 @@
     const views = {
       dashboard,
       khadems: khademList,
-      services: () => genericPage("services","ثبت خدمت رسمی",state.services,[
-        {key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},
-        {key:"responsibility",label:"مسئولیت خدمت"},{key:"notes",label:"توضیحات"}
-      ]),
+      services: officialServicesPage,
       friday: fridayPage,
       nonattendance: nonattendancePage,
       meetings: meetingsPage,
@@ -1097,7 +1159,8 @@
       changePassword: () => `<h1 class="kj-page-title">تغییر رمز عبور</h1><div class="kj-card"><p>از این بخش می‌توانید رمز عبور حساب کاربری خود را تغییر دهید. این گزینه برای همه کاربران واردشده، از جمله مدیر و کاربر عادی، در دسترس است.</p><p class="kj-muted">برای امنیت حساب، رمز جدید را در صفحه امن تغییر رمز وارد کنید.</p><a class="kj-primary" href="./change-password.html" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;text-decoration:none">رفتن به صفحه تغییر رمز عبور ←</a></div>`
     };
     main.innerHTML = (views[state.tab] || dashboard)();
-    $$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
+    if(state.tab==="services") bindOfficialServiceForm();
+    $("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
       state.tab = button.dataset.quickTab; state.selectedKhadem = null;
       render();
       window.scrollTo({top:0,behavior:"smooth"});
