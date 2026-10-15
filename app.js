@@ -135,6 +135,82 @@
       return fa(d.toLocaleDateString());
     }
   }
+  function jalaliPartsFromDate(date) {
+    const parts = new Intl.DateTimeFormat("en-u-ca-persian", { year:"numeric", month:"numeric", day:"numeric", timeZone:"UTC" }).formatToParts(date);
+    const p = Object.fromEntries(parts.filter(x => x.type !== "literal").map(x => [x.type, Number(x.value)]));
+    return { year:p.year, month:p.month, day:p.day };
+  }
+  function jalaliDateInputSelector() {
+    return "input[data-jalali-date], input[name=\"birth_date\"], input[name=\"membership_date\"], input[name$=\"_date\"], input[name$=\"_at\"], input[name=\"date\"], input[name=\"period_month\"]";
+  }
+  function installJalaliDatePicker() {
+    if (window.__kjJalaliPickerBound) return;
+    window.__kjJalaliPickerBound = true;
+    let activeInput = null, anchor = new Date();
+    const picker = document.createElement("div");
+    picker.id = "kj-jalali-picker"; picker.className = "kj-jalali-picker"; picker.hidden = true;
+    picker.setAttribute("role", "dialog"); picker.setAttribute("aria-label", "انتخاب تاریخ هجری شمسی");
+    document.body.appendChild(picker);
+    const utcDay = d => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const shiftDay = (d, n) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + n));
+    const isoOf = d => String(d.getUTCFullYear()) + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
+    const dateFromInput = input => {
+      const raw = String(input.value || "").trim().replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replaceAll("-","/");
+      const iso = jalaliToGregorian(raw);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) { const p=iso.split("-").map(Number); const d=new Date(Date.UTC(p[0],p[1]-1,p[2])); if(!Number.isNaN(d.getTime())) return d; }
+      const gm = raw.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+      if (gm) { const d=new Date(Date.UTC(Number(gm[1]),Number(gm[2])-1,Number(gm[3]))); if(!Number.isNaN(d.getTime())) return d; }
+      return utcDay(new Date());
+    };
+    const render = () => {
+      const current = jalaliPartsFromDate(anchor);
+      let first = utcDay(anchor);
+      for(let i=0;i<40;i++){ const prev=shiftDay(first,-1), p=jalaliPartsFromDate(prev); if(p.year!==current.year||p.month!==current.month) break; first=prev; }
+      const offset=(first.getUTCDay()+1)%7, gridStart=shiftDay(first,-offset);
+      const monthNames=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+      const week=["ش","ی","د","س","چ","پ","ج"];
+      const selected = activeInput ? jalaliPartsFromDate(dateFromInput(activeInput)) : null;
+      let cells="";
+      for(let i=0;i<42;i++){ const d=shiftDay(gridStart,i), p=jalaliPartsFromDate(d), same=p.year===current.year&&p.month===current.month, chosen=selected&&p.year===selected.year&&p.month===selected.month&&p.day===selected.day, today=(()=>{const t=jalaliPartsFromDate(utcDay(new Date()));return p.year===t.year&&p.month===t.month&&p.day===t.day;})();
+        cells += '<button type="button" class="kj-jalali-day'+(same?"":" is-outside")+(chosen?" is-selected":"")+(today?" is-today":"")+'" data-iso="'+isoOf(d)+'" data-jy="'+p.year+'" data-jm="'+p.month+'" data-jd="'+p.day+'" aria-label="'+fa(p.year+"/"+String(p.month).padStart(2,"0")+"/"+String(p.day).padStart(2,"0"))+'">'+fa(p.day)+'</button>';
+      }
+      picker.innerHTML = '<div class="kj-jalali-calendar-head"><button type="button" data-move="-1" aria-label="ماه قبل">‹</button><strong>'+monthNames[current.month-1]+' '+fa(current.year)+'</strong><button type="button" data-move="1" aria-label="ماه بعد">›</button></div><div class="kj-jalali-week">'+week.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="kj-jalali-days">'+cells+'</div><div class="kj-jalali-calendar-foot"><button type="button" data-today="1">امروز</button><button type="button" data-close="1">بستن</button></div>';
+    };
+    const place = () => {
+      if(!activeInput || picker.hidden) return;
+      const r=activeInput.getBoundingClientRect(), width=Math.min(320,window.innerWidth-20);
+      picker.style.width=width+"px";
+      const left=Math.max(10,Math.min(r.left,window.innerWidth-width-10));
+      const top=(r.bottom+picker.offsetHeight+8<=window.innerHeight)?r.bottom+6:Math.max(10,r.top-picker.offsetHeight-6);
+      picker.style.left=left+"px"; picker.style.top=top+"px";
+    };
+    const open = input => {
+      if(!input || !input.matches(jalaliDateInputSelector()) || input.disabled || input.readOnly) return;
+      activeInput=input;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(String(input.value||"").trim())) input.value=jalaliInputDate(input.value);
+      anchor=dateFromInput(input); picker.hidden=false; render(); place();
+      input.setAttribute("aria-haspopup","dialog"); input.setAttribute("aria-expanded","true");
+    };
+    const close = () => { if(activeInput) activeInput.setAttribute("aria-expanded","false"); picker.hidden=true; activeInput=null; };
+    document.addEventListener("click", e => {
+      const input=e.target.closest && e.target.closest(jalaliDateInputSelector());
+      if(input){ open(input); return; }
+      if(picker.contains(e.target)){
+        const move=e.target.closest("[data-move]");
+        if(move){ anchor=shiftDay(anchor,Number(move.dataset.move)*35); render(); place(); return; }
+        const day=e.target.closest("[data-iso]");
+        if(day && activeInput){ const iso=day.dataset.iso; activeInput.value=jalaliInputDate(iso); activeInput.dispatchEvent(new Event("change",{bubbles:true})); activeInput.dispatchEvent(new Event("input",{bubbles:true})); close(); return; }
+        if(e.target.closest("[data-today]")){ if(activeInput){activeInput.value=jalaliInputDate(new Date().toISOString().slice(0,10));activeInput.dispatchEvent(new Event("change",{bubbles:true}));activeInput.dispatchEvent(new Event("input",{bubbles:true}));} close(); return; }
+        if(e.target.closest("[data-close]")){close();return;}
+        return;
+      }
+      close();
+    }, true);
+    document.addEventListener("focusin", e => { if(e.target.matches && e.target.matches(jalaliDateInputSelector())) open(e.target); });
+    document.addEventListener("keydown", e => { if(e.key==="Escape"&&!picker.hidden) close(); });
+    window.addEventListener("resize", place); window.addEventListener("scroll", place, true);
+  }
+  installJalaliDatePicker();
   function toast(message, type = "info") {
     let el = $("#kj-toast");
     if (!el) {
@@ -699,8 +775,8 @@
     put(["khadem_code","personnel_code","code"],generatedCode);
     put(["father_name"],String(fd.get("father_name")||"").trim());
     put(["national_code","national_id"],String(fd.get("national_code")||"").trim());
-    put(["birth_date"],String(fd.get("birth_date")||"").trim());
-    put(["membership_date"],String(fd.get("membership_date")||"").trim());
+    put(["birth_date"],jalaliToGregorian(String(fd.get("birth_date")||"").trim()));
+    put(["membership_date"],jalaliToGregorian(String(fd.get("membership_date")||"").trim()));
     put(["phone","mobile","phone_number"],String(fd.get("phone")||"").trim());
     put(["occupation","job"],String(fd.get("occupation")||"").trim());
     put(["primary_responsibility"],String(fd.get("primary_responsibility")||"").trim());
