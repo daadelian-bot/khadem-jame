@@ -342,7 +342,7 @@
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
           <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small></div>
-          <div class="kj-actions"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><span class="kj-small">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><button class="kj-secondary" id="kj-refresh">به‌روزرسانی اطلاعات</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div>
+          <div class="kj-actions"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><span class="kj-small">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><a class="kj-secondary" href="./change-password.html" style="display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;text-decoration:none;color:inherit">🔐 تغییر رمز عبور</a><button class="kj-secondary" id="kj-refresh">به‌روزرسانی اطلاعات</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div>
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
