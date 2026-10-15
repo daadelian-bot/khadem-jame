@@ -1161,7 +1161,7 @@
     };
     main.innerHTML = (views[state.tab] || dashboard)();
     if(state.tab==="services") bindOfficialServiceForm();
-    $("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
+    $$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
       state.tab = button.dataset.quickTab; state.selectedKhadem = null;
       render();
       window.scrollTo({top:0,behavior:"smooth"});
