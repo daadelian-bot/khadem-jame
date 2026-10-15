@@ -53,10 +53,10 @@ label{display:block;font-weight:bold;margin:12px 0 5px}input{width:100%;padding:
     if (password !== confirmPassword) return show("رمز عبور و تکرار آن یکسان نیستند.", "error");
     button.disabled = true; button.textContent = "در حال ایجاد حساب…";
     try {
-      const response = await fetch(SUPABASE_URL + "/auth/v1/signup", {
+      const response = await fetch(SUPABASE_URL + "/auth/v1/signup?redirect_to=" + encodeURIComponent("https://daadelian-bot.github.io/khadem-jame/"), {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ email, password, data: { full_name: fullName }, options: { emailRedirectTo: "https://daadelian-bot.github.io/khadem-jame/" } }),
+        body: JSON.stringify({ email, password, data: { full_name: fullName } }),
         credentials: "omit", cache: "no-store"
       });
       let result = {}; try { result = await response.json(); } catch (_) {}
