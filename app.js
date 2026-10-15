@@ -1071,7 +1071,7 @@
     return raw ? raw.slice(0, 10) : "بدون تاریخ";
   }
   function responsibilityFromNotes(value) {
-    const match = String(value || "").match(/مسئولیت:\\s*([^\\r\\n]+)/);
+    const match = String(value || "").match(/مسئولیت:\s*([^\r\n]+)/);
     return match ? match[1].trim() : "";
   }
   function serviceHistoryRows(kind) {
