@@ -1,12 +1,12 @@
-/* سامانه جامع مدیریت خادمین — extracted from app.js; visual rules only */
+/* سامانه جامع مدیریت خادمین — پوسته مرجع سرمه‌ای/طلایی؛ فقط یک stylesheet فعال */
 
       :root{--kj-maroon:#781f32;--kj-gold:#bd9855;--kj-bg:#f5f3f0;--kj-ink:#292522;--kj-muted:#77716b;--kj-border:#e8e1d9}
       *{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.8}
       button,input,select,textarea{font:inherit}button{cursor:pointer}.kj-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;background:var(--kj-bg)}
       .kj-login-card{width:100%;max-width:430px;background:#fff;border:1px solid var(--kj-border);border-radius:20px;padding:26px;box-shadow:0 10px 38px #34251b12}
       .kj-logo{width:86px;height:86px;object-fit:contain;display:block;margin:0 auto 12px}.kj-login-card h1{text-align:center;font-size:21px;margin:0}.kj-login-card>p{text-align:center}
-      label{display:block;font-weight:bold;margin:12px 0 5px}.kj-login-card input,.kj-search,.kj-input{width:100%;border:1px solid #d8d0c8;border-radius:10px;padding:12px;background:white;outline-color:var(--kj-gold)}
-      .kj-primary,.kj-button{border:0;padding:11px 15px;background:var(--kj-maroon);color:white;font-weight:bold}.kj-login-card .kj-primary{width:100%;margin-top:18px}
+      label{display:block;font-weight:bold;margin:12px 0 5px}.kj-login-card input,.kj-search{width:100%;border:1px solid #d8d0c8;border-radius:10px;padding:12px;background:white;outline-color:var(--kj-gold)}
+      .kj-primary{border:0;padding:11px 15px;background:var(--kj-maroon);color:white;font-weight:bold}.kj-login-card .kj-primary{width:100%;margin-top:18px}
       .kj-small{font-size:12px;color:var(--kj-muted)}.kj-muted{color:var(--kj-muted)}.kj-alert,.kj-error{background:#fff0ee;border:1px solid #f1c7c1;color:#9c2418;padding:10px;border-radius:10px;margin:12px 0;overflow-wrap:anywhere}
       .kj-top{background:var(--kj-maroon);color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.kj-brand{font-weight:bold;}.kj-top small{display:block;color:#f1dfe2;font-weight:normal}
       .kj-shell{max-width:1500px;margin:auto}.kj-nav{gap:7px;overflow-x:auto;padding:10px;background:white;border-bottom:1px solid var(--kj-border);position:sticky;top:0;z-index:20}
@@ -62,7 +62,7 @@
       .kj-stat{color:#137c68}
       .kj-pill{background:#e5f5ef;color:#137c68}
       .kj-link{color:#137c68}
-      .kj-primary,.kj-button{background:#137c68}
+      .kj-primary{background:#137c68}
       .kj-table-wrap{border-color:var(--kj-border);}
       th{background:#f3f8f6;color:#355f56}
       .kj-footer{color:#81928d}
@@ -115,7 +115,7 @@
       .kj-hero-kicker{color:#167a63;text-transform:none;font-size:12px;letter-spacing:.2px}
       .kj-hero h1{font-size:28px;color:#103f35;line-height:1.7}
       .kj-hero p{color:#547168;max-width:760px}
-      .kj-primary,.kj-button{background:linear-gradient(110deg,#126c57,#1b8a6c);border-radius:11px;box-shadow:0 4px 10px #167a6320}
+      .kj-primary{background:linear-gradient(110deg,#126c57,#1b8a6c);border-radius:11px;box-shadow:0 4px 10px #167a6320}
       .kj-secondary{border-color:#dce8e3;border-radius:11px;color:#285348}
       .kj-card{border:1px solid var(--kj-line);border-radius:17px;box-shadow:0 6px 22px #1c493b08;background:#fff}
       .kj-stat{color:#167a63}
@@ -246,8 +246,8 @@
       .kj-hero-emblem{background:#ffffffbd;border:1px solid #d8c79f;border-radius:20px;color:#173b58;box-shadow:0 8px 24px #10283f0b}
       .kj-hero-emblem span{filter:none}
       .kj-hero-emblem small{color:#8c6d34}
-      .kj-primary,.kj-button{background:linear-gradient(115deg,#173b58,#245975);border:1px solid #173b58;border-radius:10px;box-shadow:0 5px 13px #173b5825}
-      .kj-primary:hover,.kj-button:hover{filter:brightness(1.08)}
+      .kj-primary{background:linear-gradient(115deg,#173b58,#245975);border:1px solid #173b58;border-radius:10px;box-shadow:0 5px 13px #173b5825}
+      .kj-primary:hover{filter:brightness(1.08)}
       .kj-secondary{border:1px solid #d8e0e8;background:#fff;color:#28465e;border-radius:10px}
       .kj-main .kj-page-title{color:#10283f;font-weight:800;font-size:24px;padding-bottom:12px;border-bottom:1px solid #dce3eb}
       .kj-section-title{color:#173b58;font-weight:800}
@@ -302,7 +302,7 @@
     
 
 /* ثبت خدمت رسمی: فرم برنامه و انتخاب چند خادم */
-.kj-official-service-card,.kj-official-service-history{margin-bottom:16px}
+.kj-official-service-card{margin-bottom:16px}
 .kj-official-service-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .kj-official-service-grid label,.kj-service-notes-label{display:flex;flex-direction:column;gap:6px;font-weight:600}
 .kj-official-service-grid input,.kj-service-notes-label textarea,#kj-service-khadem-search{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--kj-border,#e8e1d9);border-radius:10px;background:#fff;color:inherit;padding:11px 12px;font:inherit}
@@ -366,3 +366,17 @@ input[data-jalali-date], input[name="birth_date"], input[name="membership_date"]
   .kj-action-buttons{width:100%;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.5fr) minmax(0,.8fr);gap:6px}
   .kj-action-buttons button{min-width:0;padding:7px 6px;font-size:12px}
 }
+
+/* پوستهٔ مرجع نهایی: سرمه‌ای و طلایی. متغیرهای باقی‌مانده از پوسته‌های قدیمی به این پالت نگاشت می‌شوند. */
+:root{--kj-maroon:#173b58;--kj-gold:#c6a66a;--kj-bg:#f3f5f8;--kj-ink:#1c3045;--kj-muted:#65798a;--kj-border:#dfe6ed;--kj-card:#fff}
+.kj-registration-grid .kj-code-field{background:linear-gradient(135deg,#10283f,#245975);border-color:#c6a66a}
+.kj-registration-grid .kj-code-field b{color:#fff}
+.kj-registration-grid .kj-code-field input{background:#f8f5ee;border-color:#c6a66a;color:#173b58}
+.kj-registration-grid .kj-name-field{border-color:#c6a66a;background:#fff}
+.kj-stat,.kj-service-count{color:#173b58}
+.kj-service-participant input{accent-color:#173b58}
+.kj-menu-group{border-top-color:#ffffff16}
+.kj-loading-card{color:#627589}
+.kj-spinner{border-color:#d9e2eb;border-top-color:#c6a66a}
+.kj-data-note{color:#65798a;border-color:#dfe6ed}
+.kj-card-heading h3,.kj-guide-card h3{color:#173b58}
