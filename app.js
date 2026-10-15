@@ -318,7 +318,23 @@
       ["appSettings", "app_settings"],
       ["tuitionPayments", "tuition_payments"]
     ];
-    await Promise.all(tables.map(async ([key, table]) => { state[key] = await loadTable(table, key); }));
+    const dataModule = {
+      khadems:"khadems",
+      services:"services", nonattendance:"nonattendance",
+      meetings:"meetings", meetingInvitees:"meetings", meetingAttendance:"meetings",
+      deployments:"deployments", vehicles:"deployments", drivers:"deployments",
+      finance:"finance", tuitionDues:"finance", financeInstallments:"finance", tuitionPayments:"finance",
+      fund:"fund", donors:"donors",
+      equipmentIssues:"equipment", equipmentPayments:"equipment", equipmentReceipts:"equipment",
+      equipmentReceiptItems:"equipment", equipmentCommitteePayments:"equipment",
+      profiles:"users", roles:"users", permissions:"users", rolePermissions:"users",
+      audit:"audit", systemSettings:"settings", appSettings:"settings"
+    };
+    await Promise.all(tables.map(async ([key, table]) => {
+      const module = dataModule[key];
+      if (module && !canAccess(module)) { state[key] = []; delete state.errors[key]; return; }
+      state[key] = await loadTable(table, key);
+    }));
     state.loading = false;
     state.loaded = true;
     render();
