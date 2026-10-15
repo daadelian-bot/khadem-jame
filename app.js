@@ -20,6 +20,7 @@
     accessPermissions: null,
     isPrimaryAdmin: false,
     accessCustom: false,
+    accessLoaded: false,
     khadems: [],
     services: [],
     nonattendance: [],
@@ -371,6 +372,11 @@
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     state.selectedKhadem = null;
+    state.role = "user";
+    state.isPrimaryAdmin = false;
+    state.accessPermissions = null;
+    state.accessCustom = false;
+    state.accessLoaded = false;
     loginPage();
   }
   function loginPage(message = "") {
@@ -404,10 +410,12 @@
     return app;
   }
   function canAccess(tab) {
+    // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
     if (state.isPrimaryAdmin) return true;
-    if (!state.accessCustom || !state.accessPermissions) return true;
-    if (tab === "dashboard") return true; // داشبورد پایه همیشه برای ورود و مسیریابی در دسترس است.
-    return state.accessPermissions[tab] === true;
+    if (tab === "dashboard") return true;
+    if (!state.accessLoaded) return false;
+    if (!state.accessCustom) return true;
+    return state.accessPermissions?.[tab] === true;
   }
   function shell() {
     const app = ensureRoot();
@@ -1539,6 +1547,22 @@
       if (!approvedProfile || approvedProfile.is_active !== true) {
         loginPage("درخواست حساب شما ثبت شده اما هنوز توسط مدیر اصلی تأیید نشده است. پس از تأیید، با همین ایمیل و رمز دوباره وارد شوید.");
         return;
+      }
+      // مجوزها پیش از ساخت منو و دریافت داده‌ها از سرور بررسی شوند.
+      // اگر بررسی مجوز شکست بخورد، ادامه کار متوقف می‌شود و دسترسی پیش‌فرض باز نمی‌شود.
+      const access = await request("/functions/v1/manage-user-permissions", {
+        method: "POST", body: { action: "my_permissions" }
+      });
+      if (!access || !access.role) throw new Error("نقش و مجوزهای حساب از سرور دریافت نشد؛ دسترسی تا بررسی مجدد بسته ماند.");
+      state.role = access.role;
+      state.isPrimaryAdmin = access.role === "admin";
+      state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
+      state.accessCustom = !!state.accessPermissions;
+      state.accessLoaded = true;
+      if (!canAccess(state.tab)) {
+        state.tab = "dashboard";
+        state.selectedKhadem = null;
+        history.replaceState(null, "", window.location.pathname + window.location.search + "#dashboard");
       }
       await loadData();
     } catch (e) {
