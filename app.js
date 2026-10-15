@@ -1223,22 +1223,7 @@
     ]);
   }
 
-  function fridayPage() {
-    const rows = state.services.filter(isFridayService).map(r => {
-      const linkedKhadem = state.khadems.find(k =>
-        String(khademId(k)) === String(r.khadem_id) ||
-        (r.khadem_code !== undefined && r.khadem_code !== null && String(khademCode(k)) === String(r.khadem_code))
-      );
-      return {
-        ...r,
-        khadem_code: val(r, ["khadem_code", "personnel_code"]) || khademCode(linkedKhadem || {}),
-        service_date: val(r, ["service_date", "date", "created_at"]),
-        description: val(r, ["description", "notes", "note"])
-      };
-    });
-    return `<h1 class="kj-page-title">سوابق خدمت شب جمعه</h1><div class="kj-card"><p>خدمت‌هایی که هنگام ثبت، گزینهٔ «ثبت خدمت شب جمعه» برای آن‌ها انتخاب شده است، در این بخش به‌عنوان سابقه نمایش داده می‌شوند.</p><p class="kj-small">اطلاعات از همان سوابق خدمت موجود خوانده می‌شود و برای این تغییر، ساختار پایگاه داده دست‌کاری نشده است.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
-  }
-  function reportsPage() {
+    function reportsPage() {
     return `<h1 class="kj-page-title">گزارش‌ها</h1><div class="kj-grid">${[
       ["خادمین",state.khadems.length],["خدمات",state.services.length],["جلسات",state.meetings.length],
       ["مأموریت‌ها",state.deployments.length],["تراکنش‌های مالی",state.finance.length],["خیرین",state.donors.length]
