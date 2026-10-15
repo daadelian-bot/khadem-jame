@@ -389,7 +389,7 @@
   function canAccess(tab) {
     if (state.role === "admin") return true;
     if (!state.accessCustom || !state.accessPermissions) return true;
-    if (tab === "changePassword" || tab === "dashboard") return state.accessPermissions[tab] === true;
+    if (tab === "dashboard") return true; // داشبورد پایه همیشه برای ورود و مسیریابی در دسترس است.
     return state.accessPermissions[tab] === true;
   }
   function shell() {
