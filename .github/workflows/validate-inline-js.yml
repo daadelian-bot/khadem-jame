@@ -11,6 +11,7 @@ on:
       - "service-worker.js"
       - "equipment-finance.js"
       - "manifest.webmanifest"
+      - "admin-users.html"
       - ".github/workflows/validate-inline-js.yml"
   pull_request:
     paths:
@@ -82,6 +83,30 @@ jobs:
           } else if (failed > 0) {
             process.exitCode = 1;
           }
+          NODE
+      - name: Parse inline JavaScript in admin-users.html
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { spawnSync } = require('node:child_process');
+          const html = fs.readFileSync('admin-users.html', 'utf8');
+          const re = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+          let match, checked = 0, failed = 0;
+          while ((match = re.exec(html)) !== null) {
+            const attrs = match[1] || '';
+            const code = (match[2] || '').trim();
+            if (!code || /\\bsrc\\s*=/i.test(attrs)) continue;
+            checked++;
+            const result = spawnSync(process.execPath, ['--check', '-'], { input: code, encoding: 'utf8' });
+            if (result.status !== 0) {
+              failed++;
+              console.error('FAILED: admin-users.html inline script #' + checked);
+              console.error(result.stderr || result.stdout || 'Syntax check failed.');
+            }
+          }
+          console.log('Checked ' + checked + ' admin-users inline script(s); failures: ' + failed + '.');
+          if (checked === 0 || failed > 0) process.exitCode = 1;
           NODE
       - name: Check standalone JavaScript files
         run: |
