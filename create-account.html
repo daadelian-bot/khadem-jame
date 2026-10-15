@@ -30,7 +30,7 @@ label{display:block;font-weight:bold;margin:12px 0 5px}input{width:100%;padding:
 <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" minlength="8" required placeholder="رمز عبور را دوباره وارد کنید">
 <button id="submit" type="submit">ایجاد حساب</button>
 </form>
-<div class="note">پس از ثبت‌نام ممکن است برای فعال‌سازی حساب، تأیید ایمیل لازم باشد. ایجاد حساب به‌تنهایی به معنی اعطای دسترسی مدیریتی یا دسترسی به اطلاعات خادمین نیست.</div>
+<div class="note">پس از ثبت درخواست، مدیر اصلی باید حساب را تأیید کند. تا پیش از تأیید، دسترسی به اطلاعات سامانه فعال نمی‌شود. ایمیل تأیید برای این فرایند لازم نیست.</div>
 <p class="foot"><a href="./live-data.html">بازگشت به صفحه ورود</a></p>
 </main>
 <script>
@@ -53,10 +53,10 @@ label{display:block;font-weight:bold;margin:12px 0 5px}input{width:100%;padding:
     if (password !== confirmPassword) return show("رمز عبور و تکرار آن یکسان نیستند.", "error");
     button.disabled = true; button.textContent = "در حال ایجاد حساب…";
     try {
-      const response = await fetch(SUPABASE_URL + "/auth/v1/signup?redirect_to=" + encodeURIComponent("https://daadelian-bot.github.io/khadem-jame/"), {
+      const response = await fetch(SUPABASE_URL + "/functions/v1/public-registration", {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ email, password, data: { full_name: fullName } }),
+        body: JSON.stringify({ email, password, full_name: fullName }),
         credentials: "omit", cache: "no-store"
       });
       let result = {}; try { result = await response.json(); } catch (_) {}
@@ -65,10 +65,10 @@ label{display:block;font-weight:bold;margin:12px 0 5px}input{width:100%;padding:
         throw new Error(detail || ("HTTP " + response.status));
       }
       form.reset();
-      show("درخواست ایجاد حساب ثبت شد. اگر تأیید ایمیل فعال باشد، صندوق ورودی و پوشه هرزنامه را بررسی و ایمیل تأیید را باز کنید. سپس از صفحه ورود وارد شوید. اگر ثبت‌نام عمومی در سامانه غیرفعال باشد، مدیر سامانه باید حساب را ایجاد کند.", "ok");
+      show(result.message || "درخواست حساب ثبت شد. پس از تأیید مدیر اصلی، با همین ایمیل و رمزی که انتخاب کرده‌اید وارد سامانه شوید؛ برای این فرایند نیازی به ایمیل تأیید نیست.", "ok");
     } catch (error) {
       const detail = error && error.message ? error.message : "خطای ناشناخته";
-      show("ایجاد حساب انجام نشد: " + detail + " اگر ثبت‌نام عمومی در Supabase غیرفعال است، با مدیر سامانه تماس بگیرید.", "error");
+      show("ایجاد حساب انجام نشد: " + detail + " اگر مشکل ادامه داشت، با مدیر اصلی سامانه تماس بگیرید.", "error");
     } finally { button.disabled = false; button.textContent = "ایجاد حساب"; }
   });
 })();
