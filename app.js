@@ -405,7 +405,7 @@
           <aside class="kj-sidebar" aria-label="منوی سامانه">
             <input class="kj-side-search" id="kj-menu-search" type="search" placeholder="جست‌وجوی منو و زیرمنو…" aria-label="جست‌وجوی منو و زیرمنو">
             <nav class="kj-nav" aria-label="منوی اصلی">
-              ${groups.map(([title,items],i)=>`<section class="kj-menu-group open">
+              ${groups.map(([title,items],i)=>`<section class="kj-menu-group ${items.some(([id])=>id===state.tab) ? "open" : ""}">
                 <button type="button" class="kj-group-toggle" aria-expanded="${i===0?"true":"false"}">${title}</button>
                 <div class="kj-group-items">${items.map(([id,label])=>`<button type="button" data-tab="${id}" data-label="${label.replace(/^[^ ]+ /,"")}" class="${state.tab===id?"active":""}">${label}</button>`).join("")}</div>
               </section>`).join("")}
@@ -660,6 +660,59 @@
     el.addEventListener("click", e => { if (e.target === el) el.remove(); });
   }
 
+
+  function dashboardAnalytics() {
+    const monthCounts = new Map();
+    const typeCounts = new Map();
+    const statusCounts = new Map([["فعال",0],["غیرفعال",0],["نامشخص",0]]);
+    state.services.forEach(row => {
+      const raw = String(val(row, ["service_date","date","created_at"]) || "").trim();
+      let month = "";
+      const normalized = raw.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replaceAll("-", "/");
+      const m = normalized.match(/((?:13|14)\d{2}|20\d{2})\/(\d{1,2})/);
+      if (m) month = m[1] + "/" + String(m[2]).padStart(2,"0");
+      else if (raw) {
+        const converted = String(jalaliInputDate(raw) || "").replaceAll("-", "/");
+        const cm = converted.match(/((?:13|14)\d{2})\/(\d{1,2})/);
+        if (cm) month = cm[1] + "/" + String(cm[2]).padStart(2,"0");
+      }
+      if (month) monthCounts.set(month, (monthCounts.get(month) || 0) + 1);
+      const type = String(val(row, ["service_type","service_name","program_type","type","title"]) || "ثبت‌نشده").trim();
+      typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
+    });
+    state.khadems.forEach(k => {
+      const status = activeLabel(k);
+      statusCounts.set(status, (statusCounts.get(status) || 0) + 1);
+    });
+    const months = [...monthCounts.entries()].sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
+    const maxMonth = Math.max(1, ...months.map(x=>x[1]));
+    const monthHtml = months.length ? months.map(([label,count]) =>
+      '<div class="kj-chart-column" title="' + esc(label) + ': ' + fa(count) + ' خدمت">' +
+      '<span class="kj-chart-value">' + fa(count) + '</span>' +
+      '<div class="kj-chart-bar-track"><div class="kj-chart-bar" style="height:' + Math.max(5, count/maxMonth*100) + '%"></div></div>' +
+      '<span class="kj-chart-label">' + fa(label.slice(2)) + '</span></div>').join("") :
+      '<div class="kj-chart-empty">برای رسم روند ماهانه، تاریخ معتبر در سوابق خدمت ثبت نشده است.</div>';
+    const topTypes = [...typeCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxType = Math.max(1, ...topTypes.map(x=>x[1]));
+    const typeHtml = topTypes.length ? topTypes.map(([label,count]) =>
+      '<div class="kj-horizontal-row"><div class="kj-horizontal-label" title="' + esc(label) + '">' + esc(label) +
+      '</div><div class="kj-horizontal-track"><span style="width:' + Math.max(2,count/maxType*100) + '%"></span></div><b>' + fa(count) + '</b></div>').join("") :
+      '<div class="kj-chart-empty">هنوز سابقه خدمتی برای تحلیل نوع خدمت ثبت نشده است.</div>';
+    const statusColors = {"فعال":"active","غیرفعال":"inactive","نامشخص":"unknown"};
+    const statusTotal = [...statusCounts.values()].reduce((a,b)=>a+b,0);
+    const statusHtml = [...statusCounts.entries()].map(([label,count]) =>
+      '<div class="kj-status-row"><span class="kj-status-dot ' + statusColors[label] + '"></span><span>' + label +
+      '</span><strong>' + fa(count) + '</strong><div class="kj-status-track"><span class="' + statusColors[label] +
+      '" style="width:' + (statusTotal?count/statusTotal*100:0) + '%"></span></div></div>').join("");
+    return '<section class="kj-analytics-section">' +
+      '<div class="kj-section-heading"><div><span class="kj-section-eyebrow">تحلیل عملکرد</span><h2 class="kj-section-title">نمایش گرافیکی شاخص‌ها</h2></div><span class="kj-data-note">بر پایه داده‌های دریافت‌شده</span></div>' +
+      '<div class="kj-analytics-grid">' +
+      '<article class="kj-card kj-chart-card"><div class="kj-chart-head"><div><span class="kj-chart-eyebrow">روند زمانی</span><h3>سوابق خدمت در ماه‌های اخیر</h3></div><span class="kj-chart-icon">↗</span></div><div class="kj-chart-columns">' + monthHtml + '</div><p class="kj-chart-foot">فقط ماه‌هایی نمایش داده می‌شوند که تاریخ قابل تشخیص دارند.</p></article>' +
+      '<article class="kj-card kj-chart-card"><div class="kj-chart-head"><div><span class="kj-chart-eyebrow">ترکیب فعالیت</span><h3>پرتکرارترین انواع خدمت</h3></div><span class="kj-chart-icon">▤</span></div><div class="kj-horizontal-chart">' + typeHtml + '</div><p class="kj-chart-foot">حداکثر پنج نوع خدمت پرتکرار از اطلاعات موجود.</p></article>' +
+      '<article class="kj-card kj-chart-card kj-status-chart"><div class="kj-chart-head"><div><span class="kj-chart-eyebrow">وضعیت بانک خادمین</span><h3>توزیع وضعیت خادمین</h3></div><span class="kj-chart-icon">◉</span></div><div class="kj-status-list">' + statusHtml + '</div><p class="kj-chart-foot">وضعیت‌های نامشخص جداگانه نشان داده می‌شوند و فعال فرض نمی‌شوند.</p></article>' +
+      '</div></section>';
+  }
+
   function dashboard() {
     const stats = [
       ["تعداد خادمین", state.khadems.length, "👤"],
@@ -695,6 +748,7 @@
       ${Object.entries(state.errors).filter(([,e])=>e).length ? `<div class="kj-error"><b>برخی اطلاعات بارگذاری نشدند.</b><p>پیام هر بخش را جداگانه بررسی کنید؛ خطای دسترسی با خالی بودن اطلاعات یکسان نیست.</p>${Object.entries(state.errors).filter(([,e])=>e).map(([k,e])=>`<div>${esc(fieldLabel(k))}: ${esc(e)}</div>`).join("")}</div>` : ""}
       <div class="kj-section-heading"><div><span class="kj-section-eyebrow">خلاصه مدیریتی</span><h2 class="kj-section-title">نمای کلی مجموعه</h2></div><span class="kj-data-note">آمار بر اساس اطلاعات دریافت‌شده</span></div>
       <div class="kj-grid kj-stats-grid">${stats.map(([label,value,icon],i) => `<div class="kj-card kj-stat-card kj-stat-card-${i+1}"><div class="kj-stat-top"><span class="kj-stat-icon">${icon}</span><span class="kj-stat-label">${label}</span></div><div class="kj-stat">${fa(value)}</div><div class="kj-stat-foot">اطلاعات قابل مشاهده در سامانه</div></div>`).join("")}</div>
+      ${dashboardAnalytics()}
       <div class="kj-section-heading kj-shortcuts-head"><div><span class="kj-section-eyebrow">میانبرهای پرکاربرد</span><h2 class="kj-section-title">دسترسی سریع به بخش‌ها</h2></div><span class="kj-small">برای ورود، کارت موردنظر را انتخاب کنید.</span></div>
       <div class="kj-shortcut-grid">${shortcuts.map(([tab,icon,title,desc])=>`<button type="button" class="kj-shortcut-card" data-quick-tab="${tab}"><span class="kj-shortcut-icon">${icon}</span><strong>${title}</strong><small>${desc}</small><b>باز کردن بخش <span aria-hidden="true">←</span></b></button>`).join("")}</div>
       <section class="kj-card kj-recent-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">آخرین رویدادها</span><h3>پیگیری آخرین خدمات</h3></div><span class="kj-heading-icon">⌛</span></div>${state.errors.services||state.errors.service_records?errBox("services"):latest.length?tableHtml(latest.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):"سابقه‌ای برای نمایش نیست."}</section>
