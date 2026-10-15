@@ -277,10 +277,12 @@
       state.errors[stateKey] = message;
       state.errors[table] = message;
       console.warn("KJ: failed to load table", table, e);
-      return [];
+      // در خطای موقت، داده قبلی همان بخش حفظ شود تا شکست یک درخواست اطلاعات موجود را پاک نکند.
+      return Array.isArray(state[stateKey]) ? state[stateKey] : [];
     }
   }
   async function loadData() {
+    if (state.loading) return;
     state.loading = true;
     state.errors = {};
     render();
@@ -318,7 +320,8 @@
     state.loaded = true;
     render();
     const failed = Object.values(state.errors).filter(Boolean).length;
-    if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطا در همان بخش نمایش داده شده است.", "error");
+    if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ داده‌های قبلی آن بخش حفظ شدند و خطا در همان بخش نمایش داده شده است.", "error");
+    else toast("همه اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
   }
 
   async function login() {
@@ -403,7 +406,7 @@
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
           <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small></div>
-          <div class="kj-actions"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><span class="kj-small">${esc(user?.email || user?.user_metadata?.name || "کاربر سامانه")}</span><a class="kj-secondary" href="./change-password.html" style="display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;text-decoration:none;color:inherit">🔐 تغییر رمز عبور</a><button class="kj-secondary" id="kj-refresh">به‌روزرسانی اطلاعات</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div>
+          <div class="kj-actions"><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div></div>
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
