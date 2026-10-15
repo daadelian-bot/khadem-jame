@@ -48,4 +48,3 @@ Deno.serve(async (req: Request) => {
   }
   return reply(200, { ok: true, status: nextStatus, message: action === "approve" ? "حساب تأیید شد؛ کاربر اکنون می‌تواند وارد سامانه شود." : "درخواست رد شد." });
 });
-});
