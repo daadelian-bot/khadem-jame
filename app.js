@@ -400,7 +400,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["changePassword","🔐 تغییر رمز عبور"]]]
     ];
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
@@ -1250,6 +1250,31 @@
     return `<h1 class="kj-page-title">مدیریت سامانه و تنظیمات</h1><p class="kj-muted">این صفحه فقط تنظیمات قابل مشاهده را می‌خواند؛ هیچ مقداری را تغییر نمی‌دهد و مقادیر حساس را نمایش نمی‌دهد.</p><div class="kj-card">${errBox("systemSettings")}${genericPage("systemSettings","تنظیمات عمومی",safeRows(state.systemSettings),[{key:"key",label:"کلید تنظیم"},{key:"description",label:"شرح"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("appSettings")}${genericPage("appSettings","تنظیمات برنامه",safeRows(state.appSettings),[{key:"key",label:"کلید تنظیم"},{key:"description",label:"شرح"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px"><h3>اتصال سامانه</h3><p>نشانی پروژه: <code>${esc(SUPABASE_URL)}</code></p><p class="kj-small">تلاش برای دریافت اطلاعات: ${state.loaded ? "انجام شده" : "در انتظار"}؛ موفقیت هر جدول در پیام همان بخش مشخص می‌شود.</p><button class="kj-primary" id="kj-settings-refresh">دریافت دوباره اطلاعات</button></div>`;
   }
 
+  function changePasswordPage() {
+    return `<h1 class="kj-page-title">تغییر رمز عبور</h1><p class="kj-muted">رمز عبور حساب فعلی را تغییر دهید. این گزینه فقط در زیرمنوی «مدیریت سامانه» قرار دارد.</p><div class="kj-card" style="max-width:620px"><form id="kj-change-password-form" autocomplete="off"><div class="kj-field"><label for="kj-new-password">رمز عبور جدید</label><input id="kj-new-password" name="password" type="password" minlength="8" autocomplete="new-password" required placeholder="حداقل ۸ نویسه"></div><div class="kj-field"><label for="kj-confirm-password">تکرار رمز عبور جدید</label><input id="kj-confirm-password" name="password_confirm" type="password" minlength="8" autocomplete="new-password" required placeholder="رمز جدید را دوباره وارد کنید"></div><p id="kj-change-password-message" class="kj-small" role="status" aria-live="polite"></p><button class="kj-primary" id="kj-change-password-submit" type="submit">ذخیره رمز جدید</button></form></div>`;
+  }
+  async function savePasswordChange(form) {
+    const password = String(form.elements.password?.value || "");
+    const confirm = String(form.elements.password_confirm?.value || "");
+    const message = $("#kj-change-password-message");
+    const button = $("#kj-change-password-submit");
+    if (password.length < 8) { if (message) message.textContent = "رمز عبور باید حداقل ۸ نویسه داشته باشد."; return; }
+    if (password !== confirm) { if (message) message.textContent = "رمز عبور و تکرار آن یکسان نیستند."; return; }
+    if (!token() || token() === "demo") { if (message) message.textContent = "نشست ورود معتبر نیست؛ دوباره وارد سامانه شوید."; return; }
+    if (button) { button.disabled = true; button.textContent = "در حال ذخیره…"; }
+    if (message) message.textContent = "در حال تغییر رمز عبور…";
+    try {
+      await request("/auth/v1/user", { method: "PUT", body: { password } });
+      form.reset();
+      if (message) message.textContent = "رمز عبور با موفقیت تغییر کرد."; 
+      toast("رمز عبور با موفقیت تغییر کرد.", "success");
+    } catch (e) {
+      if (message) message.textContent = "تغییر رمز انجام نشد: " + (e?.message || "خطای نامشخص");
+      toast("تغییر رمز عبور انجام نشد.", "error");
+    } finally {
+      if (button) { button.disabled = false; button.textContent = "ذخیره رمز جدید"; }
+    }
+  }
   function render() {
     if (!token()) { loginPage(); return; }
     shell();
@@ -1280,9 +1305,11 @@
       donors: () => genericPage("donors","خیرین",state.donors),
       reports: reportsPage,
       settings: settingsPage,
+      changePassword: changePasswordPage,
     };
     main.innerHTML = (views[state.tab] || dashboard)();
     if(state.tab==="serviceRegister") bindOfficialServiceForm();
+    if (state.tab === "changePassword") $("#kj-change-password-form")?.addEventListener("submit", e => { e.preventDefault(); savePasswordChange(e.currentTarget); });
     $$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
       state.tab = button.dataset.quickTab; state.selectedKhadem = null;
       render();
@@ -1348,7 +1375,7 @@
   }
 
   async function startApp() {
-    const allowedTabs = new Set(["dashboard","khadems","serviceRegister","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings"]);
+    const allowedTabs = new Set(["dashboard","khadems","serviceRegister","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings","changePassword"]);
     const requestedTab = window.location.hash.replace(/^#/, "");
     if (allowedTabs.has(requestedTab)) state.tab = requestedTab;
     injectStyles();
