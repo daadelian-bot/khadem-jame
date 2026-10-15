@@ -84,14 +84,12 @@
       @media(max-width:1000px){.kj-shortcut-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:700px){.kj-hero{padding:18px}.kj-hero h1{font-size:20px}.kj-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-shortcut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-shortcuts-head{align-items:flex-start;flex-direction:column}}
       @media(max-width:390px){.kj-shortcut-grid{grid-template-columns:1fr}.kj-hero-actions button{width:100%}}
-      .kj-content-wrap{}
       @media(max-width:850px){.kj-layout{padding:10px;gap:10px}.kj-sidebar{padding:10px}.kj-top{padding:10px 12px}.kj-brand{font-size:15px}.kj-nav{display:block}.kj-menu-group.open .kj-group-items{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-group-items button{font-size:13px;padding:8px}.kj-side-foot{display:none}}
       @media(max-width:420px){.kj-menu-group.open .kj-group-items{grid-template-columns:1fr}.kj-top .kj-actions{gap:5px}.kj-top .kj-actions button{padding:7px 9px}}
     
 
 
       :root{--kj-green-deep:#103f35;--kj-green:#167a63;--kj-green-light:#e7f5ef;--kj-canvas:#f4f7f6;--kj-line:#e0e9e5;--kj-text:#203a34}
-      body{}
       .kj-shell{background:var(--kj-canvas)}
       .kj-top{background:linear-gradient(110deg,#103f35 0%,#176c58 60%,#23876c 100%);color:#fff;border:0;padding:16px 26px;box-shadow:0 6px 22px #103f351f}
       .kj-brand,.kj-top .kj-small{color:#fff!important}
@@ -180,7 +178,6 @@
     
 
 
-      .kj-shell{}
       .kj-layout{grid-template-columns:270px minmax(0,1fr)!important;align-items:start}
       .kj-content-wrap{display:block;width:100%;max-width:none;min-width:0}
       #kj-main.kj-main{display:block;width:100%;max-width:none;min-width:0;min-height:calc(100vh - 160px);padding:0}
@@ -190,7 +187,6 @@
       #kj-main .kj-table-wrap{max-width:100%}
       #kj-main .kj-grid{width:100%}
       @media(max-width:850px){
-        .kj-layout{}
         .kj-content-wrap{width:100%;min-width:0}
         #kj-main.kj-main{min-height:calc(100dvh - 130px);width:100%;padding:0}
       }
