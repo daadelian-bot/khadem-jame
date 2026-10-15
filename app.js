@@ -1120,7 +1120,7 @@
         description: val(r, ["description", "notes", "note"])
       };
     });
-    return `<h1 class="kj-page-title">پایش خدمت شب جمعه</h1><div class="kj-card"><p>این صفحه سوابقی را که نوع یا توضیحات آن‌ها به شب جمعه اشاره دارد، از میان سوابق خدمت نمایش می‌دهد.</p><p class="kj-small">محاسبهٔ قطعی مهلت ۴۵ روزه به نام و تاریخ استاندارد خدمت در پایگاه داده وابسته است؛ این نسخه هیچ داده‌ای را برای تکمیل این گزارش تغییر نمی‌دهد.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
+    return `<h1 class="kj-page-title">سوابق خدمت شب جمعه</h1><div class="kj-card"><p>خدمت‌هایی که هنگام ثبت، گزینهٔ «ثبت خدمت شب جمعه» برای آن‌ها انتخاب شده است، در این بخش به‌عنوان سابقه نمایش داده می‌شوند.</p><p class="kj-small">اطلاعات از همان سوابق خدمت موجود خوانده می‌شود و برای این تغییر، ساختار پایگاه داده دست‌کاری نشده است.</p></div>${errBox("services")}${tableHtml(rows,[{key:"khadem_code",label:"کد خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"description",label:"توضیحات"}],state.errors.services ? "دریافت سوابق خدمت ناموفق بود." : "سابقه‌ای با نشانهٔ شب جمعه پیدا نشد.")}`;
   }
   function reportsPage() {
     return `<h1 class="kj-page-title">گزارش‌ها</h1><div class="kj-grid">${[
