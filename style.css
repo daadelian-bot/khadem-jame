@@ -352,3 +352,17 @@ input[data-jalali-date], input[name="birth_date"], input[name="membership_date"]
 .kj-service-history-date span:last-child{color:var(--kj-muted,#77716b)}
 .kj-service-history-summary{margin-bottom:14px;line-height:1.9}
 .kj-service-history-summary p{margin:4px 0}
+
+
+/* Header controls: keep menu, refresh and sign-out together without changing the current theme. */
+.kj-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.kj-user-title{display:inline-flex;align-items:center;font-weight:700;white-space:nowrap}
+.kj-action-buttons{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.kj-action-buttons button{white-space:nowrap}
+.kj-action-buttons button:disabled{opacity:.7;cursor:wait}
+@media(max-width:850px){
+  .kj-actions{width:100%;justify-content:space-between;gap:8px}
+  .kj-user-title{width:100%}
+  .kj-action-buttons{width:100%;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.5fr) minmax(0,.8fr);gap:6px}
+  .kj-action-buttons button{min-width:0;padding:7px 6px;font-size:12px}
+}
