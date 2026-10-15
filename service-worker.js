@@ -1,5 +1,5 @@
 /* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۷۲ */
-const CACHE_NAME = 'khadem-jame-shell-v173';
+const CACHE_NAME = 'khadem-jame-shell-v174';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
 
 self.addEventListener('install', event => {
