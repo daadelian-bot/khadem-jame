@@ -308,7 +308,7 @@
     const style = document.createElement("link");
     style.id = "kj-style";
     style.rel = "stylesheet";
-    style.href = "./style.css?v=20261015-24";
+    style.href = "./style.css?v=20261015-25";
     document.head.appendChild(style);
   }
   function shell() {
