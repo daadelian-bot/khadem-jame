@@ -989,7 +989,7 @@
     const form=$("#kj-official-service-form"); if(!form)return;
     const search=$("#kj-service-khadem-search"), list=$("#kj-service-participant-list");
     const count=()=>{const n=$('input[name="service_participants"]:checked',form).length;const el=$("#kj-service-selected-count");if(el)el.textContent=fa(n)+" خادم انتخاب شده";};
-    search?.addEventListener("input",()=>{const q=String(search.value||"").trim().toLocaleLowerCase("fa");$(".kj-service-participant",list).forEach(el=>el.hidden=Boolean(q&&!el.textContent.toLocaleLowerCase("fa").includes(q)));});
+    search?.addEventListener("input",()=>{const q=String(search.value||"").trim().toLocaleLowerCase("fa");$$(".kj-service-participant",list).forEach(el=>el.hidden=Boolean(q&&!el.textContent.toLocaleLowerCase("fa").includes(q)));});
     list?.addEventListener("change",count);
     form.addEventListener("submit",e=>{e.preventDefault();saveOfficialService(form);}); count();
   }
