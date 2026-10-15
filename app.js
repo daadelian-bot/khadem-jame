@@ -336,7 +336,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["changePassword","🔐 تغییر رمز عبور"]]]
     ];
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
@@ -1108,7 +1108,8 @@
       fund: () => genericPage("fund","صندوق",state.fund),
       donors: () => genericPage("donors","خیرین",state.donors),
       reports: reportsPage,
-      settings: settingsPage
+      settings: settingsPage,
+      changePassword: () => `<h1 class="kj-page-title">تغییر رمز عبور</h1><div class="kj-card"><p>از این بخش می‌توانید رمز عبور حساب کاربری خود را تغییر دهید. این گزینه برای همه کاربران واردشده، از جمله مدیر و کاربر عادی، در دسترس است.</p><p class="kj-muted">برای امنیت حساب، رمز جدید را در صفحه امن تغییر رمز وارد کنید.</p><a class="kj-primary" href="./change-password.html" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;text-decoration:none">رفتن به صفحه تغییر رمز عبور ←</a></div>`
     };
     main.innerHTML = (views[state.tab] || dashboard)();
     $$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
@@ -1168,7 +1169,7 @@
   }
 
   async function startApp() {
-    const allowedTabs = new Set(["dashboard","khadems","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings"]);
+    const allowedTabs = new Set(["dashboard","khadems","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings","changePassword"]);
     const requestedTab = window.location.hash.replace(/^#/, "");
     if (allowedTabs.has(requestedTab)) state.tab = requestedTab;
     injectStyles();
