@@ -1008,7 +1008,18 @@
     const msg=$("#kj-official-service-message"),btn=$("#kj-save-official-service"),fd=new FormData(form);
     const codes=fd.getAll("service_participants").map(v=>String(v).trim()).filter(Boolean),get=k=>String(fd.get(k)||"").trim();
     if(!codes.length){if(msg)msg.textContent="حداقل یک خادم را انتخاب کنید.";return;}
-    const kind=get("service_kind")==="friday"?"friday":"official";const f={kind,service_title:get("service_title"),shrine_name:get("shrine_name"),departure_date:get("departure_date"),arrival_date:get("arrival_date"),service_date:get("service_date"),service_end_date:get("service_end_date"),responsibility:get("responsibility"),group_name:get("group_name"),notes:get("notes")};
+    const kind=get("service_kind")==="friday"?"friday":"official";
+    const dateFields=[["departure_date","تاریخ حرکت از مبدأ"],["arrival_date","تاریخ حضور در مقصد"],["service_date","تاریخ شروع خدمت"],["service_end_date","تاریخ پایان خدمت"]];
+    const normalizedDates={};
+    for(const [key,label] of dateFields){
+      const raw=get(key).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replaceAll("-","/");
+      const iso=jalaliToGregorian(raw);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso))){if(msg)msg.textContent=label+" را با قالب سال/ماه/روز وارد کنید؛ نمونه: ۱۴۰۵/۰۷/۱۲. تاریخ واردشده معتبر نیست.";return;}
+      const parts=iso.split("-").map(Number), check=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));
+      if(check.getUTCFullYear()!==parts[0]||check.getUTCMonth()!==parts[1]-1||check.getUTCDate()!==parts[2]){if(msg)msg.textContent=label+" معتبر نیست؛ تاریخ را بررسی کنید.";return;}
+      normalizedDates[key]=iso;
+    }
+    const f={kind,service_title:get("service_title"),shrine_name:get("shrine_name"),departure_date:normalizedDates.departure_date,arrival_date:normalizedDates.arrival_date,service_date:normalizedDates.service_date,service_end_date:normalizedDates.service_end_date,responsibility:get("responsibility"),group_name:get("group_name"),notes:get("notes")};
     const people=codes.map(code=>state.khadems.find(k=>String(khademCode(k))===code)).filter(Boolean);
     if(people.length!==codes.length){if(msg)msg.textContent="یکی از خادمین انتخاب‌شده پیدا نشد؛ اطلاعات را تازه‌سازی کنید.";return;}
     const known=new Set(Object.keys(state.services[0]||{})),infer=known.size>0;
