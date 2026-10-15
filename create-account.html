@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#781f32">
+<title>ایجاد حساب کاربری | سامانه جامع خادمین</title>
+<style>
+:root{color-scheme:light;--kj-maroon:#781f32;--kj-gold:#bd9855;--kj-bg:#f5f3f0;--kj-ink:#292522;--kj-muted:#77716b;--kj-border:#e8e1d9}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;display:grid;place-items:center;background:var(--kj-bg);color:var(--kj-ink);font:14px/1.9 Tahoma,Arial,sans-serif}
+.card{width:min(460px,100%);background:#fff;border:1px solid var(--kj-border);border-radius:20px;padding:26px;box-shadow:0 12px 38px #34251b12}
+h1{font-size:22px;text-align:center;margin:0 0 4px}.subtitle{text-align:center;color:var(--kj-muted);margin:0 0 18px}
+label{display:block;font-weight:bold;margin:12px 0 5px}input{width:100%;padding:12px;border:1px solid #d8d0c8;border-radius:10px;font:inherit;background:#fff;color:inherit}input:focus{outline:2px solid #781f3230;border-color:var(--kj-maroon)}button,.button{display:block;width:100%;padding:12px 16px;border:0;border-radius:10px;background:var(--kj-maroon);color:white;font:inherit;font-weight:bold;text-align:center;text-decoration:none;cursor:pointer;margin-top:18px}button:disabled{opacity:.65;cursor:wait}.message{display:none;margin:14px 0;padding:10px 12px;border-radius:10px;overflow-wrap:anywhere}.message.show{display:block}.message.error{background:#fff0ef;color:#922b25}.message.ok{background:#edf7f0;color:#205b35}.foot{text-align:center;color:var(--kj-muted);font-size:12px;margin:16px 0 0}.foot a{color:var(--kj-maroon);font-weight:bold;text-decoration:none}.note{background:#f8f5f0;border:1px solid var(--kj-border);border-radius:10px;padding:10px 12px;color:#62584d;font-size:12px;margin-top:14px}
+@media(max-width:420px){.card{padding:20px}h1{font-size:20px}}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>ایجاد حساب کاربری</h1>
+<p class="subtitle">سامانه جامع مدیریت خادمین مجموعه السیدة زینب سلام الله علیها</p>
+<div id="message" class="message" role="status" aria-live="polite"></div>
+<form id="signup-form">
+<label for="full-name">نام و نام خانوادگی</label>
+<input id="full-name" name="full-name" autocomplete="name" maxlength="120" required placeholder="نام کامل شما">
+<label for="email">ایمیل</label>
+<input id="email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" required placeholder="ایمیل معتبر">
+<label for="password">رمز عبور</label>
+<input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required placeholder="حداقل ۸ نویسه">
+<label for="confirm-password">تکرار رمز عبور</label>
+<input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" minlength="8" required placeholder="رمز عبور را دوباره وارد کنید">
+<button id="submit" type="submit">ایجاد حساب</button>
+</form>
+<div class="note">پس از ثبت‌نام ممکن است برای فعال‌سازی حساب، تأیید ایمیل لازم باشد. ایجاد حساب به‌تنهایی به معنی اعطای دسترسی مدیریتی یا دسترسی به اطلاعات خادمین نیست.</div>
+<p class="foot"><a href="./live-data.html">بازگشت به صفحه ورود</a></p>
+</main>
+<script>
+(() => {
+  "use strict";
+  const SUPABASE_URL = "https://fxxtyfurdzpzfvweoppo.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
+  const form = document.getElementById("signup-form");
+  const button = document.getElementById("submit");
+  const messageBox = document.getElementById("message");
+  const show = (text, type) => { messageBox.textContent = text; messageBox.className = "message show " + type; };
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const fullName = document.getElementById("full-name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirm-password").value;
+    if (!fullName) return show("نام و نام خانوادگی را وارد کنید.", "error");
+    if (password.length < 8) return show("رمز عبور باید حداقل ۸ نویسه باشد.", "error");
+    if (password !== confirmPassword) return show("رمز عبور و تکرار آن یکسان نیستند.", "error");
+    button.disabled = true; button.textContent = "در حال ایجاد حساب…";
+    try {
+      const response = await fetch(SUPABASE_URL + "/auth/v1/signup", {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email, password, data: { full_name: fullName }, options: { emailRedirectTo: "https://daadelian-bot.github.io/khadem-jame/" } }),
+        credentials: "omit", cache: "no-store"
+      });
+      let result = {}; try { result = await response.json(); } catch (_) {}
+      if (!response.ok) {
+        const detail = result.msg || result.message || result.error_description || result.error;
+        throw new Error(detail || ("HTTP " + response.status));
+      }
+      form.reset();
+      show("درخواست ایجاد حساب ثبت شد. اگر تأیید ایمیل فعال باشد، صندوق ورودی و پوشه هرزنامه را بررسی و ایمیل تأیید را باز کنید. سپس از صفحه ورود وارد شوید. اگر ثبت‌نام عمومی در سامانه غیرفعال باشد، مدیر سامانه باید حساب را ایجاد کند.", "ok");
+    } catch (error) {
+      const detail = error && error.message ? error.message : "خطای ناشناخته";
+      show("ایجاد حساب انجام نشد: " + detail + " اگر ثبت‌نام عمومی در Supabase غیرفعال است، با مدیر سامانه تماس بگیرید.", "error");
+    } finally { button.disabled = false; button.textContent = "ایجاد حساب"; }
+  });
+})();
+</script>
+</body>
+</html>
