@@ -388,7 +388,7 @@
     const style = document.createElement("link");
     style.id = "kj-style";
     style.rel = "stylesheet";
-    style.href = "./style.css?v=20261015-39";
+    style.href = "./style.css?v=20261015-40";
     document.head.appendChild(style);
   }
   function shell() {
@@ -1392,6 +1392,13 @@
         throw error;
       }
       localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+      // حساب ثبت‌نامی تا تأیید مدیر اصلی اجازه دریافت هیچ داده‌ای از سامانه را ندارد.
+      const profileRows = await request("/rest/v1/profiles?select=is_active,role&id=eq." + encodeURIComponent(authUser.id) + "&limit=1");
+      const approvedProfile = Array.isArray(profileRows) ? profileRows[0] : null;
+      if (!approvedProfile || approvedProfile.is_active !== true) {
+        loginPage("درخواست حساب شما ثبت شده اما هنوز توسط مدیر اصلی تأیید نشده است. پس از تأیید، با همین ایمیل و رمز دوباره وارد شوید.");
+        return;
+      }
       await loadData();
     } catch (e) {
       console.error("KJ: startup/auth verification failed", e);
