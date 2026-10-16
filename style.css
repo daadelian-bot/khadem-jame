@@ -1218,3 +1218,5 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
   #kj-main.kj-dashboard-view .kj-dashboard-panel-title b{font-size:12px!important}
   #kj-main.kj-dashboard-view .kj-dashboard-panel-body .kj-module-card{min-height:58px!important}
 }
+
+#kj-main.kj-dashboard-view .kj-dashboard-panel-forbidden{display:none!important}
