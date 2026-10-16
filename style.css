@@ -1220,3 +1220,12 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
 }
 
 #kj-main.kj-dashboard-view .kj-dashboard-panel-forbidden{display:none!important}
+
+
+/* Stable bank-import mapping dialog */
+#kj-modal .kj-import-map-select{width:100%;min-width:210px;max-width:100%;padding:9px 10px;border:1px solid #cbd5df;border-radius:9px;background:#fff;color:#18354d;font:inherit;font-size:13px}
+#kj-modal [data-import-header]{overflow-wrap:anywhere}
+#kj-modal .kj-table-wrap{max-width:100%;overflow:auto}
+#kj-modal .kj-import-map-select:focus{outline:2px solid #c6a66a;outline-offset:1px}
+#kj-modal .kj-small{line-height:1.9}
+@media(max-width:680px){#kj-modal .kj-import-map-select{min-width:145px;font-size:12px}#kj-modal .kj-table-wrap table{min-width:460px}}
