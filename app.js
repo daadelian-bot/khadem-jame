@@ -1024,6 +1024,10 @@
           trigger.setAttribute("aria-label","بزرگ‌نمایی "+title);trigger.title="نمایش جزئیات";
           trigger.innerHTML='<span aria-hidden="true">⤢</span>';
           trigger.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();openDetails(card,title+" "+(index+1));});
+          card.addEventListener("click",e=>{
+            if(!compact() || e.target.closest("button,a,input,select,textarea,label,[data-dashboard-expand]"))return;
+            openDetails(card,title+" "+(index+1));
+          });
           card.insertBefore(trigger,card.firstChild);
         }
       });
