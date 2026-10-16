@@ -58,7 +58,9 @@
     birthdayMonth: null,
     loading: false,
     errors: {},
-    loaded: false
+    loaded: false,
+    offlineMode: false,
+    offlineSnapshots: {}
   };
 
   let financeView = "overview";
@@ -321,6 +323,8 @@
   async function loadData() {
     if (state.loading) return;
     state.loading = true;
+    state.offlineMode = false;
+    state.offlineSnapshots = {};
     state.errors = {};
     try {
     const tables = [
@@ -405,6 +409,7 @@
       try { render(); } catch (renderError) { console.error("KJ: render after sync failed", renderError); }
       const failed = Object.values(state.errors).filter(Boolean).length;
       if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطای همان بخش را بررسی کنید.", "error");
+      else if (state.offlineMode) toast("حالت آفلاین: اطلاعات قبلاً ذخیره‌شده نمایش داده می‌شود؛ ثبت تغییرات جدید در مرحله بعد فعال خواهد شد.", "info");
       else toast("اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
     }
   }
@@ -2130,6 +2135,11 @@
     });
     main.prepend(bar);
   }
+  function offlineNotice() {
+    if (!state.offlineMode) return "";
+    return '<div role="status" aria-live="polite" style="margin:0 0 14px;padding:12px 14px;border:1px solid #d7a84b;border-right:4px solid #c18b2c;border-radius:12px;background:#fff8e7;color:#654b16;line-height:1.9;font-size:13px"><strong>حالت آفلاین</strong> — اطلاعاتی که قبلاً روی این دستگاه ذخیره شده قابل مشاهده است. در این مرحله ثبت و ویرایش اطلاعات جدید به اتصال اینترنت نیاز دارد. عکس‌ها فقط در صورت ذخیره قبلی روی همین دستگاه نمایش داده می‌شوند.</div>';
+  }
+
   function render() {
     if (!token()) { loginPage(); return; }
     if (!canAccess(state.tab)) {
@@ -2141,7 +2151,7 @@
     if (!main) return;
     main.classList.toggle("kj-dashboard-view", state.tab === "dashboard");
     if (state.selectedKhadem !== null && state.tab === "khadems") {
-      main.innerHTML = khademProfile();
+      main.innerHTML = offlineNotice() + khademProfile();
       installGlobalExportToolbar(main);
       $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; state.profileEditOpen = false; render(); });
       $("#kj-edit-profile")?.addEventListener("click", () => { state.profileEditOpen = !state.profileEditOpen; render(); });
@@ -2170,7 +2180,7 @@
       settings: settingsPage,
       changePassword: changePasswordPage,
     };
-    main.innerHTML = (views[state.tab] || dashboard)();
+    main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
     installGlobalExportToolbar(main);
     if (state.tab === "dashboard") bindDashboardExpanders(main);
     if (state.tab === "finance") {
@@ -2434,6 +2444,16 @@
       toast("باز کردن ورودی فایل ناموفق بود: " + (error && error.message ? error.message : "خطای نامشخص"), "error");
     }
   }, true);
+
+  window.addEventListener("offline", function () {
+    if (!token()) return;
+    state.offlineMode = true;
+    try { render(); } catch (err) { console.warn("KJ: offline banner render failed", err); }
+  });
+  window.addEventListener("online", function () {
+    if (!token()) return;
+    void loadData();
+  });
 
   window.KJ = {
     start: startApp,
