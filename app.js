@@ -1602,7 +1602,7 @@
       let html="<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'><title>"+title.replace(/[<>]/g,"")+"</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#172b3b;line-height:1.8;padding:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #aeb9c4;padding:6px;text-align:right}th{background:#eaf0f5}button,input,select,textarea,.kj-global-export-toolbar{display:none!important}.kj-table-wrap{overflow:visible!important}</style></head><body><h1>"+title+"</h1>"+clone.innerHTML+"</body></html>";
       if(type==="excel"){
         const tables=[...clone.querySelectorAll("table")];
-        if(!tables.length){toast("در این صفحه جدولی برای خروجی Excel وجود ندارد.","error");return;}
+        if(!tables.length){const lines=String(clone.innerText||clone.textContent||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);tables.push({outerHTML:"<table><tbody>"+lines.map(line=>"<tr><td>"+esc(line)+"</td></tr>").join("")+"</tbody></table>"});}
         html="<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'><style>table{border-collapse:collapse}td,th{border:1px solid #999;padding:5px;mso-number-format:'\\@'}</style></head><body>"+tables.map(t=>t.outerHTML).join("<br>")+"</body></html>";
       }
       const mime=type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8";
