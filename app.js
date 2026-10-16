@@ -963,27 +963,51 @@
       </section>
       ${state.loading ? `<div class="kj-card kj-loading-card"><span class="kj-spinner"></span> در حال همگام‌سازی اطلاعات سامانه…</div>` : ""}
       ${errorItems.length ? `<div class="kj-error kj-dashboard-error"><b>بعضی از داده‌ها دریافت نشده‌اند</b><p>آمار هر بخش فقط بر اساس داده‌های دریافت‌شده محاسبه شده است. خطاهای زیر را بررسی کنید.</p>${errorItems.map(([k,e])=>`<div>• ${esc(fieldLabel(k))}: ${esc(e)}</div>`).join("")}</div>` : ""}
-      <div class="kj-section-heading kj-premium-section"><div><span class="kj-section-eyebrow">نمای کلی · ${esc(monthLabel)}</span><h2 class="kj-section-title">شاخص‌های کلیدی مجموعه</h2><p>مرور سریع وضعیت داده‌های ثبت‌شده در سامانه</p></div><span class="kj-data-note">به‌روزرسانی از پایگاه داده</span></div>
-      <div class="kj-grid kj-stats-grid kj-premium-stats">${statCards.map((x,i)=>`<button type="button" class="kj-card kj-stat-card kj-stat-card-${i+1} kj-premium-stat ${x.tone}" data-quick-tab="${x.tab}"><div class="kj-stat-top"><span class="kj-stat-icon">${x.icon}</span><span class="kj-stat-label">${x.label}</span><span class="kj-stat-arrow">↗</span></div><div class="kj-stat">${fa(x.value)}</div><div class="kj-stat-foot">${x.meta}</div></button>`).join("")}</div>
-      <div class="kj-analytics-layout">
-        <section class="kj-card kj-analytics-main"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">تحلیل داده‌ها</span><h3>مرکز تحلیل و گزارش</h3></div><button type="button" class="kj-text-action" data-quick-tab="reports">همه گزارش‌ها ←</button></div>${dashboardAnalytics()}</section>
-        <aside class="kj-card kj-insight-panel"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">نمای سریع</span><h3>وضعیت سامانه</h3></div><span class="kj-heading-icon">◉</span></div>
-          <div class="kj-insight-row"><span class="kj-insight-icon">♙</span><div><b>خادمین فعال/قابل استفاده</b><small>بر اساس وضعیت ثبت‌شده</small></div><strong>${fa(activeKhadems)}</strong></div>
-          <div class="kj-insight-row"><span class="kj-insight-icon">▦</span><div><b>جلسات ثبت‌شده</b><small>مجموع جلسات قابل مشاهده</small></div><strong>${fa(meetingCount)}</strong></div>
-          <div class="kj-insight-row"><span class="kj-insight-icon">◈</span><div><b>جمع مبالغ تراکنش‌ها</b><small>بر مبنای فیلدهای مبلغ موجود</small></div><strong class="kj-insight-money">${esc(money(financeTotal))}</strong></div>
-          <div class="kj-insight-foot">این ارقام خلاصه داده‌های موجودند و به‌تنهایی تأییدکننده صحت یا تکمیل همه سوابق نیستند.</div>
-        </aside>
-      </div>
-      <div class="kj-section-heading kj-premium-section"><div><span class="kj-section-eyebrow">مسیرهای کاری</span><h2 class="kj-section-title">مرکز دسترسی به بخش‌ها</h2><p>ماژول‌ها بر اساس گردش کار مجموعه دسته‌بندی شده‌اند.</p></div></div>
-      <div class="kj-module-groups">
-        ${["مدیریت افراد","عملیات روزانه","هماهنگی","مالی","پشتیبانی","تحلیل","مدیریت سامانه"].map(group=>{const list=modules.filter(m=>m[4]===group);return list.length?`<section class="kj-module-group"><div class="kj-module-group-head"><h3>${group}</h3><span>${fa(list.length)} بخش</span></div><div class="kj-module-grid">${list.map(([tab,icon,title,desc])=>`<button type="button" class="kj-module-card" data-quick-tab="${tab}"><span class="kj-module-icon">${icon}</span><span class="kj-module-copy"><b>${title}</b><small>${desc}</small></span><span class="kj-module-arrow">←</span></button>`).join("")}</div></section>`:"";}).join("")}
-      </div>
-      <div class="kj-activity-layout">
-        <section class="kj-card kj-activity-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">سوابق اخیر</span><h3>آخرین خدمات ثبت‌شده</h3></div><button type="button" class="kj-text-action" data-quick-tab="services">مشاهده همه ←</button></div>
-          ${state.errors.services||state.errors.service_records?errBox("services"):recentServices.length?tableHtml(recentServices.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):`<div class="kj-empty">هنوز سابقه‌ای برای نمایش ثبت نشده است.</div>`}
+      <div class="kj-dashboard-panel-grid" aria-label="پنجره‌های اصلی داشبورد">
+        <section class="kj-dashboard-panel kj-panel-indicators" data-dashboard-panel="indicators">
+          <button type="button" class="kj-dashboard-panel-head" data-dashboard-panel-toggle="indicators" aria-expanded="false">
+            <span class="kj-dashboard-panel-symbol">▦</span><span class="kj-dashboard-panel-title"><b>شاخص‌های کلیدی مجموعه</b><small>آمار اصلی و تعداد رکوردهای ثبت‌شده</small></span><span class="kj-dashboard-panel-count">${fa(statCards.length)} شاخص</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="kj-dashboard-panel-summary"><span><b>${fa(state.khadems.length)}</b><small>خادم ثبت‌شده</small></span><span><b>${fa(serviceCount)}</b><small>سابقه خدمت</small></span><span><b>${fa(meetingCount)}</b><small>جلسه</small></span></div>
+          <div class="kj-dashboard-panel-body" data-dashboard-panel-body="indicators" hidden>
+            <div class="kj-section-heading kj-premium-section"><div><span class="kj-section-eyebrow">نمای کلی · ${esc(monthLabel)}</span><h2 class="kj-section-title">همه شاخص‌های کلیدی</h2><p>برای ورود به هر بخش، کارت مربوط را انتخاب کنید.</p></div><span class="kj-data-note">داده‌های قابل دسترس</span></div>
+            <div class="kj-grid kj-stats-grid kj-premium-stats">${statCards.map((x,i)=>`<button type="button" class="kj-card kj-stat-card kj-stat-card-${i+1} kj-premium-stat ${x.tone}" data-quick-tab="${x.tab}"><div class="kj-stat-top"><span class="kj-stat-icon">${x.icon}</span><span class="kj-stat-label">${x.label}</span><span class="kj-stat-arrow">↗</span></div><div class="kj-stat">${fa(x.value)}</div><div class="kj-stat-foot">${x.meta}</div></button>`).join("")}</div>
+          </div>
         </section>
-        <section class="kj-card kj-activity-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">هماهنگی مجموعه</span><h3>جلسات اخیر</h3></div><button type="button" class="kj-text-action" data-quick-tab="meetings">مشاهده همه ←</button></div>
-          ${state.errors.meetings?errBox("meetings"):recentMeetings.length?`<div class="kj-recent-list">${recentMeetings.map(m=>`<div class="kj-recent-item"><span class="kj-recent-mark">▦</span><div><b>${esc(val(m,["title","meeting_title","name"])||"جلسه مجموعه")}</b><small>${esc(dateText(val(m,["meeting_date","date","created_at"])))}</small></div><span class="kj-recent-arrow">←</span></div>`).join("")}</div>`:`<div class="kj-empty">جلسه‌ای برای نمایش ثبت نشده است.</div>`}
+        <section class="kj-dashboard-panel kj-panel-status" data-dashboard-panel="status">
+          <button type="button" class="kj-dashboard-panel-head" data-dashboard-panel-toggle="status" aria-expanded="false">
+            <span class="kj-dashboard-panel-symbol">◉</span><span class="kj-dashboard-panel-title"><b>وضعیت سامانه</b><small>خلاصه وضعیت، منوها و ماژول‌های قابل دسترس</small></span><span class="kj-dashboard-panel-count">${fa(modules.length)} ماژول</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="kj-dashboard-panel-summary"><span><b>${fa(activeKhadems)}</b><small>خادم فعال/قابل استفاده</small></span><span><b>${fa(state.deployments.length)}</b><small>مأموریت</small></span><span><b>${fa(errorItems.length)}</b><small>خطای دریافت</small></span></div>
+          <div class="kj-dashboard-panel-body" data-dashboard-panel-body="status" hidden>
+            <aside class="kj-card kj-insight-panel kj-dashboard-status-details"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">نمای سریع</span><h3>اطلاعات وضعیت سامانه</h3></div><span class="kj-heading-icon">◉</span></div>
+              <div class="kj-insight-row"><span class="kj-insight-icon">♙</span><div><b>خادمین فعال/قابل استفاده</b><small>بر اساس وضعیت ثبت‌شده</small></div><strong>${fa(activeKhadems)}</strong></div>
+              <div class="kj-insight-row"><span class="kj-insight-icon">▦</span><div><b>جلسات ثبت‌شده</b><small>مجموع جلسات قابل مشاهده</small></div><strong>${fa(meetingCount)}</strong></div>
+              <div class="kj-insight-row"><span class="kj-insight-icon">◈</span><div><b>جمع مبالغ تراکنش‌ها</b><small>بر مبنای فیلدهای مبلغ موجود</small></div><strong class="kj-insight-money">${esc(money(financeTotal))}</strong></div>
+              <div class="kj-insight-foot">این ارقام خلاصه داده‌های موجودند و به‌تنهایی تأییدکننده صحت یا تکمیل همه سوابق نیستند.</div>
+              <div class="kj-dashboard-module-status"><b>منوها و ماژول‌های سامانه</b><small>برای ورود به هر ماژول، آیتم مربوط را انتخاب کنید.</small></div>
+            </aside>
+            <div class="kj-module-groups">
+              ${["مدیریت افراد","عملیات روزانه","هماهنگی","مالی","پشتیبانی","تحلیل","مدیریت سامانه"].map(group=>{const list=modules.filter(m=>m[4]===group);return list.length?`<section class="kj-module-group"><div class="kj-module-group-head"><h3>${group}</h3><span>${fa(list.length)} بخش</span></div><div class="kj-module-grid">${list.map(([tab,icon,title,desc])=>`<button type="button" class="kj-module-card" data-quick-tab="${tab}"><span class="kj-module-icon">${icon}</span><span class="kj-module-copy"><b>${title}</b><small>${desc}</small></span><span class="kj-module-arrow">←</span></button>`).join("")}</div></section>`:"";}).join("")}
+            </div>
+          </div>
+        </section>
+        <section class="kj-dashboard-panel kj-panel-reports" data-dashboard-panel="reports">
+          <button type="button" class="kj-dashboard-panel-head" data-dashboard-panel-toggle="reports" aria-expanded="false">
+            <span class="kj-dashboard-panel-symbol">▥</span><span class="kj-dashboard-panel-title"><b>مرکز تحلیل و گزارش</b><small>نمودارها، جدول‌ها و گزارش فعالیت ماژول‌ها</small></span><span class="kj-dashboard-panel-count">تحلیل و گزارش</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="kj-dashboard-panel-summary"><span><b>${fa(serviceCount)}</b><small>سوابق خدمت</small></span><span><b>${fa(meetingCount)}</b><small>جلسات ثبت‌شده</small></span><span><b>${fa(financeRows.length)}</b><small>ردیف مالی/اقساط</small></span></div>
+          <div class="kj-dashboard-panel-body" data-dashboard-panel-body="reports" hidden>
+            <div class="kj-card kj-analytics-main"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">تحلیل داده‌ها</span><h3>تحلیل آماری مجموعه</h3></div><button type="button" class="kj-text-action" data-quick-tab="reports">همه گزارش‌ها ←</button></div>${dashboardAnalytics()}</div>
+            <div class="kj-activity-layout">
+              <section class="kj-card kj-activity-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">سوابق اخیر</span><h3>آخرین خدمات ثبت‌شده</h3></div><button type="button" class="kj-text-action" data-quick-tab="services">مشاهده همه ←</button></div>
+                ${state.errors.services||state.errors.service_records?errBox("services"):recentServices.length?tableHtml(recentServices.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):`<div class="kj-empty">هنوز سابقه‌ای برای نمایش ثبت نشده است.</div>`}
+              </section>
+              <section class="kj-card kj-activity-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">هماهنگی مجموعه</span><h3>جلسات اخیر</h3></div><button type="button" class="kj-text-action" data-quick-tab="meetings">مشاهده همه ←</button></div>
+                ${state.errors.meetings?errBox("meetings"):recentMeetings.length?`<div class="kj-recent-list">${recentMeetings.map(m=>`<div class="kj-recent-item"><span class="kj-recent-mark">▦</span><div><b>${esc(val(m,["title","meeting_title","name"])||"جلسه مجموعه")}</b><small>${esc(dateText(val(m,["meeting_date","date","created_at"])))}</small></div><span class="kj-recent-arrow">←</span></div>`).join("")}</div>`:`<div class="kj-empty">جلسه‌ای برای نمایش ثبت نشده است.</div>`}
+              </section>
+            </div>
+          </div>
         </section>
       </div>
       <section class="kj-card kj-guide-card kj-premium-guide"><span class="kj-guide-icon">ⓘ</span><div><h3>درباره آمار این داشبورد</h3><p>شاخص‌ها از داده‌های قابل مشاهده در پایگاه داده محاسبه می‌شوند؛ بخش‌های دارای خطای دسترسی یا بارگذاری، جداگانه مشخص می‌شوند و با عدد صفرِ واقعی اشتباه گرفته نمی‌شوند.</p></div></section>`;
