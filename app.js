@@ -518,9 +518,9 @@
     return "";
   }
   function nameOf(k) {
-    return val(k, ["full_name", "name", "khadem_name", "first_name"]) ||
+    return val(k, ["full_name", "name", "khadem_name"]) ||
       [val(k, ["first_name"]), val(k, ["last_name", "family", "family_name"])].filter(Boolean).join(" ") ||
-      "بدون نام";
+      val(k,["first_name"]) || "بدون نام";
   }
   function khademCode(k) { return val(k, ["khadem_code", "code", "personnel_code", "number", "id"]); }
   function activeLabel(k) { const v=val(k,["is_active","active","status"]); if(v===true||["true","1","active","فعال","enabled"].includes(String(v).toLowerCase())) return "فعال"; if(v===false||["false","0","inactive","غیرفعال","disabled"].includes(String(v).toLowerCase())) return "غیرفعال"; return "نامشخص"; }
@@ -1765,16 +1765,17 @@
       let rows=[...table.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].slice(0,cols.length).map(cell));
       let bankRecords=[],bankPhotoCol=-1;
       if(state.tab==="khadems" && state.selectedKhadem===null && state.khadems.length){
-        const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
+        const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data","full_name","name","khadem_name","first_name","last_name","family","family_name"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
         const records=state.khadems.filter(k=>khademCodeNumber(k)>=1000).slice().sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
-        const priority=["full_name","name","khadem_name","first_name","last_name","family","family_name","triple_name","tri_name","full_name_triple","father_name","birth_date","national_code","national_id","occupation","job","membership_date","education_level","education","phone","mobile","phone_number","address","residence","home_address","blood_type"];
-        keys.sort((a,b)=>{const ai=priority.indexOf(a),bi=priority.indexOf(b);return (ai<0?1000+keys.indexOf(a):ai)-(bi<0?1000+keys.indexOf(b):bi);});
+        const priority=["triple_name","tri_name","full_name_triple","father_name","birth_date","national_code","national_id","occupation","job","membership_date","education_level","education","phone","mobile","phone_number","address","residence","home_address","blood_type"];
+        const originalKeyOrder=new Map(keys.map((key,index)=>[key,index]));
+        keys.sort((a,b)=>{const ai=priority.indexOf(a),bi=priority.indexOf(b);return (ai<0?1000+originalKeyOrder.get(a):ai)-(bi<0?1000+originalKeyOrder.get(b):bi);});
         const pairs=keys.map(key=>({key,label:fieldLabel(key)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی"].includes(p.label));
         const seen=new Set(); const usablePairs=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
         bankRecords=records;
         bankPhotoCol=0;
-        cols=["عکس خادم",...usablePairs.map(p=>p.label)];
-        rows=records.map(k=>[khademPhotoPath(k),...usablePairs.map(p=>formatValue(p.key,k[p.key]))]);
+        cols=["عکس خادم","نام و نام خانوادگی",...usablePairs.map(p=>p.label)];
+        rows=records.map(k=>[khademPhotoPath(k),nameOf(k),...usablePairs.map(p=>formatValue(p.key,k[p.key]))]);
       }
       const opts=cols.map((c,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-export-col="'+i+'" checked> '+esc(c)+'</label>').join("");
       modal("انتخاب جزئیات خروجی",'<p class="kj-muted">فقط اطلاعات ثبت‌شده خروجی می‌شود؛ شناسه‌ها و کدهای فنی سامانه حذف می‌شوند. ستون‌های دلخواه را انتخاب کنید.</p><div style="display:flex;flex-wrap:wrap"> '+opts+'</div><button type="button" class="kj-primary" id="kj-export-confirm">تهیه خروجی</button>');
@@ -1799,7 +1800,7 @@
         const body=rows.map((row,ri)=>"<tr>"+chosen.map(i=>{if(photoIncluded&&i===bankPhotoCol){const src=photoData.get(ri)||"";return "<td>"+(src?'<img src="'+src+'" alt="عکس خادم" style="max-width:64px;max-height:64px;object-fit:contain">':"")+"</td>";}return "<td>"+esc(row[i]??"")+"</td>";}).join("")+"</tr>").join("");
         const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px;text-align:right}th{background:#eee}</style><h1>"+esc(title)+"</h1><p>تعداد رکوردها: "+fa(rows.length)+"</p><table><thead><tr>"+head+"</tr></thead><tbody>"+body+"</tbody></table></html>";
         if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
-        else if(type==="excel"&&photoIncluded){
+        else if(type==="excel"&&state.tab==="khadems"&&state.selectedKhadem===null){
           try{
             let ExcelJS=window.ExcelJS;
             if(!ExcelJS){await new Promise((resolve,reject)=>{const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";script.onload=()=>window.ExcelJS?resolve():reject(new Error("کتابخانه اکسل بارگذاری نشد."));script.onerror=()=>reject(new Error("بارگذاری کتابخانه اکسل ناموفق بود."));document.head.appendChild(script);});ExcelJS=window.ExcelJS;}
