@@ -301,7 +301,6 @@
     if (state.loading) return;
     state.loading = true;
     state.errors = {};
-    render();
     const tables = [
       ["khadems", "khadems"], ["services", "service_records"],
       ["nonattendance", "khadem_service_nonattendance"], ["meetings", "meetings"],
@@ -338,6 +337,8 @@
       return true;
     });
     try {
+      // بازترسیم هم داخل try باشد؛ اگر خطای رندر رخ دهد، finally حتماً قفل همگام‌سازی را آزاد می‌کند.
+      render();
       // بانک خادمین جداگانه بارگذاری می‌شود؛ خطای جدول‌های جانبی نباید صفحه را معطل کند.
       if (allowedTables.some(([key]) => key === "khadems")) {
         // درخواست اصلی بانک هم مهلت مستقل دارد؛ اگر fetch در مرورگر/شبکه معطل ماند،
