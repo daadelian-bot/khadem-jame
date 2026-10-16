@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>سامانه جامع مدیریت خادمین | اتصال داده‌ها</title>
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" as="image" href="./logo.png">
   <link id="kj-style" rel="stylesheet" href="./style.css?v=20261016-106">
   <style>
@@ -29,5 +30,14 @@
   <noscript><main class="boot"><h1>جاوااسکریپت غیرفعال است</h1><p>برای استفاده از سامانه، جاوااسکریپت مرورگر را فعال کنید.</p></main></noscript>
   <script src="./offline-store.js?v=20261016-106" defer></script>
   <script src="./app.js?v=20261016-106" defer onerror="document.getElementById(\'app\').innerHTML=\'<main class=\\\"boot\\\"><h1>بارگذاری سامانه ناموفق بود</h1><p>فایل برنامه بارگذاری نشد. اتصال اینترنت را بررسی کنید و صفحه را دوباره باز کنید.</p></main>\'"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./service-worker.js").catch(function (error) {
+          console.warn("KJ: offline shell registration failed", error);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
