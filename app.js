@@ -534,6 +534,39 @@
     return state.khadems.find(k => String(khademId(k)) === selected) ||
       state.khadems.find(k => String(khademCode(k)) === selected) || null;
   }
+  function khademPhotoPath(k){ return String(val(k,["photo_path","photo_url"])||"").trim(); }
+  function normalizeSignedStorageUrl(value){const u=String(value||"");return u.startsWith("http")?u:(u.startsWith("/storage/v1/")?SUPABASE_URL+u:SUPABASE_URL+"/storage/v1"+(u.startsWith("/")?u:"/"+u));}
+  async function loadKhademPhotoInto(img,path){
+    if(!img||!path)return;
+    try{
+      const raw=String(path).trim();
+      if(/^https?:\\/\\//i.test(raw)){img.src=raw;img.style.display="block";return;}
+      const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(raw),{method:"POST",body:{expiresIn:3600}});
+      const url=String(signed?.signedURL||signed?.signedUrl||"");
+      if(!url)throw new Error("لینک تصویر دریافت نشد.");
+      img.src=normalizeSignedStorageUrl(url);img.style.display="block";
+    }catch(e){console.warn("KJ: khadem photo unavailable",e);img.style.display="none";}
+  }
+  async function uploadKhademPhoto(file,k){
+    if(!file||!file.size)return null;
+    const ext=String(file.name||"").split(".").pop().toLowerCase();
+    const mimeByExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"};
+    const mime=["image/jpeg","image/png","image/webp"].includes(file.type)?file.type:(mimeByExt[ext]||"");
+    if(!mime)throw new Error("فرمت عکس مجاز نیست؛ لطفاً JPG، PNG یا WEBP انتخاب کنید.");
+    if(file.size>5*1024*1024)throw new Error("حجم عکس نباید بیشتر از ۵ مگابایت باشد.");
+    const id=khademId(k)||khademCode(k)||("new-"+Date.now());
+    const extension=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"})[mime];
+    const random=(window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2);
+    const path="khadems/"+String(id).replace(/[^a-zA-Z0-9_-]/g,"_")+"/"+Date.now()+"-"+random+"."+extension;
+    const response=await fetch(SUPABASE_URL+"/storage/v1/object/khadem-photos/"+financeReceiptPath(path),{method:"POST",headers:headers({"Content-Type":mime,"x-upsert":"false"}),body:file,credentials:"omit",cache:"no-store"});
+    const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}
+    if(!response.ok)throw new Error(String(data&&(data.message||data.error||data.error_description)||raw||("HTTP "+response.status)));
+    return path;
+  }
+  function bindPhotoPreview(inputSelector,imgSelector){
+    const input=$(inputSelector),img=$(imgSelector);if(!input||!img)return;
+    input.addEventListener("change",()=>{const file=input.files&&input.files[0];if(!file){img.removeAttribute("src");img.style.display="none";return;}if(!["image/jpeg","image/png","image/webp"].includes(file.type)){toast("فرمت عکس باید JPG، PNG یا WEBP باشد.","error");input.value="";img.style.display="none";return;}if(file.size>5*1024*1024){toast("حجم عکس نباید بیشتر از ۵ مگابایت باشد.","error");input.value="";img.style.display="none";return;}img.src=URL.createObjectURL(file);img.style.display="block";});
+  }
   function khademIdentityText(k) {
     if (!k) return "";
     const code = khademCode(k), name = nameOf(k);
@@ -702,7 +735,7 @@
       const selected=chosen.map(i=>fields[i]);
       const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee;width:32%}</style><h1>"+esc(title)+"</h1><table><tbody>"+selected.map(p=>"<tr><th>"+esc(p.label)+"</th><td>"+esc(p.value)+"</td></tr>").join("")+"</tbody></table></html>";
       if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
-      else {const blob=new Blob(["\\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+      else {const blob=new Blob(["\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
       $("#kj-modal")?.remove();
     });
   }
@@ -904,7 +937,7 @@
     ];
     return `<form id="kj-registration-form" class="kj-card" style="margin:14px 0" novalidate>
       <h2 class="kj-section-title">فرم ثبت خادم جدید</h2>
-      <div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="${name==="khadem_code"?fa(nextKhademCode()):""}" autocomplete="off" placeholder="${name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}"></label>`).join("")}</div>
+      <label class="kj-field" style="max-width:420px"><b>عکس خادم (اختیاری)</b><input id="kj-registration-photo" name="photo_file" type="file" accept="image/jpeg,image/png,image/webp"><img id="kj-registration-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="${name==="khadem_code"?fa(nextKhademCode()):""}" autocomplete="off" placeholder="${name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}"></label>`).join("")}</div>
       <fieldset style="border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:14px 0"><legend>مهارت‌ها و توانمندی‌ها</legend><div class="kj-skill-list">${skills.map(s=>`<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;margin:4px"><input type="checkbox" name="skills" value="${esc(s)}">${esc(s)}</label>`).join("")}</div></fieldset>
       <label class="kj-field"><b>توضیحات</b><textarea name="notes" rows="3"></textarea></label>
       <div id="kj-registration-message" class="kj-muted" role="status" aria-live="polite"></div>
@@ -915,12 +948,14 @@
     $("#kj-open-registration")?.addEventListener("click", () => { state.registrationOpen = !state.registrationOpen; render(); });
     $("#kj-cancel-registration")?.addEventListener("click", () => { state.registrationOpen = false; render(); });
     $("#kj-registration-form")?.addEventListener("submit", e => { e.preventDefault(); saveKhademFromForm(e.currentTarget); });
+    bindPhotoPreview("#kj-registration-photo","#kj-registration-photo-preview");
   }
   async function saveKhademFromForm(form) {
     const message = $("#kj-registration-message"), button = $("#kj-save-registration"), fd = new FormData(form);
     const fullName = String(fd.get("full_name") || "").trim();
     if (!fullName) { if(message) message.textContent = "لطفاً نام و نام خانوادگی خادم را وارد کنید."; return; }
     const known = new Set(Object.keys(state.khadems[0] || {})), canInfer = known.size > 0, payload = {};
+    let uploadedPhotoPath=null;
     const put = (keys,value) => { if(value===undefined||value===null||value==="") return; const key=keys.find(x=>canInfer?known.has(x):x===keys[0]); if(key) payload[key]=value; };
     put(["full_name","name","khadem_name"],fullName);
     if (!["full_name","name","khadem_name"].some(x=>Object.prototype.hasOwnProperty.call(payload,x))) {
@@ -944,14 +979,17 @@
     put(["emergency_contact_name_2"],String(fd.get("emergency_contact_name_2")||"").trim());
     put(["emergency_contact_phone_2"],String(fd.get("emergency_contact_phone_2")||"").trim());
     const selectedSkills=fd.getAll("skills"); const skillSample=state.khadems[0]?.skills; put(["skills"],Array.isArray(skillSample)?selectedSkills:selectedSkills.join("، ")); put(["notes"],String(fd.get("notes")||"").trim());
+    const photoFile=fd.get("photo_file");
     if(!Object.keys(payload).length){if(message)message.textContent="ستون‌های لازم از اطلاعات فعلی قابل تشخیص نیست؛ هیچ اطلاعاتی ارسال نشد.";return;}
     if(button){button.disabled=true;button.textContent="در حال ثبت…";} if(message)message.textContent="در حال بررسی مجوز و ثبت اطلاعات…";
     try {
+      if(photoFile instanceof File && photoFile.size){if(message)message.textContent="در حال بارگذاری عکس خادم…";uploadedPhotoPath=await uploadKhademPhoto(photoFile,{khadem_code:generatedCode});if(known.has("photo_path"))payload.photo_path=uploadedPhotoPath;else if(known.has("photo_url"))payload.photo_url=uploadedPhotoPath;else throw new Error("ستون ذخیره مسیر عکس در بانک خادمین پیدا نشد.");}
       const result=await request("/rest/v1/khadems",{method:"POST",headers:{"Prefer":"return=representation"},body:payload});
       if(!Array.isArray(result)||!result.length)throw new Error("سرور ثبت را تأیید نکرد؛ فهرست را تازه‌سازی و بررسی کنید.");
       state.registrationOpen=false;state.search="";await loadData();toast("اطلاعات خادم با موفقیت ثبت شد.","success");
     } catch(e) {
-      if(message)message.textContent="ثبت انجام نشد: "+(e.message||"خطای نامشخص")+"؛ احتمال دارد مجوز ثبت یا نام ستون‌ها متفاوت باشد. اطلاعات قبلی تغییر نکرده است.";
+      if(uploadedPhotoPath){try{await request("/storage/v1/object/khadem-photos/"+financeReceiptPath(uploadedPhotoPath),{method:"DELETE"});}catch(_){}}
+      if(message)message.textContent="ثبت انجام نشد: "+(e.message||"خطای نامشخص")+"؛ احتمال دارد مجوز ثبت عکس یا اطلاعات خادم کافی نباشد. اطلاعات قبلی تغییر نکرده است.";
       if(button){button.disabled=false;button.textContent="ثبت اطلاعات خادم";}
     }
   }
@@ -998,7 +1036,7 @@
       ["notes","توضیحات","text",val(k,["notes","description"])],
       ["active","وضعیت فعالیت (فعال/غیرفعال)","select",val(k,["is_active","active","status"])]
     ];
-    return '<form id="kj-profile-edit-form" novalidate><div class="kj-profile-grid">' +
+    return '<form id="kj-profile-edit-form" novalidate><label class="kj-field" style="max-width:420px"><b>ثبت یا تغییر عکس خادم (اختیاری)</b><input id="kj-profile-photo-input" name="photo_file" type="file" accept="image/jpeg,image/png,image/webp"><img id="kj-profile-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-profile-grid">' +
       fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="select"?'<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+'>فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+'>غیرفعال</option></select>':'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off" dir="auto" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;display:block">')+'</label>').join("") +
       '<fieldset class="kj-edit-skills" style="grid-column:1/-1;min-width:0;border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:8px 0"><legend>مهارت‌ها و توانمندی‌ها — برای انتخاب یا حذف، گزینه‌ها را علامت بزنید</legend><div class="kj-skill-list" style="display:flex;flex-wrap:wrap;gap:8px">'+skillOptions.map(s=>'<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;max-width:100%;white-space:normal;overflow-wrap:anywhere"><input type="checkbox" name="profile_skills" value="'+esc(s)+'" '+(currentSkills.includes(s)?"checked":"")+'>'+esc(s)+'</label>').join("")+'</div><label class="kj-field" style="margin-top:10px"><b>مهارت‌های دیگر (اختیاری؛ با ویرگول جدا کنید)</b><input name="custom_skills" type="text" dir="auto" value="'+esc(currentSkills.filter(s=>!skillOptions.includes(s)).join("، "))+'" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0"></label></fieldset>' +
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
@@ -1008,6 +1046,7 @@
     const message = $("#kj-profile-edit-message"), button = $("#kj-save-profile");
     if (!k) { if(message) message.textContent = "پرونده خادم پیدا نشد."; return; }
     const fd = new FormData(form), known = new Set(Object.keys(k)), payload = {};
+    let uploadedPhotoPath=null; const photoFile=fd.get("photo_file");
     const put = (aliases, value) => {
       const key = aliases.find(x => known.has(x));
       if (key) payload[key] = String(value ?? "").trim() || null;
@@ -1070,6 +1109,7 @@
     if (button) { button.disabled = true; button.textContent = "در حال ذخیره…"; }
     if (message) message.textContent = "در حال ذخیره تغییرات…";
     try {
+      if(photoFile instanceof File && photoFile.size){if(message)message.textContent="در حال بارگذاری عکس خادم…";uploadedPhotoPath=await uploadKhademPhoto(photoFile,k);if(known.has("photo_path"))payload.photo_path=uploadedPhotoPath;else if(known.has("photo_url"))payload.photo_url=uploadedPhotoPath;else throw new Error("ستون ذخیره مسیر عکس در بانک خادمین پیدا نشد.");}
       const savedRows = await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
       if (!Array.isArray(savedRows) || savedRows.length === 0) throw new Error("پایگاه داده هیچ ردیفی را به‌روزرسانی نکرد؛ شناسه خادم یا مجوز ویرایش را بررسی کنید.");
       state.profileEditOpen = false;
@@ -1084,7 +1124,8 @@
       render();
       toast("تغییرات پرونده خادم ذخیره شد.","success");
     } catch (error) {
-      if (message) message.textContent = "ذخیره انجام نشد: "+(error.message || "خطای نامشخص")+"؛ ممکن است مجوز ویرایش پایگاه داده فعال نباشد.";
+      if(uploadedPhotoPath){try{await request("/storage/v1/object/khadem-photos/"+financeReceiptPath(uploadedPhotoPath),{method:"DELETE"});}catch(_){}}
+      if (message) message.textContent = "ذخیره انجام نشد: "+(error.message || "خطای نامشخص")+"؛ ممکن است مجوز ویرایش اطلاعات یا عکس خادم فعال نباشد.";
       if (button) { button.disabled = false; button.textContent = "ذخیره تغییرات"; }
     }
   }
@@ -1185,7 +1226,7 @@
       : '<p class="kj-muted">برای نمایش جمع پرداخت شهریه در دو دوره شش‌ماهه، سوابق شهریه باید دارای تاریخ دوره و مبلغ پرداخت باشند.</p>';
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
     return `<div class="kj-toolbar"><button class="kj-secondary" id="kj-back">← بازگشت به فهرست</button></div>
-      <h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
+      <div class="kj-card" style="display:flex;justify-content:center;align-items:center;margin:10px 0 16px;padding:18px"><img id="kj-profile-photo" alt="عکس ${esc(nameOf(k))}" data-photo-path="${esc(khademPhotoPath(k))}" style="display:none;width:150px;height:180px;object-fit:cover;border-radius:14px;border:2px solid #d9c7a4;background:#f5f5f5"></div><h1 class="kj-page-title">پروندهٔ ${esc(nameOf(k))}</h1>
       <div class="kj-card"><div class="kj-toolbar" style="justify-content:space-between"><h3 class="kj-section-title" style="margin:0">پرونده خادم: ${esc(khademIdentityText(k))}</h3><button type="button" class="kj-primary" id="kj-edit-profile">${state.profileEditOpen?"بستن ویرایش":"✏️ ویرایش مشخصات خادم"}</button></div><div class="kj-profile-details">${state.profileEditOpen ? khademEditForm(k) : fields}</div></div>
       <div class="kj-card" style="margin-top:14px"><details class="kj-profile-subsection">
         <summary class="kj-section-title">☎️ تماس‌ها و شماره‌های ضروری</summary>
@@ -1664,6 +1705,8 @@
       $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; state.profileEditOpen = false; render(); });
       $("#kj-edit-profile")?.addEventListener("click", () => { state.profileEditOpen = !state.profileEditOpen; render(); });
       $("#kj-profile-edit-form")?.addEventListener("submit", e => { e.preventDefault(); saveKhademProfile(e.currentTarget); });
+      bindPhotoPreview("#kj-profile-photo-input","#kj-profile-photo-preview");
+      const profilePhoto=$("#kj-profile-photo"); if(profilePhoto)loadKhademPhotoInto(profilePhoto,profilePhoto.dataset.photoPath);
       $("#kj-cancel-profile-edit")?.addEventListener("click", () => { state.profileEditOpen = false; render(); });
       return;
     }
