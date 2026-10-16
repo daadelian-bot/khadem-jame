@@ -626,3 +626,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
  .kj-finance-nav{gap:5px;padding:6px}
  .kj-finance-nav button{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 }
+
+/* Finance receipt attachment input */
+.kj-finance-form-grid input[type="file"]{padding:9px;background:#f8fbfa;border:1px dashed #9ab8aa;cursor:pointer}
+.kj-finance-form-grid label small{font-size:11px;line-height:1.8;color:#718596;font-weight:400}
