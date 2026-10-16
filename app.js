@@ -249,7 +249,168 @@
     if (t && t !== "demo") h.Authorization = "Bearer " + t;
     return h;
   }
+  const OFFLINE_MUTATION_MODULES = {
+    khadems: "khadems",
+    service_records: "services",
+    khadem_service_nonattendance: "nonattendance",
+    meetings: "meetings",
+    meeting_invitees: "meetings",
+    meeting_attendance: "meetings",
+    deployments: "deployments",
+    vehicles: "deployments",
+    drivers: "deployments",
+    deployment_participants: "deployments",
+    deployment_costs: "deployments",
+    donors: "donors",
+    khadem_equipment_issues: "equipment",
+    khadem_equipment_payments: "equipment",
+    equipment_committee_receipts: "equipment",
+    equipment_committee_receipt_items: "equipment",
+    equipment_committee_payments: "equipment",
+    finance_transactions: "finance"
+  };
+  function offlineMutationDescriptor(path) {
+    const match = String(path || "").match(/^\\/rest\\/v1\\/([^/?]+)(?:\\?([^#]*))?$/);
+    if (!match) return null;
+    const table = decodeURIComponent(match[1]);
+    if (!Object.prototype.hasOwnProperty.call(OFFLINE_MUTATION_MODULES, table)) return null;
+    return { table, query: match[2] || "", module: OFFLINE_MUTATION_MODULES[table] };
+  }
+  function canQueueOfflineMutation(path, options) {
+    if (!window.KJOfflineStore || !state.accessLoaded || !canAccess(offlineMutationDescriptor(path)?.module || "__none__")) return false;
+    const descriptor = offlineMutationDescriptor(path);
+    if (!descriptor) return false;
+    const method = String(options.method || "GET").toUpperCase();
+    if (!["POST", "PATCH", "DELETE"].includes(method)) return false;
+    // عملیات مالی فقط ثبت پیش‌نویس ساده را می‌پذیرد؛ RPC، قطعی‌سازی و پرداخت‌ها هرگز صف نمی‌شوند.
+    if (descriptor.table === "finance_transactions") {
+      if (method !== "POST") return false;
+      const rows = Array.isArray(options.body) ? options.body : [options.body];
+      if (!rows.length || rows.some(row => !row || row.status !== "draft" || row.receipt_image_path)) return false;
+    }
+    if (method === "POST" && descriptor.table === "khadems") {
+      const rows = Array.isArray(options.body) ? options.body : [options.body];
+      if (rows.some(row => row && (row.photo_path || row.photo_url))) return false;
+    }
+    if (method === "PATCH" || method === "DELETE") {
+      const params = new URLSearchParams(descriptor.query);
+      const id = params.get("id") || "";
+      if (!id.startsWith("eq.") || !/^[0-9a-f-]{36}$/i.test(id.slice(3))) return false;
+    }
+    return true;
+  }
+  async function queueOfflineMutation(path, options) {
+    if (!canQueueOfflineMutation(path, options)) {
+      throw new Error("این عملیات در حالت آفلاین پشتیبانی نمی‌شود یا مجوز کافی ندارد؛ برای انجام آن به اینترنت وصل شوید.");
+    }
+    const descriptor = offlineMutationDescriptor(path);
+    const method = String(options.method || "GET").toUpperCase();
+    let body = options.body === undefined ? undefined : JSON.parse(JSON.stringify(options.body));
+    if (method === "POST") {
+      const rows = Array.isArray(body) ? body : [body];
+      for (const row of rows) {
+        if (!row || typeof row !== "object" || Array.isArray(row)) throw new Error("ساختار رکورد برای ذخیره آفلاین معتبر نیست.");
+        if (!row.id) {
+          if (!window.crypto || typeof window.crypto.randomUUID !== "function") throw new Error("تولید شناسه امن برای ثبت آفلاین در این مرورگر پشتیبانی نمی‌شود.");
+          row.id = window.crypto.randomUUID();
+        }
+      }
+      body = Array.isArray(body) ? rows : rows[0];
+    }
+    const query = descriptor.query;
+    const operation = {
+      path: String(path), method, body,
+      headers: { ...(options.headers || {}) },
+      table: descriptor.table, createdAt: Date.now()
+    };
+    // حفظ زمان نسخه پایه برای هشدار تعارض در به‌روزرسانی‌ها.
+    if (method === "PATCH") {
+      try {
+        const id = new URLSearchParams(query).get("id").slice(3);
+        const cached = await window.KJOfflineStore.getSnapshot(descriptor.table);
+        const row = cached && cached.rows.find(item => String(item.id) === id);
+        if (row && row.updated_at) operation.baseUpdatedAt = row.updated_at;
+      } catch (_) {}
+    }
+    const queueId = await window.KJOfflineStore.enqueue(operation);
+    let result;
+    try {
+      result = await window.KJOfflineStore.applyOptimisticMutation(descriptor.table, query, method, body);
+    } catch (err) {
+      await window.KJOfflineStore.removeOutbox(queueId);
+      throw err;
+    }
+    state.offlineMode = true;
+    try { state.offlinePendingCount = (await window.KJOfflineStore.listOutbox()).length; } catch (_) {}
+    toast("اینترنت در دسترس نیست؛ تغییر در صف محلی ذخیره شد و پس از اتصال برای پایگاه داده ارسال می‌شود.", "info");
+    return result;
+  }
+  async function syncOfflineOutbox() {
+    if (!navigator.onLine || !token() || !state.accessLoaded || !window.KJOfflineStore || state.syncingOfflineOutbox) return 0;
+    state.syncingOfflineOutbox = true;
+    let synced = 0;
+    try {
+      const items = await window.KJOfflineStore.listOutbox();
+      for (const item of items) {
+        if (!item || item.status !== "pending" || !item.operation) continue;
+        const op = item.operation;
+        const descriptor = offlineMutationDescriptor(op.path);
+        if (!descriptor || !canAccess(descriptor.module)) {
+          await window.KJOfflineStore.updateOutbox(item.id, { status: "blocked", lastError: "مجوز فعلی این عملیات را اجازه نمی‌دهد." });
+          continue;
+        }
+        try {
+          let syncPath = op.path;
+          const syncHeaders = { ...(op.headers || {}) };
+          if (op.method === "POST") {
+            syncPath += (syncPath.includes("?") ? "&" : "?") + "on_conflict=id";
+            syncHeaders.Prefer = "resolution=merge-duplicates,return=representation";
+          }
+          if (op.method === "PATCH" && op.baseUpdatedAt) {
+            const params = new URLSearchParams(descriptor.query);
+            const idFilter = params.get("id") || "";
+            const id = idFilter.startsWith("eq.") ? idFilter.slice(3) : "";
+            if (id) {
+              const current = await request("/rest/v1/" + encodeURIComponent(descriptor.table) + "?select=updated_at&id=eq." + encodeURIComponent(id) + "&limit=1", { __skipOfflineQueue: true });
+              if (Array.isArray(current) && current[0] && current[0].updated_at && String(current[0].updated_at) !== String(op.baseUpdatedAt)) {
+                await window.KJOfflineStore.updateOutbox(item.id, { status: "needs_review", lastError: "این رکورد پس از دریافت آفلاین توسط کاربر دیگری تغییر کرده است." });
+                continue;
+              }
+            }
+          }
+          await request(syncPath, { method: op.method, body: op.body, headers: syncHeaders, __skipOfflineQueue: true });
+          await window.KJOfflineStore.removeOutbox(item.id);
+          synced++;
+        } catch (err) {
+          const status = err && err.status;
+          const nextStatus = status === 401 || status === 403 ? "blocked" : status >= 400 && status < 500 ? "needs_review" : "pending";
+          await window.KJOfflineStore.updateOutbox(item.id, {
+            status: nextStatus, attempts: Number(item.attempts || 0) + 1,
+            lastError: String(err && err.message || "ارسال عملیات ناموفق بود.")
+          });
+          if (!status || status === 401 || status === 403) break;
+        }
+      }
+      try { state.offlinePendingCount = (await window.KJOfflineStore.listOutbox()).length; } catch (_) {}
+      if (synced) {
+        state.offlineMode = false;
+        toast("همگام‌سازی انجام شد؛ " + fa(synced) + " تغییر به پایگاه داده ارسال شد.", "success");
+      }
+      if (state.offlinePendingCount > 0 && synced === 0) {
+        toast("برخی تغییرات هنوز در صف هستند؛ ممکن است نیاز به بررسی مجوز یا تعارض اطلاعات داشته باشند.", "info");
+      }
+    } catch (err) {
+      console.warn("KJ: offline outbox sync failed", err);
+    } finally {
+      state.syncingOfflineOutbox = false;
+    }
+    return synced;
+  }
   async function request(path, options = {}) {
+    const method = String(options.method || "GET").toUpperCase();
+    if (method !== "GET" && !options.__skipOfflineQueue && !navigator.onLine) {
+      return queueOfflineMutation(path, options);
+    }
     const controller = new AbortController();
     // Keep the timeout active until the response body has been read as well as fetched.
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -266,6 +427,12 @@
       });
       raw = await response.text();
     } catch (e) {
+      if (!options.__skipOfflineQueue && method !== "GET") {
+        try { return await queueOfflineMutation(path, options); }
+        catch (queueError) {
+          if (queueError && queueError.message) throw queueError;
+        }
+      }
       if (e && e.name === "AbortError") throw new Error("مهلت اتصال یا دریافت پاسخ از پایگاه داده تمام شد. اینترنت را بررسی کنید و دوباره تلاش کنید.");
       throw new Error("ارتباط با Supabase برقرار نشد. اینترنت و تنظیمات اتصال را بررسی کنید.");
     } finally {
