@@ -27,6 +27,7 @@
     meetings: [],
     deployments: [],
     finance: [],
+    financeAccounts: [],
     tuitionDues: [],
     financeInstallments: [],
     fund: [],
@@ -304,6 +305,7 @@
       ["meetings", "meetings"],
       ["deployments", "deployments"],
       ["finance", "finance_transactions"],
+      ["financeAccounts", "finance_accounts"],
       ["tuitionDues", "tuition_dues"],
       ["financeInstallments", "finance_installments"],
       ["fund", "fund_transactions"],
@@ -331,7 +333,7 @@
       services:"services", nonattendance:"nonattendance",
       meetings:"meetings", meetingInvitees:"meetings", meetingAttendance:"meetings",
       deployments:"deployments", vehicles:"deployments", drivers:"deployments",
-      finance:"finance", tuitionDues:"finance", financeInstallments:"finance", tuitionPayments:"finance",
+      finance:"finance", financeAccounts:"finance", tuitionDues:"finance", financeInstallments:"finance", tuitionPayments:"finance",
       fund:"fund", donors:"donors",
       equipmentIssues:"equipment", equipmentPayments:"equipment", equipmentReceipts:"equipment",
       equipmentReceiptItems:"equipment", equipmentCommitteePayments:"equipment",
@@ -1383,27 +1385,93 @@
       return (!q||hay.includes(q))&&(financeTypeFilter==="all"||String(r.transaction_type).toLowerCase()===financeTypeFilter)&&(financeCategoryFilter==="all"||r.category===financeCategoryFilter)&&(financeStatusFilter==="all"||String(r.status).toLowerCase()===financeStatusFilter);
     }).sort((a,b)=>String(b.transaction_date||"").localeCompare(String(a.transaction_date||"")));
     const toman=v=>money(Math.round(v));
-    const tabs=[["overview","نمای کلی"],["transactions","دفتر تراکنش‌ها"],["tuition","شهریه و اقساط"],["reports","گزارش‌ها"]];
+    const tabs=[["overview","نمای کلی"],["new-income","＋ ثبت دریافت"],["new-expense","－ ثبت پرداخت"],["transactions","دفتر تراکنش‌ها"],["tuition","شهریه و اقساط"],["new-tuition","ثبت بدهی شهریه"],["installments","اقساط"],["accounts","حساب‌ها"],["reports","گزارش‌ها"]];
     const nav='<div class="kj-finance-nav" role="tablist">'+tabs.map(([id,label])=>'<button type="button" role="tab" aria-selected="'+(financeView===id)+'" class="'+(financeView===id?'active':'')+'" data-finance-view="'+id+'">'+label+'</button>').join("")+'</div>';
     const typeLabel=v=>({income:"دریافت",expense:"پرداخت",transfer:"انتقال",receipt:"دریافت",payment:"پرداخت"})[String(v).toLowerCase()]||v||"نامشخص";
     const table=data=>data.length?'<div class="kj-table-wrap kj-finance-table-wrap"><table class="kj-finance-table"><thead><tr><th>تاریخ</th><th>نوع</th><th>عنوان</th><th>دسته‌بندی</th><th>خادم</th><th>مبلغ (تومان)</th><th>وضعیت</th><th>جزئیات</th></tr></thead><tbody>'+data.map(r=>'<tr><td>'+esc(dateText(r.transaction_date))+'</td><td>'+esc(typeLabel(r.transaction_type))+'</td><td><b>'+esc(r.title)+'</b><small class="kj-finance-cell-sub">'+esc(r.party||r.description||"")+'</small></td><td>'+esc(r.category)+'</td><td>'+(r.khadem_code?esc(r.khadem_code+" — "+r.khadem_name):"—")+'</td><td class="kj-finance-amount">'+esc(toman(r.amount_toman))+'</td><td>'+esc(r.status)+'</td><td><button type="button" class="kj-link" data-finance-detail="'+r._index+'">نمایش</button></td></tr>').join("")+'</tbody></table></div>':empty(state.errors.finance_transactions?"دریافت اطلاعات مالی ناموفق بود؛ خالی بودن سوابق قابل تأیید نیست.":"تراکنشی برای نمایش پیدا نشد.");
+    const khademOptions='<option value="">بدون اتصال به خادم</option>'+state.khadems.map(k=>'<option value="'+esc(khademId(k))+'">'+esc(khademCode(k)+' — '+nameOf(k))+'</option>').join("");
+    const accountOptions='<option value="">بدون تعیین حساب</option>'+state.financeAccounts.filter(a=>a.is_active!==false).map(a=>'<option value="'+esc(a.id)+'">'+esc((a.account_code||"")+" — "+(a.account_name||""))+'</option>').join("");
+    const entryForm=(kind)=>'<section class="kj-card kj-finance-panel kj-finance-form-panel"><h2>ثبت '+(kind==="income"?"دریافت مالی":"پرداخت / هزینه")+'</h2><p class="kj-muted">اطلاعات ابتدا به‌صورت پیش‌نویس ذخیره می‌شود و تا زمان بررسی، در جمع اسناد قطعی محاسبه نخواهد شد.</p><form id="kj-finance-entry-form" data-entry-type="'+kind+'"><div class="kj-finance-form-grid"><label>عنوان سند *<input name="title" required maxlength="180" placeholder="'+(kind==="income"?"مثلاً دریافت کمک یا حق عضویت":"مثلاً خرید اقلام یا هزینه مأموریت")+'"></label><label>تاریخ *<input name="transaction_date" type="date" value="'+new Date().toISOString().slice(0,10)+'" required></label><label>مبلغ (تومان) *<input name="amount_toman" type="number" min="1" step="1" inputmode="numeric" required placeholder="مبلغ به تومان"></label><label>دسته‌بندی *<select name="category" required><option value="">انتخاب کنید</option>'+["شهریه","کمک و نذورات","حق عضویت","البسه و تجهیزات","هزینه سفر و مأموریت","هزینه مراسم","پشتیبانی و اداری","سایر"].map(c=>'<option>'+c+'</option>').join("")+'</select></label><label>ارتباط با خادم<select name="khadem_id">'+khademOptions+'</select></label><label>حساب / صندوق<select name="account_id">'+accountOptions+'</select></label><label>طرف حساب<input name="party" maxlength="180" placeholder="نام پرداخت‌کننده یا دریافت‌کننده"></label><label>روش پرداخت<select name="payment_method"><option value="cash">نقدی</option><option value="card">کارت‌به‌کارت / کارت‌خوان</option><option value="bank_transfer">انتقال بانکی</option><option value="check">چک</option><option value="other">سایر</option></select></label><label>شماره پیگیری<input name="reference_no" maxlength="100" placeholder="اختیاری"></label><label>شماره رسید / سند<input name="tracking_number" maxlength="100" placeholder="اختیاری"></label><label class="kj-finance-form-wide">شرح و توضیحات<textarea name="description" rows="3" maxlength="2000" placeholder="جزئیات تکمیلی، علت هزینه یا توضیح دریافت"></textarea></label></div><div class="kj-finance-form-actions"><button class="kj-primary" type="submit">ذخیره پیش‌نویس</button><button class="kj-secondary" type="reset">پاک‌کردن فرم</button></div><p class="kj-small" role="status" id="kj-finance-form-status"></p></form></section>';
+    const tuitionForm='<section class="kj-card kj-finance-panel kj-finance-form-panel"><h2>ثبت بدهی / شهریه خادم</h2><p class="kj-muted">ثبت بدهی، سابقه مالی جدید ایجاد می‌کند و به‌صورت پیش‌فرض پرداخت‌شده محسوب نمی‌شود.</p><form id="kj-tuition-entry-form"><div class="kj-finance-form-grid"><label>خادم *<select name="khadem_id" required><option value="">انتخاب خادم</option>'+state.khadems.map(k=>'<option value="'+esc(khademId(k))+'">'+esc(khademCode(k)+' — '+nameOf(k))+'</option>').join("")+'</select></label><label>ماه / دوره شهریه *<input name="period_month" type="month" required></label><label>مبلغ شهریه (تومان) *<input name="amount_toman" type="number" min="0" step="1" required inputmode="numeric"></label><label class="kj-finance-form-wide">توضیحات<textarea name="notes" rows="2" maxlength="1000"></textarea></label></div><div class="kj-finance-form-actions"><button class="kj-primary" type="submit">ثبت بدهی شهریه</button></div><p class="kj-small" role="status" id="kj-tuition-form-status"></p></form></section>';
+    const installmentForm='<section class="kj-card kj-finance-panel kj-finance-form-panel"><h2>ثبت قسط</h2><p class="kj-muted">قسط باید به یک سند مالی موجود متصل شود. مبلغ‌ها در این فرم به تومان وارد می‌شوند.</p><form id="kj-installment-entry-form"><div class="kj-finance-form-grid"><label>سند مالی مرتبط *<select name="transaction_id" required><option value="">انتخاب سند</option>'+state.finance.map(r=>'<option value="'+esc(r.id)+'">'+esc((r.transaction_date||"")+" — "+(r.title||"سند مالی")+" — "+money(Math.round(num(r.amount)/10))+" تومان")+'</option>').join("")+'</select></label><label>خادم مرتبط<select name="khadem_id">'+khademOptions+'</select></label><label>شماره قسط *<input name="installment_number" type="number" min="1" step="1" required></label><label>مبلغ قسط (تومان) *<input name="amount" type="number" min="1" step="1" required inputmode="numeric"></label><label>تاریخ سررسید *<input name="due_date" type="date" required></label><label class="kj-finance-form-wide">توضیحات<textarea name="notes" rows="2" maxlength="1000"></textarea></label></div><div class="kj-finance-form-actions"><button class="kj-primary" type="submit">ثبت قسط</button></div><p class="kj-small" role="status" id="kj-installment-form-status"></p></form></section>';
+    const accountsForm='<section class="kj-card kj-finance-panel kj-finance-form-panel"><h2>تعریف حساب یا صندوق</h2><form id="kj-finance-account-form"><div class="kj-finance-form-grid"><label>کد حساب *<input name="account_code" required maxlength="40" placeholder="مثلاً CASH-01"></label><label>نام حساب *<input name="account_name" required maxlength="120" placeholder="صندوق نقدی مجموعه"></label><label>نوع حساب<select name="account_type"><option value="cash">صندوق نقدی</option><option value="bank">حساب بانکی</option><option value="receivable">مطالبات</option><option value="payable">بدهی‌ها</option><option value="other">سایر</option></select></label><label>وضعیت<select name="is_active"><option value="true">فعال</option><option value="false">غیرفعال</option></select></label><label class="kj-finance-form-wide">توضیحات<textarea name="notes" rows="2" maxlength="1000"></textarea></label></div><div class="kj-finance-form-actions"><button class="kj-primary" type="submit">ذخیره حساب</button></div><p class="kj-small" role="status" id="kj-account-form-status"></p></form></section>';
     const filters='<form class="kj-finance-filters" id="kj-finance-filter-form"><label>جست‌وجو<input id="kj-finance-search" type="search" value="'+esc(financeSearch)+'" placeholder="عنوان، کد خادم، دسته‌بندی…"></label><label>نوع<select id="kj-finance-type"><option value="all">همه انواع</option><option value="income" '+(financeTypeFilter==="income"?"selected":"") +'>دریافت</option><option value="expense" '+(financeTypeFilter==="expense"?"selected":"") +'>پرداخت</option><option value="transfer" '+(financeTypeFilter==="transfer"?"selected":"") +'>انتقال</option></select></label><label>دسته‌بندی<select id="kj-finance-category"><option value="all">همه دسته‌ها</option>'+categories.map(c=>'<option value="'+esc(c)+'" '+(financeCategoryFilter===c?"selected":"")+'>'+esc(c)+'</option>').join("")+'</select></label><label>وضعیت<select id="kj-finance-status"><option value="all">همه وضعیت‌ها</option><option value="posted" '+(financeStatusFilter==="posted"?"selected":"") +'>قطعی‌شده</option><option value="draft" '+(financeStatusFilter==="draft"?"selected":"") +'>پیش‌نویس</option><option value="pending" '+(financeStatusFilter==="pending"?"selected":"") +'>در انتظار</option><option value="void" '+(financeStatusFilter==="void"?"selected":"") +'>باطل‌شده</option></select></label><div class="kj-finance-filter-actions"><button type="submit" class="kj-primary">اعمال فیلتر</button><button type="button" class="kj-secondary" id="kj-finance-clear">پاک‌کردن</button><button type="button" class="kj-secondary" id="kj-finance-export">خروجی CSV</button></div></form>';
     const totals=categories.map(category=>({category,total:rows.filter(r=>r.category===category).reduce((s,r)=>s+r.amount_toman,0)})).sort((a,b)=>b.total-a.total).slice(0,6);
     const max=Math.max(1,...totals.map(x=>x.total));
     const chart='<div class="kj-finance-category-list">'+totals.map(c=>'<div class="kj-finance-category-row"><div><span>'+esc(c.category)+'</span><b>'+esc(toman(c.total))+'</b></div><div class="kj-finance-bar"><span style="width:'+Math.max(2,Math.min(100,c.total/max*100))+'%"></span></div></div>').join("")+'</div>';
     let body="";
-    if(financeView==="overview"){
+    if(financeView==="new-income" || financeView==="new-expense"){
+      body=entryForm(financeView==="new-income"?"income":"expense");
+    }else if(financeView==="new-tuition"){
+      body=tuitionForm;
+    }else if(financeView==="installments"){
+      body=installmentForm+'<section class="kj-card kj-finance-panel"><h3>اقساط ثبت‌شده</h3>'+errBox("finance_installments")+genericPage("financeInstallments","دفتر اقساط",state.financeInstallments,[{key:"transaction_id",label:"سند مالی"},{key:"khadem_id",label:"شناسه خادم"},{key:"installment_number",label:"شماره قسط"},{key:"amount",label:"مبلغ (تومان)"},{key:"paid_amount",label:"پرداخت‌شده"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"}])+'</section>';
+    }else if(financeView==="accounts"){
+      body=accountsForm+'<section class="kj-card kj-finance-panel"><h3>حساب‌ها و صندوق‌های تعریف‌شده</h3>'+ (state.financeAccounts.length?'<div class="kj-table-wrap"><table class="kj-table"><thead><tr><th>کد</th><th>نام حساب</th><th>نوع</th><th>وضعیت</th><th>توضیحات</th></tr></thead><tbody>'+state.financeAccounts.map(a=>'<tr><td>'+esc(a.account_code||"—")+'</td><td>'+esc(a.account_name||"—")+'</td><td>'+esc(a.account_type||"—")+'</td><td>'+(a.is_active===false?"غیرفعال":"فعال")+'</td><td>'+esc(a.notes||"")+'</td></tr>').join("")+'</tbody></table></div>':empty(state.errors.financeAccounts?"دریافت حساب‌ها ناموفق بود؛ خالی بودن فهرست قابل تأیید نیست.":"هنوز حسابی تعریف نشده است."))+'</section>';
+    }else if(financeView==="overview"){
       const recent=[...rows].sort((a,b)=>String(b.transaction_date||"").localeCompare(String(a.transaction_date||""))).slice(0,5);
       body='<div class="kj-finance-hero"><div><span class="kj-finance-eyebrow">FINANCE WORKSPACE · میزکار مالی</span><h2>مرکز کنترل امور مالی</h2><p>نمای یکپارچه دفتر مالی، شهریه و تعهدات ثبت‌شده</p></div><div class="kj-finance-hero-mark">﷼</div></div><div class="kj-finance-notice"><b>واحد پول:</b> مبالغ دفتر عمومی در پایگاه داده به ریال ذخیره می‌شوند؛ برای نمایش تومان بر ۱۰ تقسیم شده‌اند. داده اصلی تغییر نمی‌کند.</div><div class="kj-finance-metrics"><div class="kj-finance-metric positive"><span>دریافت قطعی‌شده</span><strong>'+esc(toman(income))+'</strong><small>اسناد قطعی</small></div><div class="kj-finance-metric negative"><span>پرداخت قطعی‌شده</span><strong>'+esc(toman(expense))+'</strong><small>اسناد قطعی</small></div><div class="kj-finance-metric"><span>خالص گردش</span><strong>'+esc(toman(income-expense))+'</strong><small>دریافت منهای پرداخت</small></div><div class="kj-finance-metric"><span>تعداد اسناد</span><strong>'+fa(rows.length)+'</strong><small>همه وضعیت‌ها</small></div></div><div class="kj-finance-two-col"><section class="kj-card kj-finance-panel"><h3>گردش بر اساس دسته‌بندی</h3>'+chart+'</section><section class="kj-card kj-finance-panel"><h3>میانبرهای مالی</h3><div class="kj-finance-shortcuts"><button type="button" data-finance-view="transactions">دفتر تراکنش‌ها<small>جست‌وجو و خروجی</small></button><button type="button" data-finance-view="tuition">شهریه و اقساط<small>سررسیدها و تعهدات</small></button>'+(canAccess("fund")?'<button type="button" data-quick-tab="fund">صندوق و خزانه</button>':"")+(canAccess("equipment")?'<button type="button" data-quick-tab="equipment">البسه و تجهیزات</button>':"")+'</div></section></div><section class="kj-card kj-finance-panel"><h3>آخرین تراکنش‌ها</h3>'+table(recent)+'</section>';
     }else if(financeView==="transactions"){
       body='<section class="kj-card kj-finance-panel"><div class="kj-finance-panel-head"><div><h2>دفتر تراکنش‌ها</h2><p>جست‌وجو، فیلتر چندگانه و خروجی CSV برای Excel</p></div><span>'+fa(filtered.length)+' سند</span></div>'+filters+table(filtered)+'</section>';
     }else if(financeView==="tuition"){
-      body='<section class="kj-card kj-finance-panel"><h2>شهریه خادمین</h2>'+errBox("tuition_dues")+genericPage("tuitionDues","سررسیدهای شهریه",state.tuitionDues,[{key:"khadem_id",label:"شناسه خادم"},{key:"period_month",label:"دوره"},{key:"amount_toman",label:"مبلغ (تومان)"},{key:"paid_toman",label:"پرداخت‌شده (تومان)"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"}])+'<h3 class="kj-section-title">اقساط ثبت‌شده</h3>'+errBox("finance_installments")+genericPage("financeInstallments","اقساط",state.financeInstallments,[{key:"khadem_id",label:"شناسه خادم"},{key:"installment_number",label:"شماره قسط"},{key:"amount",label:"مبلغ قسط"},{key:"paid_amount",label:"پرداخت‌شده"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"}])+'</section>';
+      body=tuitionForm+'<section class="kj-card kj-finance-panel"><h2>شهریه خادمین</h2>'+errBox("tuition_dues")+genericPage("tuitionDues","سررسیدهای شهریه",state.tuitionDues,[{key:"khadem_id",label:"شناسه خادم"},{key:"period_month",label:"دوره"},{key:"amount_toman",label:"مبلغ (تومان)"},{key:"paid_toman",label:"پرداخت‌شده (تومان)"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"}])+'<h3 class="kj-section-title">اقساط ثبت‌شده</h3>'+errBox("finance_installments")+genericPage("financeInstallments","اقساط",state.financeInstallments,[{key:"khadem_id",label:"شناسه خادم"},{key:"installment_number",label:"شماره قسط"},{key:"amount",label:"مبلغ قسط"},{key:"paid_amount",label:"پرداخت‌شده"},{key:"due_date",label:"سررسید"},{key:"status",label:"وضعیت"}])+'</section>';
     }else{
       body='<section class="kj-card kj-finance-panel"><h2>گزارش و تحلیل مالی</h2><div class="kj-finance-report-grid"><div><span>تعداد اسناد</span><b>'+fa(rows.length)+'</b></div><div><span>دریافت قطعی‌شده</span><b>'+esc(toman(income))+'</b></div><div><span>پرداخت قطعی‌شده</span><b>'+esc(toman(expense))+'</b></div><div><span>خالص گردش</span><b>'+esc(toman(income-expense))+'</b></div><div><span>سررسیدهای شهریه</span><b>'+fa(state.tuitionDues.length)+'</b></div><div><span>اقساط</span><b>'+fa(state.financeInstallments.length)+'</b></div></div><h3>تحلیل دسته‌بندی‌ها</h3>'+chart+'<div class="kj-finance-notice">ترازنامه، تطبیق بانکی، سند دوطرفه و گردش حساب تفصیلی در مرحله بعد پس از تکمیل ساختار حساب‌ها و قواعد ممیزی فعال می‌شوند.</div><button type="button" class="kj-secondary" id="kj-finance-export">خروجی CSV تراکنش‌ها</button></section>';
     }
     return '<div class="kj-finance-workspace"><div class="kj-finance-page-heading"><div><span class="kj-muted">مدیریت مالی مجموعه</span><h1 class="kj-page-title">امور مالی و حسابداری</h1></div><span class="kj-finance-secure">🔒 کنترل دسترسی سامانه</span></div>'+nav+errBox("finance_transactions")+body+'</div>';
   }
+  function financeFormStatus(formId,message){const el=$("#"+formId);if(el)el.textContent=message;}
+  async function refreshFinanceAfterSave(view){
+    await loadData();
+    financeView=view;
+    render();
+  }
+  async function saveFinanceEntry(form){
+    const fd=new FormData(form), type=form.dataset.entryType, amountToman=Number(fd.get("amount_toman"));
+    const status=$("#kj-finance-form-status"), button=form.querySelector('[type="submit"]');
+    if(!Number.isFinite(amountToman)||amountToman<=0){if(status)status.textContent="مبلغ معتبر و بزرگ‌تر از صفر وارد کنید.";return;}
+    const user=(()=>{try{return JSON.parse(localStorage.getItem(USER_KEY)||"null");}catch(_){return null;}})();
+    const khadem=state.khadems.find(k=>String(khademId(k))===String(fd.get("khadem_id")));
+    const payload={title:String(fd.get("title")||"").trim(),transaction_date:String(fd.get("transaction_date")||""),transaction_type:type,amount:Math.round(amountToman*10),category:String(fd.get("category")||""),khadem_id:fd.get("khadem_id")||null,khadem_code:khadem?khademCode(khadem):null,khadem_name:khadem?nameOf(khadem):null,account_id:fd.get("account_id")||null,party:String(fd.get("party")||"").trim()||null,payment_method:String(fd.get("payment_method")||"cash"),reference_no:String(fd.get("reference_no")||"").trim()||null,tracking_number:String(fd.get("tracking_number")||"").trim()||null,description:String(fd.get("description")||"").trim()||null,notes:String(fd.get("description")||"").trim()||null,status:"draft",created_by:user?.id||null,created_by_email:user?.email||null};
+    if(!payload.title||!payload.transaction_date||!payload.category){if(status)status.textContent="عنوان، تاریخ و دسته‌بندی الزامی است.";return;}
+    try{if(button){button.disabled=true;button.textContent="در حال ذخیره…";}if(status)status.textContent="در حال ثبت پیش‌نویس در پایگاه داده…";
+      await request("/rest/v1/finance_transactions",{method:"POST",headers:{"Prefer":"return=representation"},body:payload});
+      toast("پیش‌نویس مالی ثبت شد؛ هنوز سند قطعی نیست.","success");await refreshFinanceAfterSave("transactions");
+    }catch(err){if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت سند مالی ناموفق بود. مجوز مالی و اطلاعات فرم را بررسی کنید.","error");}
+    finally{if(button){button.disabled=false;button.textContent="ذخیره پیش‌نویس";}}
+  }
+  async function saveTuitionDue(form){
+    const fd=new FormData(form), amount=Number(fd.get("amount_toman")), period=String(fd.get("period_month")||"");
+    const status=$("#kj-tuition-form-status"),button=form.querySelector('[type="submit"]');
+    if(!fd.get("khadem_id")||!/^\\d{4}-\\d{2}$/.test(period)||!Number.isFinite(amount)||amount<0){if(status)status.textContent="خادم، دوره و مبلغ معتبر را وارد کنید.";return;}
+    const user=(()=>{try{return JSON.parse(localStorage.getItem(USER_KEY)||"null");}catch(_){return null;}})();
+    try{if(button){button.disabled=true;button.textContent="در حال ثبت…";}if(status)status.textContent="در حال ثبت بدهی شهریه…";
+      await request("/rest/v1/tuition_dues",{method:"POST",headers:{"Prefer":"return=representation"},body:{khadem_id:String(fd.get("khadem_id")),period_month:period+"-01",amount_toman:amount,paid_toman:0,status:"pending",notes:String(fd.get("notes")||"").trim()||null,created_by:user?.id||null}});
+      toast("بدهی شهریه ثبت شد.","success");await refreshFinanceAfterSave("tuition");
+    }catch(err){if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت شهریه ناموفق بود؛ احتمالاً برای این خادم و دوره رکوردی از قبل وجود دارد.","error");}
+    finally{if(button){button.disabled=false;button.textContent="ثبت بدهی شهریه";}}
+  }
+  async function saveFinanceInstallment(form){
+    const fd=new FormData(form),amount=Number(fd.get("amount")),number=Number(fd.get("installment_number"));
+    const status=$("#kj-installment-form-status"),button=form.querySelector('[type="submit"]');
+    if(!fd.get("transaction_id")||!Number.isInteger(number)||number<1||!Number.isFinite(amount)||amount<=0||!fd.get("due_date")){if(status)status.textContent="سند مرتبط، شماره قسط، مبلغ و سررسید را کامل کنید.";return;}
+    try{if(button){button.disabled=true;button.textContent="در حال ثبت…";}if(status)status.textContent="در حال ثبت قسط…";
+      await request("/rest/v1/finance_installments",{method:"POST",headers:{"Prefer":"return=representation"},body:{transaction_id:String(fd.get("transaction_id")),khadem_id:fd.get("khadem_id")||null,installment_number:number,amount:amount,paid_amount:0,due_date:String(fd.get("due_date")),status:"pending",notes:String(fd.get("notes")||"").trim()||null}});
+      toast("قسط ثبت شد.","success");await refreshFinanceAfterSave("installments");
+    }catch(err){if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت قسط ناموفق بود؛ شماره قسط تکراری یا مجوز ناکافی را بررسی کنید.","error");}
+    finally{if(button){button.disabled=false;button.textContent="ثبت قسط";}}
+  }
+  async function saveFinanceAccount(form){
+    const fd=new FormData(form),status=$("#kj-account-form-status"),button=form.querySelector('[type="submit"]');
+    const code=String(fd.get("account_code")||"").trim(),name=String(fd.get("account_name")||"").trim();
+    if(!code||!name){if(status)status.textContent="کد و نام حساب الزامی است.";return;}
+    try{if(button){button.disabled=true;button.textContent="در حال ذخیره…";}if(status)status.textContent="در حال ذخیره حساب…";
+      await request("/rest/v1/finance_accounts",{method:"POST",headers:{"Prefer":"return=representation"},body:{account_code:code,account_name:name,account_type:String(fd.get("account_type")||"other"),is_active:String(fd.get("is_active"))!=="false",notes:String(fd.get("notes")||"").trim()||null}});
+      toast("حساب مالی ثبت شد.","success");await refreshFinanceAfterSave("accounts");
+    }catch(err){if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت حساب ناموفق بود؛ کد تکراری یا مجوز مالی را بررسی کنید.","error");}
+    finally{if(button){button.disabled=false;button.textContent="ذخیره حساب";}}
+  }
+
   function nonattendancePage() {
     const rows = state.nonattendance.map(r => {
       const k = state.khadems.find(x => String(khademId(x)) === String(r.khadem_id));
@@ -1515,7 +1583,11 @@
       $$("[data-finance-view]", main).forEach(button => button.addEventListener("click", () => { financeView=button.dataset.financeView; render(); }));
       $("#kj-finance-filter-form")?.addEventListener("submit", event => { event.preventDefault(); financeSearch=$("#kj-finance-search")?.value||""; financeTypeFilter=$("#kj-finance-type")?.value||"all"; financeCategoryFilter=$("#kj-finance-category")?.value||"all"; financeStatusFilter=$("#kj-finance-status")?.value||"all"; render(); });
       $("#kj-finance-clear")?.addEventListener("click", () => { financeSearch=""; financeTypeFilter="all"; financeCategoryFilter="all"; financeStatusFilter="all"; render(); });
-      $$("[data-finance-detail]", main).forEach(button => button.addEventListener("click", () => { const row=state.finance[Number(button.dataset.financeDetail)]; if(row) modal("جزئیات سند مالی",dataFields(row)); }));
+      $("[data-finance-detail]", main).forEach(button => button.addEventListener("click", () => { const row=state.finance[Number(button.dataset.financeDetail)]; if(row) modal("جزئیات سند مالی",dataFields(row)); }));
+      $("#kj-finance-entry-form")?.addEventListener("submit",e=>{e.preventDefault();saveFinanceEntry(e.currentTarget);});
+      $("#kj-tuition-entry-form")?.addEventListener("submit",e=>{e.preventDefault();saveTuitionDue(e.currentTarget);});
+      $("#kj-installment-entry-form")?.addEventListener("submit",e=>{e.preventDefault();saveFinanceInstallment(e.currentTarget);});
+      $("#kj-finance-account-form")?.addEventListener("submit",e=>{e.preventDefault();saveFinanceAccount(e.currentTarget);});
       $("#kj-finance-export")?.addEventListener("click", () => {
         const records=state.finance.filter(row => { const q=financeSearch.trim().toLocaleLowerCase("fa"); const hay=[row.title,row.category,row.transaction_type,row.khadem_code,row.khadem_name,row.reference_no,row.tracking_number,row.description].join(" ").toLocaleLowerCase("fa"); return (!q||hay.includes(q))&&(financeTypeFilter==="all"||String(row.transaction_type).toLowerCase()===financeTypeFilter)&&(financeCategoryFilter==="all"||String(row.category||"بدون دسته‌بندی")===financeCategoryFilter)&&(financeStatusFilter==="all"||String(row.status).toLowerCase()===financeStatusFilter); });
         const columns=[["transaction_date","تاریخ"],["transaction_type","نوع"],["title","عنوان"],["category","دسته‌بندی"],["khadem_code","کد خادم"],["khadem_name","نام خادم"],["amount","مبلغ ریال"],["status","وضعیت"],["reference_no","شماره پیگیری"],["description","شرح"]];
