@@ -605,3 +605,24 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
   #kj-main.kj-dashboard-view .kj-module-copy b{font-size:11px}
   #kj-main.kj-dashboard-view .kj-module-copy small{font-size:10px}
 }
+
+/* Finance registration forms: responsive, compact on phones */
+.kj-finance-form-panel{margin:0;max-width:100%;overflow:hidden}
+.kj-finance-form-panel>p{margin-top:-4px;margin-bottom:14px}
+.kj-finance-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kj-finance-form-grid label{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;color:#526b7c;font-size:12px}
+.kj-finance-form-grid input,.kj-finance-form-grid select,.kj-finance-form-grid textarea{width:100%;min-width:0;border:1px solid #d7e1e7;border-radius:10px;padding:11px;background:#fff;color:#203c4e;font:inherit;font-size:14px;outline-color:#23865c}
+.kj-finance-form-grid textarea{resize:vertical}
+.kj-finance-form-wide{grid-column:1/-1}
+.kj-finance-form-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.kj-finance-form-actions button{min-width:130px}
+.kj-finance-form-panel [role="status"]{overflow-wrap:anywhere}
+@media(max-width:560px){
+ .kj-finance-form-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+ .kj-finance-form-wide{grid-column:auto}
+ .kj-finance-form-panel{padding:13px}
+ .kj-finance-form-actions{display:grid;grid-template-columns:1fr}
+ .kj-finance-form-actions button{width:100%;min-width:0}
+ .kj-finance-nav{gap:5px;padding:6px}
+ .kj-finance-nav button{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+}
