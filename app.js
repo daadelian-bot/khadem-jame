@@ -690,11 +690,34 @@
     if (!rows.length) return empty(emptyText);
     return `<div class="kj-table-wrap"><table><thead><tr>${columns.map(c => `<th>${esc(c.label)}</th>`).join("")}<th>جزئیات</th></tr></thead><tbody>${rows.map((row,i) => `<tr>${columns.map(c => `<td>${esc(formatValue(c.key, row[c.key]))}</td>`).join("")}<td><button class="kj-link" data-row="${i}">نمایش</button></td></tr>`).join("")}</tbody></table></div>`;
   }
+  function showRecordExportChooser(row,title,type) {
+    const excluded=new Set(["id","created_at","updated_at","extra_data","receipt_image_path","created_by","created_by_email"]);
+    const pairs=Object.entries(row||{}).filter(([key,value])=>!excluded.has(key)&&value!==null&&value!==undefined&&value!==""&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(key)).map(([key,value])=>({key,label:fieldLabel(key),value:key==="receipt_image_path"?"سند پیوست شده":formatValue(key,value)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی","شناسه سند","شناسه حساب"].includes(p.label));
+    const seen=new Set(), fields=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
+    const opts=fields.map((p,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-record-export-col="'+i+'" checked> '+esc(p.label)+'</label>').join("");
+    modal("انتخاب جزئیات خروجی",'<p class="kj-muted">اطلاعات قابل‌نمایش این پرونده را انتخاب کنید. شناسه‌های فنی و مسیر داخلی فایل صادر نمی‌شوند.</p><div style="display:flex;flex-wrap:wrap">'+opts+'</div><button type="button" class="kj-primary" id="kj-record-export-confirm">تهیه خروجی</button>');
+    $("#kj-record-export-confirm")?.addEventListener("click",()=>{
+      const chosen=$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
+      if(!chosen.length){toast("حداقل یک مورد را انتخاب کنید.","error");return;}
+      const selected=chosen.map(i=>fields[i]);
+      const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee;width:32%}</style><h1>"+esc(title)+"</h1><table><tbody>"+selected.map(p=>"<tr><th>"+esc(p.label)+"</th><td>"+esc(p.value)+"</td></tr>").join("")+"</tbody></table></html>";
+      if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
+      else {const blob=new Blob(["\\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+      $("#kj-modal")?.remove();
+    });
+  }
+  function addRecordExportActions(row,title) {
+    const modalRoot=$("#kj-modal"); if(!modalRoot||!row)return;
+    const actions=document.createElement("div"); actions.className="kj-global-export-toolbar"; actions.innerHTML='<span>خروجی جزئیات:</span><button type="button" data-record-export="pdf">PDF / چاپ</button><button type="button" data-record-export="word">Word</button><button type="button" data-record-export="excel">Excel</button>';
+    modalRoot.querySelector("h3")?.parentElement?.insertAdjacentElement("afterend",actions);
+    actions.addEventListener("click",e=>{const b=e.target.closest("[data-record-export]");if(b)showRecordExportChooser(row,title,b.dataset.recordExport);});
+  }
   function attachRowDetails(container, rows, title = "جزئیات") {
-    $$("[data-row]", container).forEach(button => button.addEventListener("click", () => {
+    $("[data-row]", container).forEach(button => button.addEventListener("click", () => {
       const row = rows[Number(button.dataset.row)];
       if (!row) return;
       modal(title, dataFields(row));
+      addRecordExportActions(row,title);
     }));
   }
   function modal(title, body) {
@@ -1442,8 +1465,8 @@
     if(!file||!file.size)return null;
     const extension=String(file.name||"").split(".").pop().toLowerCase();
     const typeByExtension={"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp","gif":"image/gif","heic":"image/heic","heif":"image/heif","pdf":"application/pdf"};
-    const mime=file.type||typeByExtension[extension]||"";
     const allowed=["image/jpeg","image/png","image/webp","image/gif","image/heic","image/heif","application/pdf"];
+    const mime=allowed.includes(file.type)?file.type:(typeByExtension[extension]||file.type||"");
     if(!allowed.includes(mime))throw new Error("فرمت فایل مجاز نیست؛ JPG، PNG، WEBP، GIF، HEIC/HEIF یا PDF انتخاب کنید.");
     if(file.size>8*1024*1024)throw new Error("حجم فایل سند نباید بیشتر از ۸ مگابایت باشد.");
     const ext=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/heic":"heic","image/heif":"heif","application/pdf":"pdf"})[mime];
@@ -1482,7 +1505,7 @@
       if(receiptFile instanceof File && receiptFile.size){if(status)status.textContent="در حال بارگذاری تصویر سند…";uploadedPath=await uploadFinanceReceipt(receiptFile);payload.receipt_image_path=uploadedPath;}
       await request("/rest/v1/finance_transactions",{method:"POST",headers:{"Prefer":"return=representation"},body:payload});
       toast(uploadedPath?"پیش‌نویس مالی همراه تصویر سند ثبت شد.":"پیش‌نویس مالی ثبت شد؛ هنوز سند قطعی نیست.","success");await refreshFinanceAfterSave("transactions");
-    }catch(err){if(uploadedPath)await removeFinanceReceipt(uploadedPath);if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت سند مالی ناموفق بود. مجوز مالی و اطلاعات فرم را بررسی کنید.","error");}
+    }catch(err){if(uploadedPath)await removeFinanceReceipt(uploadedPath);if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت سند مالی ناموفق بود: "+(err?.message||"خطای نامشخص"),"error");}
     finally{if(button){button.disabled=false;button.textContent="ذخیره پیش‌نویس";}}
   }
   async function saveTuitionPayment(form){
@@ -1597,18 +1620,17 @@
     bar.addEventListener("click",event=>{
       const button=event.target.closest("[data-kj-export]"); if(!button)return;
       const type=button.dataset.kjExport, title=(main.querySelector("h1,h2")?.textContent||"گزارش سامانه").trim();
-      const table=main.querySelector("table"); if(!table){toast("در این بخش جدول اطلاعات قابل خروجی وجود ندارد.","error");return;}
+      const table=main.querySelector("table"); if(!table){const record=state.tab==="khadems"&&state.selectedKhadem!==null?selectedKhademRecord():null;if(record){showRecordExportChooser(record,title,type);return;}toast("در این بخش جدول یا پرونده‌ای برای خروجی وجود ندارد.","error");return;}
       const cell=el=>String(el?.innerText||el?.textContent||"").trim();
       let cols=[...table.querySelectorAll("thead th")].map(cell).filter(x=>x&&x!=="جزئیات");
       let rows=[...table.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].slice(0,cols.length).map(cell));
       if(state.tab==="khadems" && state.selectedKhadem===null && state.khadems.length){
         const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
         const records=state.khadems.filter(k=>Number(String(khademCode(k)).replace(/[^0-9]/g,""))>=1000);
-        cols=keys.map(fieldLabel).filter((x,i,a)=>x&&x!=="شناسه داخلی"&&x!=="شناسه خادم"&&x!=="شناسه شخص"&&x!=="شناسه پرسنلی"&&a.indexOf(x)===i);
-        rows=records.map(k=>keys.filter(key=>!["id","created_at","updated_at","extra_data"].includes(key)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(key)).map(key=>formatValue(key,k[key])));
-        const usable=keys.filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
-        cols=usable.map(fieldLabel).filter(x=>x&&x!=="شناسه داخلی"&&x!=="شناسه خادم"&&x!=="شناسه شخص"&&x!=="شناسه پرسنلی");
-        rows=records.map(k=>usable.map(key=>formatValue(key,k[key])));
+        const pairs=keys.map(key=>({key,label:fieldLabel(key)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی"].includes(p.label));
+        const seen=new Set(); const usablePairs=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
+        cols=usablePairs.map(p=>p.label);
+        rows=records.map(k=>usablePairs.map(p=>formatValue(p.key,k[p.key])));
       }
       const opts=cols.map((c,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-export-col="'+i+'" checked> '+esc(c)+'</label>').join("");
       modal("انتخاب جزئیات خروجی",'<p class="kj-muted">فقط اطلاعات ثبت‌شده خروجی می‌شود؛ شناسه‌ها و کدهای فنی سامانه حذف می‌شوند. ستون‌های دلخواه را انتخاب کنید.</p><div style="display:flex;flex-wrap:wrap"> '+opts+'</div><button type="button" class="kj-primary" id="kj-export-confirm">تهیه خروجی</button>');
@@ -1669,7 +1691,7 @@
       $$("[data-finance-view]", main).forEach(button => button.addEventListener("click", () => { financeView=button.dataset.financeView; render(); }));
       $("#kj-finance-filter-form")?.addEventListener("submit", event => { event.preventDefault(); financeSearch=$("#kj-finance-search")?.value||""; financeTypeFilter=$("#kj-finance-type")?.value||"all"; financeCategoryFilter=$("#kj-finance-category")?.value||"all"; financeStatusFilter=$("#kj-finance-status")?.value||"all"; render(); });
       $("#kj-finance-clear")?.addEventListener("click", () => { financeSearch=""; financeTypeFilter="all"; financeCategoryFilter="all"; financeStatusFilter="all"; render(); });
-      $$("[data-finance-detail]", main).forEach(button => button.addEventListener("click", () => { const row=state.finance[Number(button.dataset.financeDetail)]; if(row) modal("جزئیات سند مالی",dataFields(row)); }));
+      $("[data-finance-detail]", main).forEach(button => button.addEventListener("click", () => { const row=state.finance[Number(button.dataset.financeDetail)]; if(row){modal("جزئیات سند مالی",dataFields(row));addRecordExportActions(row,"جزئیات سند مالی");} }));
       $$("[data-finance-receipt]", main).forEach(button=>button.addEventListener("click",()=>openFinanceReceipt(button.dataset.financeReceipt)));
       $$("[data-finance-post]", main).forEach(button=>button.addEventListener("click",()=>setFinanceStatus(button.dataset.financePost,"posted")));
       $$("[data-finance-void]", main).forEach(button=>button.addEventListener("click",()=>setFinanceStatus(button.dataset.financeVoid,"void")));
