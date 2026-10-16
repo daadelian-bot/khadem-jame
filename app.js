@@ -754,8 +754,9 @@
     const seen=new Set(), fields=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label)).sort((a,b)=>rankExport(a)-rankExport(b));
     const opts=fields.map((p,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-record-export-col="'+i+'" checked> '+esc(p.label)+'</label>').join("");
     modal("انتخاب جزئیات خروجی",'<p class="kj-muted">اطلاعات قابل‌نمایش این پرونده را انتخاب کنید. شناسه‌های فنی و مسیر داخلی فایل صادر نمی‌شوند.</p><div style="display:flex;flex-wrap:wrap">'+opts+'</div><button type="button" class="kj-primary" id="kj-record-export-confirm">تهیه خروجی</button>');
-    $("#kj-record-export-confirm")?.addEventListener("click",async()=>{
-      const chosen=$$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
+    $("#kj-record-export-confirm")?.addEventListener("click",async(event)=>{
+      const confirmButton=event.currentTarget; confirmButton.disabled=true; confirmButton.textContent="در حال آماده‌سازی…"; toast("در حال آماده‌سازی خروجی پرونده؛ لطفاً صبر کنید.","info");
+      const chosen=Array.from(document.querySelectorAll("#kj-modal [data-record-export-col]:checked")).map(x=>Number(x.dataset.recordExportCol));
       if(!chosen.length){toast("حداقل یک مورد را انتخاب کنید.","error");return;}
       const selected=chosen.map(i=>fields[i]);
       let photoUrl="",photoDataUrl="",photoMime="image/jpeg";
@@ -1779,8 +1780,9 @@
       }
       const opts=cols.map((c,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-export-col="'+i+'" checked> '+esc(c)+'</label>').join("");
       modal("انتخاب جزئیات خروجی",'<p class="kj-muted">فقط اطلاعات ثبت‌شده خروجی می‌شود؛ شناسه‌ها و کدهای فنی سامانه حذف می‌شوند. ستون‌های دلخواه را انتخاب کنید.</p><div style="display:flex;flex-wrap:wrap"> '+opts+'</div><button type="button" class="kj-primary" id="kj-export-confirm">تهیه خروجی</button>');
-      $("#kj-export-confirm")?.addEventListener("click",async()=>{
-        const chosen=$$("[data-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.exportCol));
+      $("#kj-export-confirm")?.addEventListener("click",async(event)=>{
+        const confirmButton=event.currentTarget; confirmButton.disabled=true; confirmButton.textContent="در حال آماده‌سازی…"; toast("در حال آماده‌سازی خروجی؛ لطفاً صبر کنید.","info");
+        const chosen=Array.from(document.querySelectorAll("#kj-modal [data-export-col]:checked")).map(x=>Number(x.dataset.exportCol));
         if(!chosen.length){toast("حداقل یک ستون را انتخاب کنید.","error");return;}
         const photoData=new Map();
         const photoIncluded=bankPhotoCol>=0&&chosen.includes(bankPhotoCol);
