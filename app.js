@@ -60,7 +60,9 @@
     errors: {},
     loaded: false,
     offlineMode: false,
-    offlineSnapshots: {}
+    offlineSnapshots: {},
+    offlinePendingCount: 0,
+    syncingOfflineOutbox: false
   };
 
   let financeView = "overview";
@@ -490,7 +492,7 @@
   async function loadData() {
     if (state.loading) return;
     state.loading = true;
-    state.offlineMode = false;
+    state.offlineMode = !navigator.onLine;
     state.offlineSnapshots = {};
     state.errors = {};
     try {
@@ -2307,8 +2309,13 @@
     main.prepend(bar);
   }
   function offlineNotice() {
-    if (!state.offlineMode) return "";
-    return '<div role="status" aria-live="polite" style="margin:0 0 14px;padding:12px 14px;border:1px solid #d7a84b;border-right:4px solid #c18b2c;border-radius:12px;background:#fff8e7;color:#654b16;line-height:1.9;font-size:13px"><strong>حالت آفلاین</strong> — اطلاعاتی که قبلاً روی این دستگاه ذخیره شده قابل مشاهده است. در این مرحله ثبت و ویرایش اطلاعات جدید به اتصال اینترنت نیاز دارد. عکس‌ها فقط در صورت ذخیره قبلی روی همین دستگاه نمایش داده می‌شوند.</div>';
+    if (!state.offlineMode && !Number(state.offlinePendingCount || 0)) return "";
+    const pending = Number(state.offlinePendingCount || 0);
+    return '<div role="status" aria-live="polite" style="margin:0 0 14px;padding:12px 14px;border:1px solid #d7a84b;border-right:4px solid #c18b2c;border-radius:12px;background:#fff8e7;color:#654b16;line-height:1.9;font-size:13px"><strong>' +
+      (state.offlineMode ? 'حالت آفلاین' : 'همگام‌سازی اطلاعات') +
+      '</strong> — اطلاعات ذخیره‌شده روی این دستگاه قابل مشاهده است.' +
+      (pending ? ' تعداد تغییرات در صف ارسال: <strong>' + fa(pending) + '</strong>.' : '') +
+      ' تغییرات پشتیبانی‌شده پس از اتصال اینترنت ارسال می‌شوند. عملیات حساس مانند پرداخت شهریه، تغییر رمز، مدیریت دسترسی و بارگذاری عکس جدید همچنان به اینترنت نیاز دارند.</div>';
   }
 
   function render() {
@@ -2549,7 +2556,7 @@
       }
       // رابط سامانه را فوراً نمایش بده؛ دریافت جدول‌های متعدد در پس‌زمینه ادامه پیدا می‌کند.
       // loadData ابتدا وضعیت بارگذاری را رندر می‌کند و پس از پایان، اطلاعات را جایگزین می‌کند.
-      void loadData();
+      void (async function () { await syncOfflineOutbox(); await loadData(); })();
     } catch (e) {
       console.error("KJ: startup/auth verification failed", e);
       if (e && (e.status === 401 || e.status === 403)) {
@@ -2623,7 +2630,10 @@
   });
   window.addEventListener("online", function () {
     if (!token()) return;
-    void loadData();
+    void (async function () {
+      await syncOfflineOutbox();
+      await loadData();
+    })();
   });
 
   window.KJ = {
