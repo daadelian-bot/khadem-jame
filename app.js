@@ -958,7 +958,7 @@
           <h1>سلام، به میزکار مجموعه خوش آمدید</h1>
           <p class="kj-hero-subtitle">مجموعه خدام عتبات مقدسه السیدة زینب سلام الله علیها</p>
           <p>نمایی یکپارچه برای پایش وضعیت خادمین، برنامه‌های خدمت، هماهنگی جلسات و امور مالی؛ اطلاعات هر بخش بر اساس داده‌های قابل دسترس حساب شما نمایش داده می‌شود.</p>
-          <div class="kj-hero-actions"><button class="kj-primary" data-quick-tab="khadems">＋ ثبت و مدیریت خادمین</button><button class="kj-hero-ghost" data-quick-tab="reports">مشاهده گزارش‌های مدیریتی ←</button></div>
+          <div class="kj-hero-actions">${canAccess("khadems") ? '<button class="kj-primary" data-quick-tab="khadems">＋ ثبت و مدیریت خادمین</button>' : ""}${canAccess("reports") ? '<button class="kj-hero-ghost" data-quick-tab="reports">مشاهده گزارش‌های مدیریتی ←</button>' : ""}</div>
         </div>
         <div class="kj-hero-emblem" aria-hidden="true"><span>🕌</span><small>خدمت صادقانه · نظم سازمانی</small><div class="kj-hero-orbit"></div></div>
         <div class="kj-hero-foot"><span>● اطلاعات متصل به سامانه</span><span>نمایش ${state.loaded?"داده‌های دریافت‌شده":"در انتظار دریافت داده‌ها"}</span></div>
@@ -984,8 +984,8 @@
           <div class="kj-dashboard-panel-body" data-dashboard-panel-body="status" hidden>
             <aside class="kj-card kj-insight-panel kj-dashboard-status-details"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">نمای سریع</span><h3>اطلاعات وضعیت سامانه</h3></div><span class="kj-heading-icon">◉</span></div>
               <div class="kj-insight-row"><span class="kj-insight-icon">♙</span><div><b>خادمین فعال/قابل استفاده</b><small>بر اساس وضعیت ثبت‌شده</small></div><strong>${fa(activeKhadems)}</strong></div>
-              <div class="kj-insight-row"><span class="kj-insight-icon">▦</span><div><b>جلسات ثبت‌شده</b><small>مجموع جلسات قابل مشاهده</small></div><strong>${fa(meetingCount)}</strong></div>
-              <div class="kj-insight-row"><span class="kj-insight-icon">◈</span><div><b>جمع مبالغ تراکنش‌ها</b><small>بر مبنای فیلدهای مبلغ موجود</small></div><strong class="kj-insight-money">${esc(money(financeTotal))}</strong></div>
+              ${canAccess("meetings") ? `<div class="kj-insight-row"><span class="kj-insight-icon">▦</span><div><b>جلسات ثبت‌شده</b><small>مجموع جلسات قابل مشاهده</small></div><strong>${fa(meetingCount)}</strong></div>` : ""}
+              ${canAccess("finance") ? `<div class="kj-insight-row"><span class="kj-insight-icon">◈</span><div><b>جمع مبالغ تراکنش‌ها</b><small>بر مبنای فیلدهای مبلغ موجود</small></div><strong class="kj-insight-money">${esc(money(financeTotal))}</strong></div>` : ""}
               <div class="kj-insight-foot">این ارقام خلاصه داده‌های موجودند و به‌تنهایی تأییدکننده صحت یا تکمیل همه سوابق نیستند.</div>
               <div class="kj-dashboard-module-status"><b>منوها و ماژول‌های سامانه</b><small>برای ورود به هر ماژول، آیتم مربوط را انتخاب کنید.</small></div>
             </aside>
@@ -994,7 +994,7 @@
             </div>
           </div>
         </section>
-        <section class="kj-dashboard-panel kj-panel-reports" data-dashboard-panel="reports">
+        <section class="kj-dashboard-panel kj-panel-reports ${canAccess("reports") ? "" : "kj-dashboard-panel-forbidden"}" data-dashboard-panel="reports">
           <button type="button" class="kj-dashboard-panel-head" data-dashboard-panel-toggle="reports" aria-expanded="false">
             <span class="kj-dashboard-panel-symbol">▥</span><span class="kj-dashboard-panel-title"><b>مرکز تحلیل و گزارش</b><small>نمودارها، جدول‌ها و گزارش فعالیت ماژول‌ها</small></span><span class="kj-dashboard-panel-count">تحلیل و گزارش</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
           </button>
