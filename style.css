@@ -833,3 +833,17 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
   #kj-main.kj-dashboard-view .kj-module-copy b{font-size:9px!important}
   #kj-main.kj-dashboard-view .kj-module-copy small{font-size:8px!important}
 }
+
+
+/* Module categories span the available width; actual module tiles remain paired. */
+#kj-main.kj-dashboard-view .kj-module-groups{
+  grid-template-columns:minmax(0,1fr);
+}
+@media(max-width:760px){
+  #kj-main.kj-dashboard-view .kj-module-groups{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  #kj-main.kj-dashboard-view .kj-module-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
