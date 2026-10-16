@@ -340,7 +340,14 @@
     try {
       // بانک خادمین جداگانه بارگذاری می‌شود؛ خطای جدول‌های جانبی نباید صفحه را معطل کند.
       if (allowedTables.some(([key]) => key === "khadems")) {
-        state.khadems = await loadTable("khadems", "khadems");
+        // درخواست اصلی بانک هم مهلت مستقل دارد؛ اگر fetch در مرورگر/شبکه معطل ماند،
+        // رابط کاربری و دکمه‌ها نباید برای همیشه در وضعیت بارگذاری قفل شوند.
+        const khademRequest = loadTable("khadems", "khadems");
+        const khademTimeout = new Promise(resolve => setTimeout(() => {
+          state.errors.khadems = state.errors.khadems || "پاسخ بانک خادمین در زمان مقرر دریافت نشد. اتصال اینترنت یا دسترسی پایگاه داده را بررسی و دوباره تلاش کنید.";
+          resolve(Array.isArray(state.khadems) ? state.khadems : []);
+        }, TIMEOUT_MS + 2000));
+        state.khadems = await Promise.race([khademRequest, khademTimeout]);
         state.loaded = true;
         state.loading = false;
         render();
