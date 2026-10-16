@@ -264,7 +264,7 @@ jobs:
 
           mkdir -p dist
           cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.7-debug.apk"
-          sha256sum "dist/Samane-Jame-Khademin-1.0.6-debug.apk" > "dist/SHA256SUMS.txt"
+          sha256sum "dist/Samane-Jame-Khademin-1.0.7-debug.apk" > "dist/SHA256SUMS.txt"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
