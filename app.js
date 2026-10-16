@@ -386,6 +386,7 @@
     state.isPrimaryAdmin = false;
     state.accessPermissions = null;
     state.accessCustom = false;
+    state.accessFull = false;
     state.accessLoaded = false;
     loginPage();
   }
@@ -2189,6 +2190,8 @@
       state.role = access.role;
       state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
       state.accessCustom = !!state.accessPermissions;
+      // وضعیت دسترسی کامل را از پاسخ رسمی سرور بخوان؛ پروفایل سفارشی همچنان محدودکننده است.
+      state.accessFull = access.full_access === true && !state.accessCustom;
       // حساب ثبت‌نامی تا تأیید مدیر اصلی اجازه دریافت هیچ داده‌ای از سامانه را ندارد.
       const profileRows = await request("/rest/v1/profiles?select=is_active,role&id=eq." + encodeURIComponent(authUser.id) + "&limit=1");
       const approvedProfile = Array.isArray(profileRows) ? profileRows[0] : null;
