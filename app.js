@@ -1487,12 +1487,12 @@
       $("#kj-finance-filter-form")?.addEventListener("submit", event => { event.preventDefault(); financeSearch=$("#kj-finance-search")?.value||""; financeTypeFilter=$("#kj-finance-type")?.value||"all"; financeCategoryFilter=$("#kj-finance-category")?.value||"all"; financeStatusFilter=$("#kj-finance-status")?.value||"all"; render(); });
       $("#kj-finance-clear")?.addEventListener("click", () => { financeSearch=""; financeTypeFilter="all"; financeCategoryFilter="all"; financeStatusFilter="all"; render(); });
       $("[data-finance-detail]", main).forEach(button => button.addEventListener("click", () => { const row=state.finance[Number(button.dataset.financeDetail)]; if(row) modal("جزئیات سند مالی",dataFields(row)); }));
-      $("[data-finance-export]", main).forEach(button => button.addEventListener("click", () => {
+      $("#kj-finance-export")?.addEventListener("click", () => {
         const records=state.finance.filter(row => { const q=financeSearch.trim().toLocaleLowerCase("fa"); const hay=[row.title,row.category,row.transaction_type,row.khadem_code,row.khadem_name,row.reference_no,row.tracking_number,row.description].join(" ").toLocaleLowerCase("fa"); return (!q||hay.includes(q))&&(financeTypeFilter==="all"||String(row.transaction_type).toLowerCase()===financeTypeFilter)&&(financeCategoryFilter==="all"||String(row.category||"بدون دسته‌بندی")===financeCategoryFilter)&&(financeStatusFilter==="all"||String(row.status).toLowerCase()===financeStatusFilter); });
         const columns=[["transaction_date","تاریخ"],["transaction_type","نوع"],["title","عنوان"],["category","دسته‌بندی"],["khadem_code","کد خادم"],["khadem_name","نام خادم"],["amount","مبلغ ریال"],["status","وضعیت"],["reference_no","شماره پیگیری"],["description","شرح"]];
         const csv="\uFEFF"+[columns.map(c=>c[1]).join(","),...records.map(row=>columns.map(c=>'"'+String(row[c[0]]??"").replace(/"/g,'""')+'"').join(","))].join("\r\n");
         const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const link=document.createElement("a"); link.href=url; link.download="finance-transactions.csv"; link.click(); URL.revokeObjectURL(url);
-      }));
+      });
     }
     if(state.tab==="serviceRegister") bindOfficialServiceForm();
     if (state.tab === "changePassword") $("#kj-change-password-form")?.addEventListener("submit", e => { e.preventDefault(); savePasswordChange(e.currentTarget); });
