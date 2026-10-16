@@ -701,3 +701,135 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
  #kj-main.kj-dashboard-view .kj-dashboard-expand-trigger{z-index:8}
 }
 @media(max-width:380px){#kj-main.kj-dashboard-view .kj-analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+
+/* Dashboard paired-window layout v20261016-88
+   Keep existing authentication, navigation and permission logic untouched. */
+#kj-main.kj-dashboard-view .kj-analytics-layout,
+#kj-main.kj-dashboard-view .kj-activity-layout{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  align-items:stretch;
+}
+#kj-main.kj-dashboard-view .kj-analytics-main,
+#kj-main.kj-dashboard-view .kj-insight-panel,
+#kj-main.kj-dashboard-view .kj-activity-card{
+  min-width:0;
+  border-radius:16px;
+}
+#kj-main.kj-dashboard-view .kj-module-groups{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+}
+#kj-main.kj-dashboard-view .kj-module-group{
+  min-width:0;
+  border-radius:16px;
+  background:linear-gradient(145deg,#ffffff 0%,#f3f7f6 100%);
+  border:1px solid #dce8e3;
+  box-shadow:0 5px 18px rgba(26,68,57,.055);
+}
+#kj-main.kj-dashboard-view .kj-module-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+#kj-main.kj-dashboard-view .kj-module-card{
+  box-sizing:border-box;
+  min-width:0;
+  min-height:112px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:8px;
+  padding:12px 10px;
+  border:1px solid #e1e9e6;
+  border-radius:13px;
+  background:linear-gradient(145deg,#fff 0%,#f5f8fa 100%);
+  box-shadow:0 2px 8px rgba(26,58,75,.045);
+  text-align:right;
+  white-space:normal;
+  touch-action:manipulation;
+}
+#kj-main.kj-dashboard-view .kj-module-card:hover{
+  border-color:#a9cabe;
+  box-shadow:0 5px 14px rgba(26,88,68,.10);
+  transform:translateY(-1px);
+}
+#kj-main.kj-dashboard-view .kj-module-icon{
+  flex:0 0 auto;
+}
+#kj-main.kj-dashboard-view .kj-module-copy{
+  display:block;
+  width:100%;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+#kj-main.kj-dashboard-view .kj-module-copy b{
+  display:block;
+  font-size:12px;
+  line-height:1.7;
+}
+#kj-main.kj-dashboard-view .kj-module-copy small{
+  display:block;
+  margin-top:3px;
+  font-size:10px;
+  line-height:1.65;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#kj-main.kj-dashboard-view .kj-module-arrow{
+  align-self:flex-end;
+  margin-top:auto;
+}
+@media(max-width:760px){
+  #kj-main.kj-dashboard-view .kj-analytics-layout,
+  #kj-main.kj-dashboard-view .kj-activity-layout{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #kj-main.kj-dashboard-view .kj-analytics-main,
+  #kj-main.kj-dashboard-view .kj-insight-panel,
+  #kj-main.kj-dashboard-view .kj-activity-card{
+    min-width:0;
+    padding:10px!important;
+  }
+  #kj-main.kj-dashboard-view .kj-module-groups{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #kj-main.kj-dashboard-view .kj-module-group{
+    max-height:none;
+    padding:8px!important;
+    overflow:visible;
+  }
+  #kj-main.kj-dashboard-view .kj-module-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+  #kj-main.kj-dashboard-view .kj-module-card{
+    min-height:105px;
+    padding:9px 7px!important;
+    align-items:flex-start;
+    overflow:hidden;
+  }
+  #kj-main.kj-dashboard-view .kj-module-copy b{font-size:10px!important}
+  #kj-main.kj-dashboard-view .kj-module-copy small{font-size:9px!important}
+  #kj-main.kj-dashboard-view .kj-activity-card .kj-card-heading{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  #kj-main.kj-dashboard-view .kj-activity-card .kj-card-heading h3{
+    font-size:11px!important;
+    overflow-wrap:anywhere;
+  }
+}
+@media(max-width:360px){
+  #kj-main.kj-dashboard-view .kj-module-card{min-height:100px;padding:7px 5px!important}
+  #kj-main.kj-dashboard-view .kj-module-copy b{font-size:9px!important}
+  #kj-main.kj-dashboard-view .kj-module-copy small{font-size:8px!important}
+}
