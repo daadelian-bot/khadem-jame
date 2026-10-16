@@ -1620,7 +1620,8 @@
     bar.addEventListener("click",event=>{
       const button=event.target.closest("[data-kj-export]"); if(!button)return;
       const type=button.dataset.kjExport, title=(main.querySelector("h1,h2")?.textContent||"گزارش سامانه").trim();
-      const table=main.querySelector("table"); if(!table){const record=state.tab==="khadems"&&state.selectedKhadem!==null?selectedKhademRecord():null;if(record){showRecordExportChooser(record,title,type);return;}toast("در این بخش جدول یا پرونده‌ای برای خروجی وجود ندارد.","error");return;}
+      if(state.tab==="khadems"&&state.selectedKhadem!==null){const record=selectedKhademRecord();if(record){showRecordExportChooser(record,title,type);return;}}
+      const table=main.querySelector("table"); if(!table){toast("در این بخش جدول یا پرونده‌ای برای خروجی وجود ندارد.","error");return;}
       const cell=el=>String(el?.innerText||el?.textContent||"").trim();
       let cols=[...table.querySelectorAll("thead th")].map(cell).filter(x=>x&&x!=="جزئیات");
       let rows=[...table.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].slice(0,cols.length).map(cell));
