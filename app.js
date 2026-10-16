@@ -730,7 +730,7 @@
     const opts=fields.map((p,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-record-export-col="'+i+'" checked> '+esc(p.label)+'</label>').join("");
     modal("انتخاب جزئیات خروجی",'<p class="kj-muted">اطلاعات قابل‌نمایش این پرونده را انتخاب کنید. شناسه‌های فنی و مسیر داخلی فایل صادر نمی‌شوند.</p><div style="display:flex;flex-wrap:wrap">'+opts+'</div><button type="button" class="kj-primary" id="kj-record-export-confirm">تهیه خروجی</button>');
     $("#kj-record-export-confirm")?.addEventListener("click",()=>{
-      const chosen=$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
+      const chosen=$$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
       if(!chosen.length){toast("حداقل یک مورد را انتخاب کنید.","error");return;}
       const selected=chosen.map(i=>fields[i]);
       const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee;width:32%}</style><h1>"+esc(title)+"</h1><table><tbody>"+selected.map(p=>"<tr><th>"+esc(p.label)+"</th><td>"+esc(p.value)+"</td></tr>").join("")+"</tbody></table></html>";
