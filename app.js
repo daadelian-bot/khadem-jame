@@ -62,6 +62,7 @@
     offlineMode: false,
     offlineSnapshots: {},
     offlinePendingCount: 0,
+    offlineReviewCount: 0,
     syncingOfflineOutbox: false
   };
 
@@ -343,7 +344,7 @@
       throw err;
     }
     state.offlineMode = true;
-    try { state.offlinePendingCount = (await window.KJOfflineStore.listOutbox()).length; } catch (_) {}
+    try { const outbox = await window.KJOfflineStore.listOutbox(); state.offlinePendingCount = outbox.filter(row => row.status === "pending").length; state.offlineReviewCount = outbox.length - state.offlinePendingCount; } catch (_) {}
     toast("اینترنت در دسترس نیست؛ تغییر در صف محلی ذخیره شد و پس از اتصال برای پایگاه داده ارسال می‌شود.", "info");
     return result;
   }
@@ -2311,10 +2312,12 @@
   function offlineNotice() {
     if (!state.offlineMode && !Number(state.offlinePendingCount || 0)) return "";
     const pending = Number(state.offlinePendingCount || 0);
+    const review = Number(state.offlineReviewCount || 0);
     return '<div role="status" aria-live="polite" style="margin:0 0 14px;padding:12px 14px;border:1px solid #d7a84b;border-right:4px solid #c18b2c;border-radius:12px;background:#fff8e7;color:#654b16;line-height:1.9;font-size:13px"><strong>' +
       (state.offlineMode ? 'حالت آفلاین' : 'همگام‌سازی اطلاعات') +
       '</strong> — اطلاعات ذخیره‌شده روی این دستگاه قابل مشاهده است.' +
       (pending ? ' تعداد تغییرات در صف ارسال: <strong>' + fa(pending) + '</strong>.' : '') +
+      (review ? ' عملیات نیازمند بررسی: <strong>' + fa(review) + '</strong>.' : '') +
       ' تغییرات پشتیبانی‌شده پس از اتصال اینترنت ارسال می‌شوند. عملیات حساس مانند پرداخت شهریه، تغییر رمز، مدیریت دسترسی و بارگذاری عکس جدید همچنان به اینترنت نیاز دارند.</div>';
   }
 
@@ -2582,6 +2585,7 @@
             state.accessLoaded = true;
             state.offlineMode = true;
             state.offlineAuthVerifiedAt = cachedAuth.verifiedAt;
+            try { const outbox = await window.KJOfflineStore.listOutbox(); state.offlinePendingCount = outbox.filter(row => row.status === "pending").length; state.offlineReviewCount = outbox.length - state.offlinePendingCount; } catch (_) {}
             if (!canAccess(state.tab)) state.tab = "dashboard";
             toast("اینترنت در دسترس نیست؛ اطلاعات ذخیره‌شده قبلی در حالت آفلاین باز می‌شود.", "info");
             void loadData();
