@@ -535,7 +535,7 @@
     return state.khadems.find(k => String(khademId(k)) === selected) ||
       state.khadems.find(k => String(khademCode(k)) === selected) || null;
   }
-  function khademPhotoPath(k){ return String(val(k,["photo_path","photo_url"])||"").trim(); }
+  function khademPhotoPath(k){ return String(val(k,["photo_path","photo_url"])||val(k?.extra_data||{},["photo_path","photo_url"])||"").trim(); }
   function normalizeSignedStorageUrl(value){const u=String(value||"");return u.startsWith("http")?u:(u.startsWith("/storage/v1/")?SUPABASE_URL+u:SUPABASE_URL+"/storage/v1"+(u.startsWith("/")?u:"/"+u));}
   async function loadKhademPhotoInto(img,path){
     if(!img||!path)return;
@@ -1844,8 +1844,10 @@
     if(state.tab==="khadems" && state.showKhademPhotos){
       $("img[data-khadem-photo-path]",main).forEach(img=>{
         const path=img.dataset.khademPhotoPath;
-        if(!path){const placeholder=img.parentElement?.querySelector("[data-khadem-photo-empty]");if(placeholder)placeholder.textContent="بدون عکس";return;}
-        loadKhademPhotoInto(img,path).then(()=>{const placeholder=img.parentElement?.querySelector("[data-khadem-photo-empty]");if(placeholder)placeholder.style.display=img.style.display==="block"?"none":"inline";});
+        const placeholder=img.parentElement?.querySelector("[data-khadem-photo-empty]");
+        if(!path){if(placeholder)placeholder.textContent="بدون عکس";return;}
+        img.onerror=()=>{img.style.display="none";if(placeholder){placeholder.textContent="عکس بارگذاری نشد";placeholder.style.display="inline";}};
+        loadKhademPhotoInto(img,path).then(()=>{if(placeholder)placeholder.style.display=img.style.display==="block"?"none":"inline";});
       });
     }
     $("[data-row]", main).forEach(b => b.addEventListener("click", () => {
