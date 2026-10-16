@@ -96,7 +96,7 @@ jobs:
           rm -f automation-task-prompt.md
 
           # Keep automation credentials and database deployment files outside this agent's PR.
-          if git diff --name-only | grep -Eq '^(\.github/workflows/|supabase/|.*SUPABASE.*\.sql$)'; then
+          if git status --porcelain --untracked-files=all | sed -E 's/^.{3}//' | grep -Eq '^(\.github/workflows/|supabase/|.*SUPABASE.*\.sql$)'; then
             gh issue comment "${ISSUE_NUMBER}" --body 'عامل خودکار تلاش کرد فایل‌های محافظت‌شدهٔ workflow یا Supabase را تغییر دهد؛ برای ایمنی، PR خودکار ساخته نشد. این بخش نیازمند بررسی جداگانه است.'
             echo "::error::Protected automation or Supabase files changed; refusing to publish the agent changes."
             exit 1
