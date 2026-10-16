@@ -630,3 +630,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 /* Finance receipt attachment input */
 .kj-finance-form-grid input[type="file"]{padding:9px;background:#f8fbfa;border:1px dashed #9ab8aa;cursor:pointer}
 .kj-finance-form-grid label small{font-size:11px;line-height:1.8;color:#718596;font-weight:400}
+
+.kj-global-export-toolbar{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding:10px 12px;border:1px solid #d8e3e8;border-radius:14px;background:#f8fbfc;color:#254452;font-size:13px}
+.kj-global-export-toolbar button{border:1px solid #cbd9df;border-radius:9px;background:#fff;color:#174b42;padding:8px 12px;font:inherit;cursor:pointer}
+input[data-jalali-date]{cursor:pointer;background-image:none!important}
+@media print{.kj-global-export-toolbar,.kj-nav,.kj-finance-nav,button{display:none!important}.kj-table-wrap{overflow:visible!important;max-width:none!important}body{background:#fff!important}.kj-card{box-shadow:none!important;break-inside:avoid}}
