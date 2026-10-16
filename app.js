@@ -395,7 +395,7 @@
     app.innerHTML = `
       <div class="kj-login-wrap" dir="rtl">
         <form class="kj-login-card" id="kj-login-form">
-          <img src="logo.png" alt="لوگوی مجموعه" class="kj-logo" onerror="this.style.display='none'">
+          <img src="logo.png" alt="لوگوی مجموعه" class="kj-logo" width="86" height="86" decoding="async" fetchpriority="high" onerror="this.style.display='none'">
           <h1>سامانه جامع مدیریت خادمین</h1>
           <p class="kj-muted">مجموعه السیدة زینب سلام الله علیها</p>
           ${message ? `<div class="kj-alert">${esc(message)}</div>` : ""}
