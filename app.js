@@ -854,7 +854,7 @@
             if (estimate.quota && estimate.usage / estimate.quota > 0.85) return;
           }
           let url = item.path;
-          if (!/^https?:\\/\\//i.test(url)) {
+          if (!/^https?:\/\//i.test(url)) {
             const signed = await request("/storage/v1/object/sign/khadem-photos/" + financeReceiptPath(url), { method: "POST", body: { expiresIn: 3600 } });
             const signedUrl = String(signed?.signedURL || signed?.signedUrl || "");
             if (!signedUrl) continue;
