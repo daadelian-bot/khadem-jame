@@ -118,7 +118,7 @@
     }
     try { if (typeof initOfflineJalaliCalendars === 'function') initOfflineJalaliCalendars(); } catch (_) {}
   }
-  let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [] };
+  let cache = { khadems: [], receipts: [], items: [], committeePayments: [], issues: [], khademPayments: [], pricing: null };
   async function loadData() {
     const tables = [
       ['khadems', 'khadems', 'select=id,khadem_code,full_name,is_active&order=khadem_code.asc&limit=3000'],
@@ -130,6 +130,7 @@
     ];
     const loaded = await Promise.all(tables.map(async ([key, table, query]) => [key, await api(table, 'GET', query)]));
     loaded.forEach(([key, value]) => { cache[key] = value; });
+    try { const pricingRows = await api('finance_pricing', 'GET', 'id=eq.1&select=*'); cache.pricing = pricingRows[0] || null; } catch (_) { cache.pricing = null; }
   }
   function paidForIssue(id) {
     return cache.khademPayments.filter(p => p.issue_id === id).reduce((s, p) => s + num(p.amount_toman), 0);
@@ -192,6 +193,8 @@
     const issueCost = cache.issues.reduce((s, i) => s + num(i.total_amount_toman), 0);
     const khademPaid = cache.khademPayments.reduce((s, p) => s + num(p.amount_toman), 0);
     const stockKeys = ['white_cap','cream_cap','vest','fringe'];
+    const currentPrices = cache.pricing && cache.pricing.item_prices || {};
+    const pricingNotice = '<div class="card section"><h3>تعرفه‌های جاری مجموعه</h3><p class="muted">قیمت‌های این فهرست از بخش امور مالی ← تعرفه‌ها و قیمت‌ها خوانده می‌شود. هر رسید و تحویل، قیمت همان زمان را حفظ می‌کند؛ تغییر تعرفه، سابقه قبلی را عوض نمی‌کند.</p><div class="table-wrap"><table><thead><tr><th>قلم</th><th>تعرفه جاری</th></tr></thead><tbody>' + Object.keys(ITEMS).map(key=>'<tr><td>'+esc(label(key))+'</td><td>'+esc(money(num(currentPrices[key])))+'</td></tr>').join('') + '</tbody></table></div></div>';
     const stockRows = stockKeys.map(key => {
       const total = cache.items.filter(i => i.item_key === key).reduce((s, i) => s + num(i.quantity), 0);
       const delivered = cache.issues.filter(i => i.item_key === key && i.issue_status === 'delivered').reduce((s, i) => s + num(i.quantity), 0);
@@ -220,12 +223,12 @@
       '<div class="card"><span class="muted">پرداخت به هیئت</span><b style="display:block;font-size:20px">' + esc(money(committeePaid)) + '</b></div>' +
       '<div class="card"><span class="muted">بدهی مجموعه به هیئت</span><b style="display:block;font-size:20px;color:#b42318">' + esc(money(committeeDebt)) + '</b></div>' +
       '<div class="card"><span class="muted">بدهی خدام بابت اقلام تحویل‌شده</span><b style="display:block;font-size:20px;color:#b42318">' + esc(money(deliveredDebt)) + '</b></div></div>' +
-      '<div class="card section"><h3>۱. دریافت وسایل و تجهیزات از هیئت</h3><p class="muted">ابتدا رسید دریافت را ثبت کنید. تعداد و قیمت واحد هر قلم در همان رسید نگهداری می‌شود و قیمت‌های رسیدهای قبلی تغییر نمی‌کند. پرداخت هم‌زمان فقط وقتی وارد شود که واقعاً همان لحظه وجهی به هیئت پرداخت شده باشد.</p>' +
+      pricingNotice + '<div class="card section"><h3>۱. دریافت وسایل و تجهیزات از هیئت</h3><p class="muted">ابتدا رسید دریافت را ثبت کنید. تعداد و قیمت واحد هر قلم در همان رسید نگهداری می‌شود و قیمت‌های رسیدهای قبلی تغییر نمی‌کند. پرداخت هم‌زمان فقط وقتی وارد شود که واقعاً همان لحظه وجهی به هیئت پرداخت شده باشد.</p>' +
       '<form id="eqReceiptForm"><div class="form-grid"><div class="field"><label>تاریخ دریافت (شمسی)</label><input id="eqRDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field"><label>شماره رسید هیئت</label><input id="eqRRef" placeholder="اختیاری"></div>' +
-      '<div class="field"><label>تعداد جلیقه</label><input id="eqRQty_vest" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد جلیقه (تومان)</label><input id="eqRPrice_vest" type="number" min="0" step="1" value="0"></div>' +
-      '<div class="field"><label>تعداد کلاه سفید</label><input id="eqRQty_white_cap" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد کلاه سفید (تومان)</label><input id="eqRPrice_white_cap" type="number" min="0" step="1" value="0"></div>' +
-      '<div class="field"><label>تعداد کلاه کرم</label><input id="eqRQty_cream_cap" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد کلاه کرم (تومان)</label><input id="eqRPrice_cream_cap" type="number" min="0" step="1" value="0"></div>' +
-      '<div class="field"><label>تعداد ریشه (پر)</label><input id="eqRQty_fringe" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد ریشه (پر) (تومان)</label><input id="eqRPrice_fringe" type="number" min="0" step="1" value="0"></div>' +
+      '<div class="field"><label>تعداد جلیقه</label><input id="eqRQty_vest" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد جلیقه (تومان)</label><input id="eqRPrice_vest" type="number" min="0" step="1" value="' + esc(num(cache.pricing && cache.pricing.item_prices && cache.pricing.item_prices.vest)) + '"></div>' +
+      '<div class="field"><label>تعداد کلاه سفید</label><input id="eqRQty_white_cap" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد کلاه سفید (تومان)</label><input id="eqRPrice_white_cap" type="number" min="0" step="1" value="' + esc(num(cache.pricing && cache.pricing.item_prices && cache.pricing.item_prices.white_cap)) + '"></div>' +
+      '<div class="field"><label>تعداد کلاه کرم</label><input id="eqRQty_cream_cap" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد کلاه کرم (تومان)</label><input id="eqRPrice_cream_cap" type="number" min="0" step="1" value="' + esc(num(cache.pricing && cache.pricing.item_prices && cache.pricing.item_prices.cream_cap)) + '"></div>' +
+      '<div class="field"><label>تعداد ریشه (پر)</label><input id="eqRQty_fringe" type="number" min="0" step="1" value="0"></div><div class="field"><label>قیمت واحد ریشه (پر) (تومان)</label><input id="eqRPrice_fringe" type="number" min="0" step="1" value="' + esc(num(cache.pricing && cache.pricing.item_prices && cache.pricing.item_prices.fringe)) + '"></div>' +
       '<div class="field"><label>پرداخت به هیئت در همین نوبت (تومان)</label><input id="eqRPay" type="number" min="0" step="1" value="0"></div><div class="field"><label>جمع هزینه اقلام این رسید</label><b id="eqRTotal">۰ تومان</b></div><div class="field full"><label>توضیحات</label><textarea id="eqRNotes"></textarea></div></div><button class="btn primary" type="submit">ثبت رسید و همه اقلام</button><span id="eqRMsg" class="muted"></span></form></div>' +
       '<div class="card section"><h3>۳. تحویل وسیله به خادم</h3><p class="muted">ابتدا موجودی را بررسی کنید؛ سپس خادم، قلم و رسید منبع را انتخاب کنید. سامانه تعداد را از موجودی همان رسید کم می‌کند. تحویل کالا به‌تنهایی به معنی پرداخت نیست؛ بدهی فقط پس از ثبت وجه دریافتی کاهش می‌یابد.</p>' +
       '<form id="eqIssueForm"><div class="form-grid"><div class="field"><label>خادم</label><select id="eqKhadem" required><option value="">انتخاب خادم…</option>' + khademOptions + '</select></div><div class="field"><label>قلم</label><select id="eqItem"><option value="vest">جلیقه</option><option value="white_cap">کلاه سفید</option><option value="cream_cap">کلاه کرم</option><option value="fringe">ریشه (پر)</option><option value="service_shirt">پیراهن خدمت (دوخت خیاط)</option></select></div><div class="field"><label>تعداد</label><input id="eqQty" type="number" min="1" value="1" required></div><div class="field"><label>قیمت واحد هنگام تحویل (تومان)</label><input id="eqPrice" type="number" min="0" step="1" required></div><div class="field"><label>وضعیت تحویل</label><select id="eqStatus"><option value="delivered">تحویل خادم شده</option><option value="pending">هنوز تحویل نشده</option></select></div><div class="field"><label>تاریخ ثبت/تحویل (شمسی)</label><input id="eqIDate" data-jalali-date placeholder="۱۴۰۵/۰۷/۲۱"></div><div class="field full" id="eqSourceWrap"><label>از کدام رسید موجودی تحویل می‌شود؟</label><select id="eqSource"><option value="">انتخاب رسید موجودی…</option>' + stockOptions + '</select><small class="muted">برای چهار قلم دریافتی از هیئت، رسید منبع انتخاب شود تا موجودی درست کم شود.</small></div><div class="field" id="eqTailorWrap" style="display:none"><label>نام خیاط</label><input id="eqTailor"></div><div class="field" id="eqSizeWrap" style="display:none"><label>اندازه پیراهن</label><input id="eqSize"></div><div class="field" id="eqOrderWrap" style="display:none"><label>تاریخ سفارش دوخت (شمسی)</label><input id="eqOrderDate" data-jalali-date placeholder="اختیاری"></div><div class="field full"><label>توضیحات</label><textarea id="eqINotes"></textarea></div></div><button class="btn primary" type="submit">ثبت تحویل / سفارش وسیله</button><span id="eqIMsg" class="muted"></span></form></div>' +
@@ -338,6 +341,9 @@
     const sourceWrap = $('eqSourceWrap'), tailorWrap = $('eqTailorWrap'), sizeWrap = $('eqSizeWrap'), orderWrap = $('eqOrderWrap');
     function syncIssueFields() {
       const shirt = itemSel.value === 'service_shirt';
+      const currentPrices = cache.pricing && cache.pricing.item_prices || {};
+      const priceField = $('eqPrice');
+      if (priceField) { const current = Number(currentPrices[itemSel.value] || 0); priceField.value = current > 0 ? String(current) : ''; }
       if (sourceWrap) sourceWrap.style.display = shirt ? 'none' : '';
       if (tailorWrap) tailorWrap.style.display = shirt ? '' : 'none';
       if (sizeWrap) sizeWrap.style.display = shirt ? '' : 'none';
