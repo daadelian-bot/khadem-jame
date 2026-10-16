@@ -39,6 +39,13 @@ h1{font-size:1.35rem;margin:0 0 8px}p{margin:8px 0;color:var(--muted)}label{disp
 <button id="refreshUsersBtn" class="secondary" type="button">بارگذاری کاربران و نقش‌ها</button>
 <div id="usersList" aria-live="polite"></div>
 </div>
+<div id="auditBox" class="hidden" style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
+<h2 style="font-size:1.1rem;margin:0">گزارش اقدامات مدیران</h2>
+<p>سوابق حذف حساب، تأیید یا رد درخواست و تغییر نقش؛ این گزارش از سرور امن Supabase دریافت می‌شود.</p>
+<div class="row"><button id="refreshAuditBtn" class="secondary" type="button">به‌روزرسانی گزارش</button><button id="exportAuditBtn" class="secondary" type="button">خروجی CSV گزارش</button></div>
+<label for="auditSearch">جست‌وجو در گزارش</label><input id="auditSearch" type="search" placeholder="نام، ایمیل، نوع اقدام یا شناسه حساب">
+<div id="auditList" aria-live="polite"></div>
+</div>
 <div id="message" class="notice" role="status" aria-live="polite">برای ادامه با حساب مدیر اصلی وارد شوید.</div>
 <p class="small">نکته: ایمیل دعوت باید به نشانی درست برسد. اگر دعوت‌نامه ارسال نشد، تنظیمات ایمیل و نشانی‌های مجاز تغییر مسیر در Supabase باید بررسی شود. این صفحه هیچ رمز کاربری را ذخیره نمی‌کند.</p>
 </section></main>
@@ -65,7 +72,7 @@ async function refreshSession(){
  if(authorized){
   show("دسترسی مدیر اصلی تأیید شد. مجوز هر عملیات در سرور نیز دوباره بررسی می‌شود.","ok");
  }else{
-  $("requestsList").textContent="";$("usersList").textContent="";
+  $("requestsList").textContent="";$("usersList").textContent="";$("auditList").textContent="";
   show(session?"این صفحه فقط برای مدیر اصلی فعال مجاز است. از حساب فعلی خارج شوید و با حساب مدیر اصلی وارد شوید.":"برای ادامه با حساب مدیر اصلی وارد شوید.",session?"error":"");
  }
 }
@@ -179,9 +186,54 @@ async function loadUsers(){
  }catch(e){box.textContent="دریافت کاربران ناموفق بود: "+(e?.message||"خطای نامشخص");}
  finally{button.disabled=false;}
 }
+
+const auditActionLabels={user_deleted:"حذف کامل حساب",registration_approved:"تأیید درخواست عضویت",registration_rejected:"رد درخواست عضویت",user_role_changed:"تغییر نقش کاربر"};
+let cachedAuditRows=[];
+function auditDate(value){try{return new Date(value).toLocaleString("fa-IR",{dateStyle:"short",timeStyle:"short"});}catch{return value||"—";}}
+function auditDetails(d){
+ if(!d||typeof d!=="object")return "";
+ const parts=[];
+ if(d.previous_role||d.new_role)parts.push("نقش: "+(d.previous_role||"—")+" ← "+(d.new_role||"—"));
+ if(d.requested_role)parts.push("نقش درخواستی: "+d.requested_role);
+ if(d.request_status)parts.push("وضعیت درخواست: "+d.request_status);
+ if(d.active!==undefined)parts.push("حساب فعال: "+(d.active?"بله":"خیر"));
+ if(d.source)parts.push("منبع: "+d.source);
+ return parts.join("؛ ");
+}
+function renderAudit(){
+ const box=$("auditList"),q=$("auditSearch").value.trim().toLocaleLowerCase();
+ const rows=cachedAuditRows.filter(r=>[r.actor_email,r.target_email,r.target_name,r.action,r.target_user_id,r.actor_user_id,auditDetails(r.details)].join(" ").toLocaleLowerCase().includes(q));
+ if(!rows.length){box.innerHTML='<div class="notice">گزارشی مطابق جست‌وجو پیدا نشد.</div>';return;}
+ box.innerHTML=rows.map(r=>'<article class="notice" style="margin-top:10px"><strong>'+escapeHtml(auditActionLabels[r.action]||r.action||"اقدام ثبت‌شده")+'</strong><br><span class="small">زمان: '+escapeHtml(auditDate(r.created_at))+'</span><br>انجام‌دهنده: '+escapeHtml(r.actor_email||r.actor_user_id||"نامشخص")+'<br>حساب هدف: '+escapeHtml(r.target_name||"بدون نام")+' — '+escapeHtml(r.target_email||r.target_user_id||"—")+(auditDetails(r.details)?'<br>جزئیات: '+escapeHtml(auditDetails(r.details)):"")+'</article>').join("");
+}
+async function loadAudit(){
+ const box=$("auditList"),button=$("refreshAuditBtn");button.disabled=true;box.textContent="در حال دریافت گزارش از Supabase…";
+ try{
+  const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error("ابتدا وارد حساب مدیر اصلی شوید.");
+  const {data,error}=await supabase.functions.invoke("registration-approval",{body:{action:"list_audit"},headers:{Authorization:"Bearer "+session.access_token}});
+  if(error){let detail=error.message;try{const j=await error.context.json();if(j.error)detail=j.error;}catch{}throw new Error(detail);}
+  if(data?.error)throw new Error(data.error);
+  cachedAuditRows=Array.isArray(data?.logs)?data.logs:[];
+  renderAudit();
+ }catch(e){box.textContent="دریافت گزارش ناموفق بود: "+(e?.message||"خطای نامشخص");}
+ finally{button.disabled=false;}
+}
+function exportAuditCsv(){
+ const rows=cachedAuditRows;
+ if(!rows.length){show("ابتدا گزارش را بارگذاری کنید.","error");return;}
+ const quote=v=>'"'+String(v??"").replaceAll('"','""')+'"';
+ const header=["زمان","اقدام","ایمیل مدیر انجام‌دهنده","نام حساب هدف","ایمیل حساب هدف","شناسه حساب هدف","جزئیات"];
+ const lines=[header,...rows.map(r=>[r.created_at,auditActionLabels[r.action]||r.action,r.actor_email,r.target_name,r.target_email,r.target_user_id,auditDetails(r.details)])].map(row=>row.map(quote).join(","));
+ const blob=new Blob(["\\uFEFF"+lines.join("\\r\\n")],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="account-action-audit.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+$("refreshAuditBtn").addEventListener("click",loadAudit);
+$("auditSearch").addEventListener("input",renderAudit);
+$("exportAuditBtn").addEventListener("click",exportAuditCsv);
+
 $("refreshUsersBtn").addEventListener("click",loadUsers);
 $("refreshRequestsBtn").addEventListener("click",loadRequests);
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();await refreshSession();show("از حساب خارج شدید.");});
 await refreshSession();
-if(!$("userRolesBox").classList.contains("hidden")){loadRequests();loadUsers();}
+if(!$("userRolesBox").classList.contains("hidden")){loadRequests();loadUsers();loadAudit();}
 </script></body></html>
