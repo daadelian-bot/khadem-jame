@@ -249,8 +249,10 @@
   }
   async function request(path, options = {}) {
     const controller = new AbortController();
+    // Keep the timeout active until the response body has been read as well as fetched.
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     let response;
+    let raw;
     try {
       response = await fetch(SUPABASE_URL + path, {
         method: options.method || "GET",
@@ -260,13 +262,13 @@
         credentials: "omit",
         cache: "no-store"
       });
+      raw = await response.text();
     } catch (e) {
-      if (e && e.name === "AbortError") throw new Error("زمان اتصال به پایگاه داده تمام شد.");
+      if (e && e.name === "AbortError") throw new Error("مهلت اتصال یا دریافت پاسخ از پایگاه داده تمام شد. اینترنت را بررسی کنید و دوباره تلاش کنید.");
       throw new Error("ارتباط با Supabase برقرار نشد. اینترنت و تنظیمات اتصال را بررسی کنید.");
     } finally {
       clearTimeout(timer);
     }
-    const raw = await response.text();
     let data = null;
     try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
     if (!response.ok) {
