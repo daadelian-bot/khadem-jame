@@ -275,7 +275,7 @@
       if (!response.ok || !result || !result.access_token) {
         const message = result && (result.message || result.msg || result.error_description || result.error) || raw || "تمدید نشست ناموفق بود.";
         const error = new Error(String(message));
-        error.status = response.status || 401;
+        error.status = response.status === 400 ? 401 : (response.status || 401);
         throw error;
       }
       localStorage.setItem(TOKEN_KEY, result.access_token);
