@@ -984,6 +984,52 @@
       <section class="kj-card kj-guide-card kj-premium-guide"><span class="kj-guide-icon">ⓘ</span><div><h3>درباره آمار این داشبورد</h3><p>شاخص‌ها از داده‌های قابل مشاهده در پایگاه داده محاسبه می‌شوند؛ بخش‌های دارای خطای دسترسی یا بارگذاری، جداگانه مشخص می‌شوند و با عدد صفرِ واقعی اشتباه گرفته نمی‌شوند.</p></div></section>`;
   }
 
+
+  function bindDashboardExpanders(main) {
+    if (!main || state.tab !== "dashboard") return;
+    const compact = () => window.matchMedia("(max-width: 760px)").matches;
+    const targets = [
+      [".kj-stat-card", "شاخص مدیریتی"], [".kj-chart-card", "تحلیل آماری"],
+      [".kj-insight-panel", "وضعیت سامانه"], [".kj-module-group", "دسترسی به بخش‌ها"],
+      [".kj-activity-card", "سوابق اخیر"], [".kj-guide-card", "راهنمای داشبورد"],
+      [".kj-dashboard-error", "خطاهای دریافت اطلاعات"], [".kj-loading-card", "وضعیت همگام‌سازی"]
+    ];
+    const openDetails = (card, title) => {
+      const copy = card.cloneNode(true);
+      copy.querySelectorAll("[data-dashboard-expand],.kj-dashboard-expand-trigger").forEach(n=>n.remove());
+      copy.style.cssText = "box-shadow:none!important;max-width:100%;width:100%;margin:0;max-height:none;overflow:visible";
+      copy.querySelectorAll("button").forEach(b=>{b.disabled=true;b.removeAttribute("data-quick-tab");});
+      const tab = card.dataset.quickTab || card.querySelector("[data-quick-tab]")?.dataset.quickTab;
+      const action = tab ? '<div style="margin-top:14px"><button type="button" class="kj-primary" data-dashboard-go="'+esc(tab)+'">رفتن به بخش مربوط ←</button></div>' : "";
+      modal(title, '<div class="kj-dashboard-expanded-content">'+copy.outerHTML+action+'</div>');
+      $("#kj-modal")?.querySelector("[data-dashboard-go]")?.addEventListener("click",e=>{
+        const next=e.currentTarget.dataset.dashboardGo;$("#kj-modal")?.remove();
+        if(next){state.tab=next;state.selectedKhadem=null;render();}
+      });
+    };
+    targets.forEach(([selector,title])=>{
+      $(selector,main).forEach((card,index)=>{
+        if(card.dataset.dashboardExpandable==="1")return;
+        card.dataset.dashboardExpandable="1";
+        if(card.matches(".kj-stat-card")){
+          card.addEventListener("click",e=>{
+            if(!compact())return;
+            e.preventDefault();e.stopImmediatePropagation();
+            openDetails(card,card.querySelector(".kj-stat-label")?.textContent||title);
+          },true);
+        }else{
+          card.classList.add("kj-dashboard-expandable");
+          const trigger=document.createElement("button");
+          trigger.type="button";trigger.className="kj-dashboard-expand-trigger";trigger.dataset.dashboardExpand="1";
+          trigger.setAttribute("aria-label","بزرگ‌نمایی "+title);trigger.title="نمایش جزئیات";
+          trigger.innerHTML='<span aria-hidden="true">⤢</span>';
+          trigger.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();openDetails(card,title+" "+(index+1));});
+          card.insertBefore(trigger,card.firstChild);
+        }
+      });
+    });
+  }
+
   function khademCodeNumber(k){
     const raw=String(khademCode(k)??"").replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));
     const digits=raw.replace(/[^0-9]/g,"");
@@ -1973,6 +2019,7 @@
     };
     main.innerHTML = (views[state.tab] || dashboard)();
     installGlobalExportToolbar(main);
+    if (state.tab === "dashboard") bindDashboardExpanders(main);
     if (state.tab === "finance") {
       $$("[data-finance-view]", main).forEach(button => button.addEventListener("click", () => { financeView=button.dataset.financeView; render(); }));
       $("#kj-finance-filter-form")?.addEventListener("submit", event => { event.preventDefault(); financeSearch=$("#kj-finance-search")?.value||""; financeTypeFilter=$("#kj-finance-type")?.value||"all"; financeCategoryFilter=$("#kj-finance-category")?.value||"all"; financeStatusFilter=$("#kj-finance-status")?.value||"all"; render(); });
