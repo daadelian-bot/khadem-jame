@@ -726,15 +726,20 @@
   }
   function showRecordExportChooser(row,title,type) {
     const excluded=new Set(["id","created_at","updated_at","extra_data","receipt_image_path","created_by","created_by_email"]);
-    const pairs=Object.entries(row||{}).filter(([key,value])=>!excluded.has(key)&&value!==null&&value!==undefined&&value!==""&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(key)).map(([key,value])=>({key,label:fieldLabel(key),value:key==="receipt_image_path"?"سند پیوست شده":formatValue(key,value)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی","شناسه سند","شناسه حساب"].includes(p.label));
+    const photoPath=khademPhotoPath(row);
+    const pairs=Object.entries(row||{}).filter(([key,value])=>!excluded.has(key)&&!["photo_path","photo_url"].includes(key)&&value!==null&&value!==undefined&&value!==""&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(key)).map(([key,value])=>({key,label:fieldLabel(key),value:key==="receipt_image_path"?"سند پیوست شده":formatValue(key,value)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی","شناسه سند","شناسه حساب"].includes(p.label));
+    if(photoPath)pairs.push({key:"__khadem_photo__",label:"عکس خادم",value:photoPath});
     const seen=new Set(), fields=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
     const opts=fields.map((p,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-record-export-col="'+i+'" checked> '+esc(p.label)+'</label>').join("");
     modal("انتخاب جزئیات خروجی",'<p class="kj-muted">اطلاعات قابل‌نمایش این پرونده را انتخاب کنید. شناسه‌های فنی و مسیر داخلی فایل صادر نمی‌شوند.</p><div style="display:flex;flex-wrap:wrap">'+opts+'</div><button type="button" class="kj-primary" id="kj-record-export-confirm">تهیه خروجی</button>');
-    $("#kj-record-export-confirm")?.addEventListener("click",()=>{
+    $("#kj-record-export-confirm")?.addEventListener("click",async()=>{
       const chosen=$$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
       if(!chosen.length){toast("حداقل یک مورد را انتخاب کنید.","error");return;}
       const selected=chosen.map(i=>fields[i]);
-      const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee;width:32%}</style><h1>"+esc(title)+"</h1><table><tbody>"+selected.map(p=>"<tr><th>"+esc(p.label)+"</th><td>"+esc(p.value)+"</td></tr>").join("")+"</tbody></table></html>";
+      let photoUrl="";
+      const photoField=selected.find(p=>p.key==="__khadem_photo__");
+      if(photoField){try{const raw=String(photoField.value||"");if(raw.startsWith("http://")||raw.startsWith("https://"))photoUrl=raw;else{const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(raw),{method:"POST",body:{expiresIn:3600}});photoUrl=normalizeSignedStorageUrl(signed?.signedURL||signed?.signedUrl||"");}if(!photoUrl)throw new Error("لینک عکس دریافت نشد.");}catch(e){toast("دریافت عکس برای خروجی ناموفق بود: "+(e.message||"خطای نامشخص"),"error");return;}}
+      const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right;vertical-align:middle}th{background:#eee;width:32%}img{max-width:180px;max-height:220px;object-fit:contain}</style><h1>"+esc(title)+"</h1><table><tbody>"+selected.map(p=>"<tr><th>"+esc(p.label)+"</th><td>"+(p.key==="__khadem_photo__"?'<img src="'+esc(photoUrl)+'" alt="عکس خادم">':esc(p.value))+"</td></tr>").join("")+"</tbody></table></html>";
       if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
       else {const blob=new Blob(["\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
       $("#kj-modal")?.remove();
