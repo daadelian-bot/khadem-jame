@@ -2185,7 +2185,12 @@
         throw error;
       }
       localStorage.setItem(USER_KEY, JSON.stringify(authUser));
-      const access = await request("/functions/v1/manage-user-permissions", { method: "POST", body: { action: "my_permissions" } });
+      // پس از تأیید هویت، نقش و وضعیت تأیید حساب مستقل‌اند؛ آن‌ها را هم‌زمان بررسی کن
+      // تا دو رفت‌وبرگشت شبکه‌ای متوالی زمان ورود را بی‌جهت طولانی نکند.
+      const [access, profileRows] = await Promise.all([
+        request("/functions/v1/manage-user-permissions", { method: "POST", body: { action: "my_permissions" } }),
+        request("/rest/v1/profiles?select=is_active,role&id=eq." + encodeURIComponent(authUser.id) + "&limit=1")
+      ]);
       if (!access || !access.role) throw new Error("بررسی نقش و دسترسی حساب ناموفق بود.");
       state.role = access.role;
       state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
@@ -2193,7 +2198,6 @@
       // وضعیت دسترسی کامل را از پاسخ رسمی سرور بخوان؛ پروفایل سفارشی همچنان محدودکننده است.
       state.accessFull = access.full_access === true && !state.accessCustom;
       // حساب ثبت‌نامی تا تأیید مدیر اصلی اجازه دریافت هیچ داده‌ای از سامانه را ندارد.
-      const profileRows = await request("/rest/v1/profiles?select=is_active,role&id=eq." + encodeURIComponent(authUser.id) + "&limit=1");
       const approvedProfile = Array.isArray(profileRows) ? profileRows[0] : null;
       if (!approvedProfile || approvedProfile.is_active !== true) {
         loginPage("درخواست حساب شما ثبت شده اما هنوز توسط مدیر اصلی تأیید نشده است. پس از تأیید، با همین ایمیل و رمز دوباره وارد شوید.");
