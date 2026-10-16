@@ -585,6 +585,7 @@
       // آزادسازی قفل در هر مسیر، حتی اگر بازترسیم صفحه خطا بدهد.
       state.loading = false;
       try { render(); } catch (renderError) { console.error("KJ: render after sync failed", renderError); }
+      if (navigator.onLine && state.accessLoaded) void cacheKhademPhotosForOffline();
       const failed = Object.values(state.errors).filter(Boolean).length;
       if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطای همان بخش را بررسی کنید.", "error");
       else if (state.offlineMode) toast("حالت آفلاین: اطلاعات ذخیره‌شده نمایش داده می‌شود؛ تغییرات پشتیبانی‌شده در صف همگام‌سازی باقی می‌مانند.", "info");
@@ -834,6 +835,42 @@
       if(store){try{const cached=await store.getPhoto(photoKey);if(showBlob(cached))return;}catch(_){}}
       console.warn("KJ: khadem photo unavailable",e);img.style.display="none";img.dataset.photoError=String(e?.message||"بارگذاری عکس ناموفق بود");
     }
+  }
+  async function cacheKhademPhotosForOffline() {
+    const store = window.KJOfflineStore;
+    if (!navigator.onLine || !store || !state.accessLoaded || !canAccess("khadems")) return;
+    const photos = (state.khadems || []).map(row => ({
+      path: String(val(row, ["photo_path", "photo_url"]) || "").trim()
+    })).filter(item => item.path);
+    if (!photos.length) return;
+    let next = 0, cachedCount = 0;
+    async function worker() {
+      while (next < photos.length) {
+        const item = photos[next++];
+        try {
+          if (await store.getPhoto(item.path)) continue;
+          if (navigator.storage && navigator.storage.estimate) {
+            const estimate = await navigator.storage.estimate();
+            if (estimate.quota && estimate.usage / estimate.quota > 0.85) return;
+          }
+          let url = item.path;
+          if (!/^https?:\\/\\//i.test(url)) {
+            const signed = await request("/storage/v1/object/sign/khadem-photos/" + financeReceiptPath(url), { method: "POST", body: { expiresIn: 3600 } });
+            const signedUrl = String(signed?.signedURL || signed?.signedUrl || "");
+            if (!signedUrl) continue;
+            url = normalizeSignedStorageUrl(signedUrl);
+          }
+          const response = await fetch(url, { method: "GET", credentials: "omit", cache: "no-store" });
+          if (!response.ok) continue;
+          const blob = await response.blob();
+          if (!blob.size || blob.size > 5 * 1024 * 1024) continue;
+          await store.savePhoto(item.path, blob);
+          cachedCount++;
+        } catch (err) { console.warn("KJ: background photo cache skipped", err); }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(2, photos.length) }, () => worker()));
+    if (cachedCount) toast("عکس " + fa(cachedCount) + " خادم برای مشاهده آفلاین ذخیره شد.", "success");
   }
   async function uploadKhademPhoto(file,k){
     if(!file||!file.size)return null;
