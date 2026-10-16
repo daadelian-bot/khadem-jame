@@ -1845,6 +1845,7 @@
       if (month < 1 || month > 12) return;
       if (!tuitionByYear[year]) tuitionByYear[year] = {year, first_due:0, first_paid:0, first_balance:0, second_due:0, second_paid:0, second_balance:0, annual_paid:0, annual_balance:0};
       const periodType=String(r.period_type||"");
+      if(!["first_half","second_half","annual"].includes(periodType))return; // سوابق قدیمی بدون نوع دوره، با شهریه شش‌ماهه/سالانه مخلوط نشوند.
       const amount=num(val(r,["amount_toman","amount","total_amount_toman"])),paid=num(val(r,["paid_toman","amount_paid","paid_amount"])),balance=Math.max(0,amount-paid);
       if(periodType==="annual"){tuitionByYear[year].annual_due+=amount;tuitionByYear[year].annual_paid+=paid;tuitionByYear[year].annual_balance+=balance;}
       else {const half=periodType==="first_half"?"first":periodType==="second_half"?"second":month<=6?"first":"second";tuitionByYear[year][half+"_due"]+=amount;tuitionByYear[year][half+"_paid"]+=paid;tuitionByYear[year][half+"_balance"]+=balance;}
