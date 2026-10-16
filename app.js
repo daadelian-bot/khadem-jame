@@ -944,6 +944,8 @@
       ["users","♧","کاربران و دسترسی‌ها","حساب‌ها و نقش‌های قابل مشاهده","مدیریت سامانه"],
       ["settings","⚙","تنظیمات سامانه","تنظیمات و وضعیت اتصال","مدیریت سامانه"]
     ];
+    const visibleStatCards = statCards.filter(x => canAccess(x.tab));
+    const visibleModules = modules.filter(([tab]) => canAccess(tab));
     const errorItems = Object.entries(state.errors).filter(([,e])=>e);
     return `
       <div class="kj-workspace-head">
@@ -966,17 +968,17 @@
       <div class="kj-dashboard-panel-grid" aria-label="پنجره‌های اصلی داشبورد">
         <section class="kj-dashboard-panel kj-panel-indicators" data-dashboard-panel="indicators">
           <button type="button" class="kj-dashboard-panel-head" data-dashboard-panel-toggle="indicators" aria-expanded="false">
-            <span class="kj-dashboard-panel-symbol">▦</span><span class="kj-dashboard-panel-title"><b>شاخص‌های کلیدی مجموعه</b><small>آمار اصلی و تعداد رکوردهای ثبت‌شده</small></span><span class="kj-dashboard-panel-count">${fa(statCards.length)} شاخص</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
+            <span class="kj-dashboard-panel-symbol">▦</span><span class="kj-dashboard-panel-title"><b>شاخص‌های کلیدی مجموعه</b><small>آمار اصلی و تعداد رکوردهای ثبت‌شده</small></span><span class="kj-dashboard-panel-count">${fa(visibleStatCards.length)} شاخص</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
           </button>
           <div class="kj-dashboard-panel-summary"><span><b>${fa(state.khadems.length)}</b><small>خادم ثبت‌شده</small></span><span><b>${fa(serviceCount)}</b><small>سابقه خدمت</small></span><span><b>${fa(meetingCount)}</b><small>جلسه</small></span></div>
           <div class="kj-dashboard-panel-body" data-dashboard-panel-body="indicators" hidden>
             <div class="kj-section-heading kj-premium-section"><div><span class="kj-section-eyebrow">نمای کلی · ${esc(monthLabel)}</span><h2 class="kj-section-title">همه شاخص‌های کلیدی</h2><p>برای ورود به هر بخش، کارت مربوط را انتخاب کنید.</p></div><span class="kj-data-note">داده‌های قابل دسترس</span></div>
-            <div class="kj-grid kj-stats-grid kj-premium-stats">${statCards.map((x,i)=>`<button type="button" class="kj-card kj-stat-card kj-stat-card-${i+1} kj-premium-stat ${x.tone}" data-quick-tab="${x.tab}"><div class="kj-stat-top"><span class="kj-stat-icon">${x.icon}</span><span class="kj-stat-label">${x.label}</span><span class="kj-stat-arrow">↗</span></div><div class="kj-stat">${fa(x.value)}</div><div class="kj-stat-foot">${x.meta}</div></button>`).join("")}</div>
+            <div class="kj-grid kj-stats-grid kj-premium-stats">${visibleStatCards.map((x,i)=>`<button type="button" class="kj-card kj-stat-card kj-stat-card-${i+1} kj-premium-stat ${x.tone}" data-quick-tab="${x.tab}"><div class="kj-stat-top"><span class="kj-stat-icon">${x.icon}</span><span class="kj-stat-label">${x.label}</span><span class="kj-stat-arrow">↗</span></div><div class="kj-stat">${fa(x.value)}</div><div class="kj-stat-foot">${x.meta}</div></button>`).join("")}</div>
           </div>
         </section>
         <section class="kj-dashboard-panel kj-panel-status" data-dashboard-panel="status">
           <button type="button" class="kj-dashboard-panel-head" data-dashboard-panel-toggle="status" aria-expanded="false">
-            <span class="kj-dashboard-panel-symbol">◉</span><span class="kj-dashboard-panel-title"><b>وضعیت سامانه</b><small>خلاصه وضعیت، منوها و ماژول‌های قابل دسترس</small></span><span class="kj-dashboard-panel-count">${fa(modules.length)} ماژول</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
+            <span class="kj-dashboard-panel-symbol">◉</span><span class="kj-dashboard-panel-title"><b>وضعیت سامانه</b><small>خلاصه وضعیت، منوها و ماژول‌های قابل دسترس</small></span><span class="kj-dashboard-panel-count">${fa(visibleModules.length)} ماژول</span><span class="kj-dashboard-panel-chevron" aria-hidden="true">⌄</span>
           </button>
           <div class="kj-dashboard-panel-summary"><span><b>${fa(activeKhadems)}</b><small>خادم فعال/قابل استفاده</small></span><span><b>${fa(state.deployments.length)}</b><small>مأموریت</small></span><span><b>${fa(errorItems.length)}</b><small>خطای دریافت</small></span></div>
           <div class="kj-dashboard-panel-body" data-dashboard-panel-body="status" hidden>
@@ -988,7 +990,7 @@
               <div class="kj-dashboard-module-status"><b>منوها و ماژول‌های سامانه</b><small>برای ورود به هر ماژول، آیتم مربوط را انتخاب کنید.</small></div>
             </aside>
             <div class="kj-module-groups">
-              ${["مدیریت افراد","عملیات روزانه","هماهنگی","مالی","پشتیبانی","تحلیل","مدیریت سامانه"].map(group=>{const list=modules.filter(m=>m[4]===group);return list.length?`<section class="kj-module-group"><div class="kj-module-group-head"><h3>${group}</h3><span>${fa(list.length)} بخش</span></div><div class="kj-module-grid">${list.map(([tab,icon,title,desc])=>`<button type="button" class="kj-module-card" data-quick-tab="${tab}"><span class="kj-module-icon">${icon}</span><span class="kj-module-copy"><b>${title}</b><small>${desc}</small></span><span class="kj-module-arrow">←</span></button>`).join("")}</div></section>`:"";}).join("")}
+              ${["مدیریت افراد","عملیات روزانه","هماهنگی","مالی","پشتیبانی","تحلیل","مدیریت سامانه"].map(group=>{const list=visibleModules.filter(m=>m[4]===group);return list.length?`<section class="kj-module-group"><div class="kj-module-group-head"><h3>${group}</h3><span>${fa(list.length)} بخش</span></div><div class="kj-module-grid">${list.map(([tab,icon,title,desc])=>`<button type="button" class="kj-module-card" data-quick-tab="${tab}"><span class="kj-module-icon">${icon}</span><span class="kj-module-copy"><b>${title}</b><small>${desc}</small></span><span class="kj-module-arrow">←</span></button>`).join("")}</div></section>`:"";}).join("")}
             </div>
           </div>
         </section>
