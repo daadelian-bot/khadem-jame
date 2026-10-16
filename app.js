@@ -1595,23 +1595,33 @@
     bar.className="kj-global-export-toolbar";
     bar.innerHTML='<span>خروجی این بخش:</span><button type="button" data-kj-export="pdf">PDF / چاپ</button><button type="button" data-kj-export="word">Word</button><button type="button" data-kj-export="excel">Excel</button>';
     bar.addEventListener("click",event=>{
-      const button=event.target.closest("[data-kj-export]");
-      if(!button)return;
-      const type=button.dataset.kjExport;
-      if(type==="pdf"){window.print();return;}
-      const clone=main.cloneNode(true);
-      clone.querySelectorAll(".kj-global-export-toolbar,[data-kj-export],button[type=submit],button[type=reset]").forEach(el=>el.remove());
-      const title=(main.querySelector("h1,h2")?.textContent||document.title||"گزارش سامانه").trim();
-      let html="<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'><title>"+title.replace(/[<>]/g,"")+"</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#172b3b;line-height:1.8;padding:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #aeb9c4;padding:6px;text-align:right}th{background:#eaf0f5}button,input,select,textarea,.kj-global-export-toolbar{display:none!important}.kj-table-wrap{overflow:visible!important}</style></head><body><h1>"+title+"</h1>"+clone.innerHTML+"</body></html>";
-      if(type==="excel"){
-        const tables=[...clone.querySelectorAll("table")];
-        if(!tables.length){const lines=String(clone.innerText||clone.textContent||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);tables.push({outerHTML:"<table><tbody>"+lines.map(line=>"<tr><td>"+esc(line)+"</td></tr>").join("")+"</tbody></table>"});}
-        html="<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'><style>table{border-collapse:collapse}td,th{border:1px solid #999;padding:5px;mso-number-format:'\\@'}</style></head><body>"+tables.map(t=>t.outerHTML).join("<br>")+"</body></html>";
+      const button=event.target.closest("[data-kj-export]"); if(!button)return;
+      const type=button.dataset.kjExport, title=(main.querySelector("h1,h2")?.textContent||"گزارش سامانه").trim();
+      const table=main.querySelector("table"); if(!table){toast("در این بخش جدول اطلاعات قابل خروجی وجود ندارد.","error");return;}
+      const cell=el=>String(el?.innerText||el?.textContent||"").trim();
+      let cols=[...table.querySelectorAll("thead th")].map(cell).filter(x=>x&&x!=="جزئیات");
+      let rows=[...table.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].slice(0,cols.length).map(cell));
+      if(state.tab==="khadems" && state.selectedKhadem===null && state.khadems.length){
+        const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
+        const records=state.khadems.filter(k=>Number(String(khademCode(k)).replace(/[^0-9]/g,""))>=1000);
+        cols=keys.map(fieldLabel).filter((x,i,a)=>x&&x!=="شناسه داخلی"&&x!=="شناسه خادم"&&x!=="شناسه شخص"&&x!=="شناسه پرسنلی"&&a.indexOf(x)===i);
+        rows=records.map(k=>keys.filter(key=>!["id","created_at","updated_at","extra_data"].includes(key)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(key)).map(key=>formatValue(key,k[key])));
+        const usable=keys.filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
+        cols=usable.map(fieldLabel).filter(x=>x&&x!=="شناسه داخلی"&&x!=="شناسه خادم"&&x!=="شناسه شخص"&&x!=="شناسه پرسنلی");
+        rows=records.map(k=>usable.map(key=>formatValue(key,k[key])));
       }
-      const mime=type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8";
-      const blob=new Blob(["\\uFEFF",html],{type:mime});
-      const url=URL.createObjectURL(blob),link=document.createElement("a");
-      link.href=url;link.download=(type==="excel"?"گزارش-سامانه.xls":"گزارش-سامانه.doc");document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const opts=cols.map((c,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-export-col="'+i+'" checked> '+esc(c)+'</label>').join("");
+      modal("انتخاب جزئیات خروجی",'<p class="kj-muted">فقط اطلاعات ثبت‌شده خروجی می‌شود؛ شناسه‌ها و کدهای فنی سامانه حذف می‌شوند. ستون‌های دلخواه را انتخاب کنید.</p><div style="display:flex;flex-wrap:wrap"> '+opts+'</div><button type="button" class="kj-primary" id="kj-export-confirm">تهیه خروجی</button>');
+      $("#kj-export-confirm")?.addEventListener("click",()=>{
+        const chosen=$$("[data-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.exportCol));
+        if(!chosen.length){toast("حداقل یک ستون را انتخاب کنید.","error");return;}
+        const head=chosen.map(i=>"<th>"+esc(cols[i])+"</th>").join("");
+        const body=rows.map(row=>"<tr>"+chosen.map(i=>"<td>"+esc(row[i]??"")+"</td>").join("")+"</tr>").join("");
+        const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px;text-align:right}th{background:#eee}</style><h1>"+esc(title)+"</h1><p>تعداد رکوردها: "+fa(rows.length)+"</p><table><thead><tr>"+head+"</tr></thead><tbody>"+body+"</tbody></table></html>";
+        if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
+        else {const blob=new Blob(["\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(title.replace(/[<>]/g,"-"))+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+        $("#kj-modal")?.remove();
+      });
     });
     main.prepend(bar);
   }
