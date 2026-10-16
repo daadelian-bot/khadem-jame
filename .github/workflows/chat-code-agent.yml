@@ -39,12 +39,12 @@ jobs:
             gh issue comment "${ISSUE_NUMBER}" --body 'تعذر تنفيذ الطلب آلياً: لم يُضف مالك المستودع السر OPENAI_API_KEY إلى GitHub Actions Secrets. لا تضع المفتاح في تعليق أو ملف بالمستودع.'
             echo "::error::Missing OPENAI_API_KEY repository secret."
             exit 1
-          f
+          fi
           if [ -z "${GH_AUTOMATION_TOKEN}" ]; then
             gh issue comment "${ISSUE_NUMBER}" --body 'تعذر ساخت PR خودکار: secret با نام GH_AUTOMATION_TOKEN موجود نیست. توکن باید فقط به همین مخزن و مجوزهای لازم محدود باشد.'
             echo "::error::Missing GH_AUTOMATION_TOKEN repository secret."
             exit 1
-          fii
+          fi
 
       - name: Create isolated working branch
         env:
