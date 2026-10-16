@@ -1813,7 +1813,9 @@
         state.selectedKhadem = null;
         history.replaceState(null, "", window.location.pathname + window.location.search + "#dashboard");
       }
-      await loadData();
+      // رابط سامانه را فوراً نمایش بده؛ دریافت جدول‌های متعدد در پس‌زمینه ادامه پیدا می‌کند.
+      // loadData ابتدا وضعیت بارگذاری را رندر می‌کند و پس از پایان، اطلاعات را جایگزین می‌کند.
+      void loadData();
     } catch (e) {
       console.error("KJ: startup/auth verification failed", e);
       if (e && (e.status === 401 || e.status === 403)) {
