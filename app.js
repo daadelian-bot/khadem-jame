@@ -356,16 +356,30 @@
       const otherLoads = Promise.all(otherTables.map(async ([key, table]) => {
         state[key] = await loadTable(table, key);
       }));
-      await Promise.race([
-        otherLoads,
-        new Promise(resolve => setTimeout(resolve, TIMEOUT_MS + 1500))
-      ]);
+      // انتظار اصلی رابط کاربری حداکثر تا مهلت مشخص ادامه دارد؛ تکمیل درخواست‌های جانبی
+      // پس از آن نیز داده را ذخیره و رابط را دوباره ترسیم می‌کند.
+      let timeoutHandle;
+      const timedOut = new Promise(resolve => {
+        timeoutHandle = setTimeout(() => resolve("timeout"), TIMEOUT_MS + 1500);
+      });
+      const result = await Promise.race([otherLoads.then(() => "complete"), timedOut]);
+      clearTimeout(timeoutHandle);
       state.loaded = true;
+      if (result === "timeout") {
+        state.errors.sync = "بعضی جدول‌ها دیر پاسخ می‌دهند؛ بانک خادمین و دکمه‌های صفحه باید همچنان قابل استفاده باشند.";
+        render();
+        otherLoads.then(() => {
+          delete state.errors.sync;
+          state.loaded = true;
+          render();
+        }).catch(() => {});
+      }
     } catch (e) {
       state.errors.khadems = state.errors.khadems || (e?.message || "دریافت اطلاعات بانک خادمین ناموفق بود.");
     } finally {
+      // آزادسازی قفل در هر مسیر، حتی اگر بازترسیم صفحه خطا بدهد.
       state.loading = false;
-      render();
+      try { render(); } catch (renderError) { console.error("KJ: render after sync failed", renderError); }
       const failed = Object.values(state.errors).filter(Boolean).length;
       if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطای همان بخش را بررسی کنید.", "error");
       else toast("اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
