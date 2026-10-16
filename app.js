@@ -1780,7 +1780,7 @@
       const opts=cols.map((c,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-export-col="'+i+'" checked> '+esc(c)+'</label>').join("");
       modal("انتخاب جزئیات خروجی",'<p class="kj-muted">فقط اطلاعات ثبت‌شده خروجی می‌شود؛ شناسه‌ها و کدهای فنی سامانه حذف می‌شوند. ستون‌های دلخواه را انتخاب کنید.</p><div style="display:flex;flex-wrap:wrap"> '+opts+'</div><button type="button" class="kj-primary" id="kj-export-confirm">تهیه خروجی</button>');
       $("#kj-export-confirm")?.addEventListener("click",async()=>{
-        const chosen=$("[data-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.exportCol));
+        const chosen=$$("[data-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.exportCol));
         if(!chosen.length){toast("حداقل یک ستون را انتخاب کنید.","error");return;}
         const photoData=new Map();
         const photoIncluded=bankPhotoCol>=0&&chosen.includes(bankPhotoCol);
