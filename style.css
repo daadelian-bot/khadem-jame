@@ -1012,3 +1012,50 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
   #kj-main.kj-dashboard-view .kj-module-card{min-height:108px!important;padding:8px 6px!important}
   #kj-main.kj-dashboard-view .kj-module-copy b{font-size:9px!important}
 }
+
+
+/* Dashboard redesign v20261016-93: high-contrast, unmistakable visual hierarchy */
+#kj-main.kj-dashboard-view .kj-premium-section{
+  position:relative!important;
+  border-right:5px solid #1c6175!important;
+  background:linear-gradient(110deg,#e4f2f4 0%,#ffffff 75%)!important;
+  box-shadow:0 8px 24px rgba(18,62,82,.10)!important;
+}
+#kj-main.kj-dashboard-view .kj-premium-stat{
+  border-top:4px solid #397f8e!important;
+  box-shadow:0 7px 20px rgba(23,59,88,.11)!important;
+  transition:transform .18s ease,box-shadow .18s ease!important;
+}
+#kj-main.kj-dashboard-view .kj-premium-stat:nth-child(3n+2){border-top-color:#8171b2!important}
+#kj-main.kj-dashboard-view .kj-premium-stat:nth-child(3n){border-top-color:#4b9467!important}
+#kj-main.kj-dashboard-view .kj-premium-stat .kj-stat{
+  font-size:clamp(23px,3vw,32px)!important;
+  font-weight:900!important;
+  color:#173b58!important;
+}
+#kj-main.kj-dashboard-view .kj-module-group{
+  border-top:4px solid #397f8e!important;
+  background:linear-gradient(145deg,#eaf4f6 0%,#fff 78%)!important;
+}
+#kj-main.kj-dashboard-view .kj-module-group:nth-child(3n+2){border-top-color:#8171b2!important;background:linear-gradient(145deg,#f1eef9 0%,#fff 78%)!important}
+#kj-main.kj-dashboard-view .kj-module-group:nth-child(3n){border-top-color:#4b9467!important;background:linear-gradient(145deg,#eaf5ed 0%,#fff 78%)!important}
+#kj-main.kj-dashboard-view .kj-module-card{
+  min-height:132px!important;
+  border-right:3px solid #397f8e!important;
+  box-shadow:0 5px 15px rgba(23,59,88,.09)!important;
+  transition:transform .16s ease,box-shadow .16s ease!important;
+}
+#kj-main.kj-dashboard-view .kj-module-card:nth-child(3n+2){border-right-color:#8171b2!important}
+#kj-main.kj-dashboard-view .kj-module-card:nth-child(3n){border-right-color:#4b9467!important}
+#kj-main.kj-dashboard-view .kj-module-card:active{transform:scale(.985)!important}
+#kj-main.kj-dashboard-view .kj-analytics-main,
+#kj-main.kj-dashboard-view .kj-insight-panel,
+#kj-main.kj-dashboard-view .kj-activity-card{
+  border-top:3px solid #d0a35e!important;
+  box-shadow:0 7px 22px rgba(23,59,88,.08)!important;
+}
+@media(max-width:760px){
+  #kj-main.kj-dashboard-view .kj-premium-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #kj-main.kj-dashboard-view .kj-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #kj-main.kj-dashboard-view .kj-module-card{min-height:116px!important}
+}
