@@ -53,6 +53,7 @@
     profileEditOpen: false,
     registrationOpen: false,
     search: "",
+    showKhademPhotos: false,
     birthdayMonth: null,
     loading: false,
     errors: {},
@@ -906,14 +907,17 @@
       triple_name:val(k,["triple_name","tri_name","full_name_triple"]), national_code:val(k,["national_code","national_id"]),
       birth_date:val(k,["birth_date"]), membership_date:val(k,["membership_date"]), occupation:val(k,["occupation","job"]),
       phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"]), referrer_name:val(k,["referrer_name","introducer_name","referred_by","referrer"]) || val(k?.extra_data||{},["referrer_name","introducer_name","referred_by","referrer"]), active_label:activeLabel(k)}));
-    const table = tableHtml(htmlRows, columns, state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی با کد ۱۰۰۰ به بالا ثبت نشده است.");
+    const emptyTableMessage = state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی با کد ۱۰۰۰ به بالا ثبت نشده است.";
+    const table = state.showKhademPhotos
+      ? (htmlRows.length ? '<div class="kj-table-wrap"><table><thead><tr><th>عکس خادم</th>'+columns.map(c => '<th>'+esc(c.label)+'</th>').join("")+'<th>جزئیات</th></tr></thead><tbody>'+htmlRows.map((row,i) => { const original=rows[i]; return '<tr><td style="min-width:74px;text-align:center"><img data-khadem-photo-path="'+esc(khademPhotoPath(original))+'" alt="عکس '+esc(nameOf(original))+'" style="display:none;width:56px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #d9c7a4"><span data-khadem-photo-empty style="color:#888">—</span></td>'+columns.map(c => '<td>'+esc(formatValue(c.key,row[c.key]))+'</td>').join("")+'<td><button class="kj-link" data-row="'+i+'">نمایش</button></td></tr>'; }).join("")+'</tbody></table></div>' : empty(emptyTableMessage))
+      : tableHtml(htmlRows, columns, emptyTableMessage);
     const currentJalaliMonth = Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(new Date()).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
     if (!state.birthdayMonth) state.birthdayMonth = currentJalaliMonth;
     const birthdayRows = rows.filter(k => { const raw=String(val(k,["birth_date"])||"").trim(); let month=0; const jm=raw.match(/^(?:13|14)\d{2}[/-](\d{1,2})[/-]\d{1,2}$/); if(jm) month=Number(jm[1]); else { const d=new Date(raw); if(!Number.isNaN(d.getTime())) month=Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(d).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))); } return month===Number(state.birthdayMonth); }).map(k=>({full_name:nameOf(k),birth_date:val(k,["birth_date"])}));
     const monthOptions = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"].map((m,i)=>`<option value="${i+1}" ${Number(state.birthdayMonth)===i+1?"selected":""}>${m}</option>`).join("");
     const birthdays = `<section class="kj-card" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین ماه انتخابی</h2><label class="kj-field"><b>انتخاب ماه</b><select id="kj-birthday-month">${monthOptions}</select></label><p class="kj-muted">فهرست خادمین متولد ماه انتخاب‌شده بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
-      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
+      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><label class="kj-pill" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="kj-show-khadem-photos" ${state.showKhademPhotos?"checked":""}> نمایش عکس خادمین</label><span class="kj-pill">تعداد: ${fa(rows.length)}</span><button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button></div>
       ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>${birthdays}`;
   }
 
@@ -1795,6 +1799,26 @@
         input?.focus(); input?.setSelectionRange(pos,pos);
         bindKhademButtons();
       });
+      $("#kj-khadem-search")?.addEventListener("input", e => {
+        const pos = e.target.selectionStart;
+        state.search = e.target.value;
+        const main = $("#kj-main");
+        main.innerHTML = khademList();
+        installGlobalExportToolbar(main);
+        bindKhademRegistrationControls();
+        const input = $("#kj-khadem-search");
+        input?.focus(); input?.setSelectionRange(pos,pos);
+        bindKhademButtons();
+      });
+      $("#kj-show-khadem-photos")?.addEventListener("change", e => {
+        state.showKhademPhotos = !!e.target.checked;
+        const main=$("#kj-main");
+        main.innerHTML=khademList();
+        installGlobalExportToolbar(main);
+        bindKhademRegistrationControls();
+        bindKhademButtons();
+        $("#kj-birthday-month")?.addEventListener("change",ev=>{state.birthdayMonth=Number(ev.target.value);render();});
+      });
       bindKhademButtons();
       $("#kj-birthday-month")?.addEventListener("change", e => { state.birthdayMonth = Number(e.target.value); const main=$("#kj-main"); if(main){main.innerHTML=khademList(); installGlobalExportToolbar(main); bindKhademRegistrationControls(); bindKhademButtons(); $("#kj-birthday-month")?.addEventListener("change", ev=>{state.birthdayMonth=Number(ev.target.value);render();});} });
     }
@@ -1811,7 +1835,14 @@
     if (!main) return;
     const q = state.search.trim().toLowerCase();
     const rows = state.khadems.filter(k => Number(String(khademCode(k)).replace(/[^0-9]/g,"")) >= 1000 && (!q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(q))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
-    $$("[data-row]", main).forEach(b => b.addEventListener("click", () => {
+    if(state.tab==="khadems" && state.showKhademPhotos){
+      $("img[data-khadem-photo-path]",main).forEach(img=>{
+        const path=img.dataset.khademPhotoPath;
+        if(!path){const placeholder=img.parentElement?.querySelector("[data-khadem-photo-empty]");if(placeholder)placeholder.textContent="بدون عکس";return;}
+        loadKhademPhotoInto(img,path).then(()=>{const placeholder=img.parentElement?.querySelector("[data-khadem-photo-empty]");if(placeholder)placeholder.style.display=img.style.display==="block"?"none":"inline";});
+      });
+    }
+    $("[data-row]", main).forEach(b => b.addEventListener("click", () => {
       const k = rows[Number(b.dataset.row)];
       if (!k) return;
       state.selectedKhadem = "code:" + String(khademCode(k));
