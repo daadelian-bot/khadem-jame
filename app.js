@@ -366,7 +366,7 @@
           const syncHeaders = { ...(op.headers || {}) };
           if (op.method === "POST") {
             syncPath += (syncPath.includes("?") ? "&" : "?") + "on_conflict=id";
-            syncHeaders.Prefer = "resolution=merge-duplicates,return=representation";
+            syncHeaders.Prefer = "resolution=ignore-duplicates,return=representation";
           }
           if (op.method === "PATCH" && op.baseUpdatedAt) {
             const params = new URLSearchParams(descriptor.query);
@@ -578,7 +578,7 @@
       try { render(); } catch (renderError) { console.error("KJ: render after sync failed", renderError); }
       const failed = Object.values(state.errors).filter(Boolean).length;
       if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطای همان بخش را بررسی کنید.", "error");
-      else if (state.offlineMode) toast("حالت آفلاین: اطلاعات قبلاً ذخیره‌شده نمایش داده می‌شود؛ ثبت تغییرات جدید در مرحله بعد فعال خواهد شد.", "info");
+      else if (state.offlineMode) toast("حالت آفلاین: اطلاعات ذخیره‌شده نمایش داده می‌شود؛ تغییرات پشتیبانی‌شده در صف همگام‌سازی باقی می‌مانند.", "info");
       else toast("اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
     }
   }
