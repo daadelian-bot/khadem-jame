@@ -935,14 +935,18 @@
       ["serviceRegister","＋","ثبت خدمت","ثبت و پیگیری فعالیت‌های خدمتی","عملیات روزانه"],
       ["services","✦","سوابق خدمت","خدمات رسمی و گزارش فعالیت‌ها","عملیات روزانه"],
       ["friday","☾","شب‌های جمعه","سوابق و برنامه‌های شب جمعه","عملیات روزانه"],
+      ["nonattendance","▤","عدم حضور","ثبت، پیگیری و مشاهده سوابق عدم حضور","عملیات روزانه"],
       ["meetings","▦","جلسات و حضور","جلسات، دعوت‌شدگان و حضور","هماهنگی"],
       ["deployments","↗","مأموریت‌ها","مدیریت مأموریت‌ها و اعزام‌ها","هماهنگی"],
       ["finance","◈","امور مالی","تراکنش‌ها و اقساط","مالی"],
       ["fund","▤","صندوق مجموعه","دریافت‌ها و گردش صندوق","مالی"],
+      ["donors","♡","نیکوکاران و خیرین","پرونده‌های خیرین و کمک‌ها","مالی"],
       ["equipment","▣","تجهیزات و البسه","تحویل تجهیزات و پرداخت‌ها","پشتیبانی"],
-      ["reports","▥","گزارش‌ساز مدیریتی","خلاصه داده‌های ثبت‌شده","تحلیل"],
+      ["reports","▥","گزارش‌ساز مدیریتی","خلاصه داده‌های ثبت‌شده و جدول‌ها","تحلیل"],
+      ["audit","▧","سوابق فعالیت و ممیزی","ردیابی فعالیت‌ها و سوابق مدیریتی","تحلیل"],
       ["users","♧","کاربران و دسترسی‌ها","حساب‌ها و نقش‌های قابل مشاهده","مدیریت سامانه"],
-      ["settings","⚙","تنظیمات سامانه","تنظیمات و وضعیت اتصال","مدیریت سامانه"]
+      ["settings","⚙","تنظیمات سامانه","تنظیمات و وضعیت اتصال","مدیریت سامانه"],
+      ["changePassword","🔐","تغییر رمز عبور","مدیریت امن رمز حساب کاربری","مدیریت سامانه"]
     ];
     const visibleStatCards = statCards.filter(x => canAccess(x.tab));
     const visibleModules = modules.filter(([tab]) => canAccess(tab));
@@ -1006,7 +1010,7 @@
                 ${state.errors.services||state.errors.service_records?errBox("services"):recentServices.length?tableHtml(recentServices.map(r=>({...r,khadem_name:nameOf(state.khadems.find(k=>String(khademId(k))===String(r.khadem_id))||{}),service_date:val(r,["service_date","date","created_at"])})),[{key:"khadem_name",label:"نام خادم"},{key:"service_date",label:"تاریخ خدمت"},{key:"service_type",label:"نوع خدمت"},{key:"responsibility",label:"مسئولیت"}],"سابقه‌ای ثبت نشده است."):`<div class="kj-empty">هنوز سابقه‌ای برای نمایش ثبت نشده است.</div>`}
               </section>
               <section class="kj-card kj-activity-card"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">هماهنگی مجموعه</span><h3>جلسات اخیر</h3></div><button type="button" class="kj-text-action" data-quick-tab="meetings">مشاهده همه ←</button></div>
-                ${state.errors.meetings?errBox("meetings"):recentMeetings.length?`<div class="kj-recent-list">${recentMeetings.map(m=>`<div class="kj-recent-item"><span class="kj-recent-mark">▦</span><div><b>${esc(val(m,["title","meeting_title","name"])||"جلسه مجموعه")}</b><small>${esc(dateText(val(m,["meeting_date","date","created_at"])))}</small></div><span class="kj-recent-arrow">←</span></div>`).join("")}</div>`:`<div class="kj-empty">جلسه‌ای برای نمایش ثبت نشده است.</div>`}
+                ${state.errors.meetings?errBox("meetings"):recentMeetings.length?`<div class="kj-recent-list">${recentMeetings.map(m=>`<button type="button" class="kj-recent-item" data-quick-tab="meetings"><span class="kj-recent-mark">▦</span><span class="kj-recent-copy"><b>${esc(val(m,["title","meeting_title","name"])||"جلسه مجموعه")}</b><small>${esc(dateText(val(m,["meeting_date","date","created_at"])))}</small></span><span class="kj-recent-arrow">←</span></button>`).join("")}</div>`:`<div class="kj-empty">جلسه‌ای برای نمایش ثبت نشده است.</div>`}
               </section>
             </div>
           </div>
