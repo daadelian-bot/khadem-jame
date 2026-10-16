@@ -540,7 +540,7 @@
     if(!img||!path)return;
     try{
       const raw=String(path).trim();
-      if(/^https?:\\/\\//i.test(raw)){img.src=raw;img.style.display="block";return;}
+      if(raw.startsWith("http://")||raw.startsWith("https://")){img.src=raw;img.style.display="block";return;}
       const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(raw),{method:"POST",body:{expiresIn:3600}});
       const url=String(signed?.signedURL||signed?.signedUrl||"");
       if(!url)throw new Error("لینک تصویر دریافت نشد.");
