@@ -750,10 +750,26 @@
       const chosen=$$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
       if(!chosen.length){toast("حداقل یک مورد را انتخاب کنید.","error");return;}
       const selected=chosen.map(i=>fields[i]);
-      let photoUrl="";
+      let photoUrl="",photoDataUrl="";
       const photoField=selected.find(p=>p.key==="__khadem_photo__");
-      if(photoField){try{const raw=String(photoField.value||"");if(raw.startsWith("http://")||raw.startsWith("https://"))photoUrl=raw;else{const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(raw),{method:"POST",body:{expiresIn:3600}});photoUrl=normalizeSignedStorageUrl(signed?.signedURL||signed?.signedUrl||"");}if(!photoUrl)throw new Error("لینک عکس دریافت نشد.");}catch(e){toast("دریافت عکس برای خروجی ناموفق بود: "+(e.message||"خطای نامشخص"),"error");return;}}
-      const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}h1{font-size:18px}table{width:100%;border-collapse:collapse;table-layout:auto}td,th{border:1px solid #999;padding:8px;text-align:center;vertical-align:middle;min-width:90px}th{background:#eee;font-weight:bold}td{word-break:break-word}img{display:block;margin:auto;max-width:130px;max-height:150px;object-fit:contain}@media print{body{padding:4px}table{font-size:10px}td,th{padding:4px;min-width:65px}}</style><h1>"+esc(title)+"</h1><table><thead><tr>"+selected.map(p=>"<th>"+esc(p.label)+"</th>").join("")+"</tr></thead><tbody><tr>"+selected.map(p=>"<td>"+(p.key==="__khadem_photo__"?(photoUrl?'<img src="'+esc(photoUrl)+'" alt="عکس خادم">':"عکس موجود نیست"):esc(p.value)).replace(/undefined/g,"")+"</td>").join("")+"</tr></tbody></table></html>";
+      if(photoField){
+        try{
+          const raw=String(photoField.value||"");
+          if(raw.startsWith("http://")||raw.startsWith("https://"))photoUrl=raw;
+          else{
+            const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(raw),{method:"POST",body:{expiresIn:3600}});
+            photoUrl=normalizeSignedStorageUrl(signed?.signedURL||signed?.signedUrl||"");
+          }
+          if(!photoUrl)throw new Error("لینک عکس دریافت نشد.");
+          const imageResponse=await fetch(photoUrl,{cache:"no-store"});
+          if(!imageResponse.ok)throw new Error("دریافت فایل تصویر ناموفق بود (HTTP "+imageResponse.status+").");
+          const imageBlob=await imageResponse.blob();
+          if(!String(imageBlob.type||"").startsWith("image/"))throw new Error("فایل ذخیره‌شده تصویر قابل‌شناسایی نیست.");
+          photoDataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||""));reader.onerror=()=>reject(new Error("خواندن فایل تصویر ناموفق بود."));reader.readAsDataURL(imageBlob);});
+          if(!photoDataUrl.startsWith("data:image/"))throw new Error("تبدیل تصویر برای فایل خروجی ناموفق بود.");
+        }catch(e){toast("عکس خادم برای خروجی بارگذاری نشد: "+(e.message||"خطای نامشخص"),"error");return;}
+      }
+      const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}h1{font-size:18px}table{width:100%;border-collapse:collapse;table-layout:auto}td,th{border:1px solid #999;padding:8px;text-align:center;vertical-align:middle;min-width:90px}th{background:#eee;font-weight:bold}td{word-break:break-word}img{display:block;margin:auto;max-width:130px;max-height:150px;object-fit:contain}@media print{body{padding:4px}table{font-size:10px}td,th{padding:4px;min-width:65px}}</style><h1>"+esc(title)+"</h1><table><thead><tr>"+selected.map(p=>"<th>"+esc(p.label)+"</th>").join("")+"</tr></thead><tbody><tr>"+selected.map(p=>"<td>"+(p.key==="__khadem_photo__"?(photoDataUrl?'<img src="'+photoDataUrl+'" alt="عکس خادم">':"عکس موجود نیست"):esc(p.value)).replace(/undefined/g,"")+"</td>").join("")+"</tr></tbody></table></html>";
       if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
       else {const blob=new Blob(["\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
       $("#kj-modal")?.remove();
