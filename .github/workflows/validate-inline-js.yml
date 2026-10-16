@@ -77,6 +77,40 @@ jobs:
             process.exitCode = 1;
           }
           NODE
+      - name: Parse inline JavaScript in live-data.html
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+          const html = fs.readFileSync('live-data.html', 'utf8');
+          const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'khadem-live-data-inline-js-'));
+          const re = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+          let match, checked = 0, failed = 0;
+          while ((match = re.exec(html)) !== null) {
+            const attrs = match[1] || '';
+            const code = (match[2] || '').trim();
+            if (!code || /\\bsrc\\s*=/.test(attrs)) continue;
+            const typeMatch = attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
+            const type = typeMatch ? typeMatch[1].toLowerCase() : 'text/javascript';
+            if (type.includes('json') || type === 'importmap') continue;
+            if (!type.includes('javascript') && type !== 'module' && type !== 'text/ecmascript') continue;
+            checked++;
+            const file = path.join(tempDir, 'live-data-inline-' + checked + '.js');
+            fs.writeFileSync(file, code, 'utf8');
+            const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (result.status !== 0) {
+              failed++;
+              console.error('FAILED: live-data.html inline script #' + checked);
+              console.error(result.stderr || result.stdout || 'Syntax check failed.');
+            }
+          }
+          console.log('Checked ' + checked + ' live-data inline JavaScript block(s); failures: ' + failed + '.');
+          if (checked === 0 || failed > 0) process.exitCode = 1;
+          NODE
+
       - name: Parse inline JavaScript in admin-users.html
         shell: bash
         run: |
