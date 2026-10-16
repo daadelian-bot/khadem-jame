@@ -369,15 +369,23 @@
             syncPath += (syncPath.includes("?") ? "&" : "?") + "on_conflict=id";
             syncHeaders.Prefer = "resolution=ignore-duplicates,return=representation";
           }
-          if (op.method === "PATCH" && op.baseUpdatedAt) {
+          if (op.method === "PATCH") {
             const params = new URLSearchParams(descriptor.query);
             const idFilter = params.get("id") || "";
             const id = idFilter.startsWith("eq.") ? idFilter.slice(3) : "";
             if (id) {
-              const current = await request("/rest/v1/" + encodeURIComponent(descriptor.table) + "?select=updated_at&id=eq." + encodeURIComponent(id) + "&limit=1", { __skipOfflineQueue: true });
-              if (Array.isArray(current) && current[0] && current[0].updated_at && String(current[0].updated_at) !== String(op.baseUpdatedAt)) {
-                await window.KJOfflineStore.updateOutbox(item.id, { status: "needs_review", lastError: "این رکورد پس از دریافت آفلاین توسط کاربر دیگری تغییر کرده است." });
-                continue;
+              const current = await request("/rest/v1/" + encodeURIComponent(descriptor.table) + "?select=*&id=eq." + encodeURIComponent(id) + "&limit=1", { __skipOfflineQueue: true });
+              if (Array.isArray(current) && current[0]) {
+                const alreadyApplied = Object.entries(op.body || {}).every(([key, value]) => JSON.stringify(current[0][key]) === JSON.stringify(value));
+                if (alreadyApplied) {
+                  await window.KJOfflineStore.removeOutbox(item.id);
+                  synced++;
+                  continue;
+                }
+                if (op.baseUpdatedAt && current[0].updated_at && String(current[0].updated_at) !== String(op.baseUpdatedAt)) {
+                  await window.KJOfflineStore.updateOutbox(item.id, { status: "needs_review", lastError: "این رکورد پس از دریافت آفلاین توسط کاربر دیگری تغییر کرده است." });
+                  continue;
+                }
               }
             }
           }
