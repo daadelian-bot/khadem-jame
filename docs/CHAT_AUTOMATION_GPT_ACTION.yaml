@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: Khadem Jame Code Request
+  description: ثبت درخواست تغییر نرم‌افزار مدیریت خادمین برای اجرای عامل کدنویسی در GitHub و ساخت Pull Request پیش‌نویس.
+  version: 1.0.0
+servers:
+  - url: https://api.github.com
+paths:
+  /repos/daadelian-bot/khadem-jame/issues:
+    post:
+      operationId: submitKhademCodeRequest
+      summary: ثبت درخواست تغییر کد سامانه خادمین
+      description: |
+        درخواست کاربر را به‌صورت یک Issue جدید ثبت می‌کند. عنوان باید با [AI-DEV] شروع شود.
+        فقط درخواست‌های ایجادشده توسط مالک مخزن واجد اجرای خودکار هستند. عامل کدنویسی یک
+        Pull Request پیش‌نویس می‌سازد و هیچ تغییری را مستقیماً روی main منتشر نمی‌کند.
+      x-openai-isConsequential: true
+      security:
+        - GitHubToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - title
+                - body
+              properties:
+                title:
+                  type: string
+                  minLength: 12
+                  maxLength: 240
+                  pattern: '^\\[AI-DEV\\].+'
+                  description: عنوان کوتاه فارسی با پیشوند دقیق [AI-DEV].
+                body:
+                  type: string
+                  minLength: 10
+                  maxLength: 10000
+                  description: درخواست کامل به فارسی؛ هدف، رفتار فعلی، رفتار مورد انتظار و محدودیت‌های مهم را بنویسید.
+      responses:
+        '201':
+          description: درخواست ثبت شد؛ اگر شرایط امنیتی و secretها فراهم باشند، GitHub Actions کار را آغاز می‌کند.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  number:
+                    type: integer
+                  title:
+                    type: string
+                  html_url:
+                    type: string
+                    format: uri
+                  state:
+                    type: string
+        '401':
+          description: توکن GitHub معتبر نیست.
+        '403':
+          description: توکن اجازه ایجاد Issue در این مخزن را ندارد.
+components:
+  securitySchemes:
+    GitHubToken:
+      type: http
+      scheme: bearer
