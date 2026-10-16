@@ -871,7 +871,7 @@
     actions.addEventListener("click",e=>{const b=e.target.closest("[data-record-export]");if(b)showRecordExportChooser(row,title,b.dataset.recordExport);});
   }
   function attachRowDetails(container, rows, title = "جزئیات") {
-    $("[data-row]", container).forEach(button => button.addEventListener("click", () => {
+    $$("[data-row]", container).forEach(button => button.addEventListener("click", () => {
       const row = rows[Number(button.dataset.row)];
       if (!row) return;
       modal(title, dataFields(row));
@@ -2146,7 +2146,7 @@
     }
     if(state.tab==="serviceRegister") bindOfficialServiceForm();
     if (state.tab === "changePassword") $("#kj-change-password-form")?.addEventListener("submit", e => { e.preventDefault(); savePasswordChange(e.currentTarget); });
-    $("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
+    $$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
       const requestedTab = button.dataset.quickTab;
       if (!canAccess(requestedTab)) { toast("دسترسی این بخش برای حساب شما فعال نیست. از مدیر اصلی بخواهید مجوز آن را در بخش «کاربران و دسترسی‌ها» تنظیم کند.", "error"); return; }
       state.tab = requestedTab; state.selectedKhadem = null;
