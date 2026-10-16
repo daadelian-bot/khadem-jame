@@ -77,6 +77,52 @@ jobs:
             process.exitCode = 1;
           }
           NODE
+      - name: Parse inline JavaScript in live-data.html
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+
+          const html = fs.readFileSync('live-data.html', 'utf8');
+          const scriptTag = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+          const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'khadem-live-data-inline-js-'));
+          let match;
+          let checked = 0;
+          let failed = 0;
+
+          while ((match = scriptTag.exec(html)) !== null) {
+            const attrs = match[1] || '';
+            const source = (match[2] || '').trim();
+            if (!source || /\bsrc\s*=/i.test(attrs)) continue;
+
+            const typeMatch = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i);
+            const type = typeMatch ? typeMatch[1].toLowerCase() : 'text/javascript';
+            if (type.includes('json') || type === 'importmap') continue;
+            if (!type.includes('javascript') && type !== 'module' && type !== 'text/ecmascript') continue;
+
+            checked += 1;
+            const file = path.join(tempDir, 'inline-' + checked + '.js');
+            fs.writeFileSync(file, source, 'utf8');
+            const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (result.status !== 0) {
+              failed += 1;
+              console.error('FAILED: live-data inline script #' + checked);
+              if (result.stdout) console.error(result.stdout);
+              if (result.stderr) console.error(result.stderr);
+            }
+          }
+
+          console.log('Checked ' + checked + ' inline JavaScript block(s); failures: ' + failed + '.');
+          if (checked === 0) {
+            console.error('No inline JavaScript blocks were found in live-data.html; refusing a false-green result.');
+            process.exitCode = 1;
+          } else if (failed > 0) {
+            process.exitCode = 1;
+          }
+          NODE
       - name: Parse inline JavaScript in admin-users.html
         shell: bash
         run: |
