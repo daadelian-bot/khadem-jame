@@ -58,7 +58,9 @@
     birthdayMonth: null,
     loading: false,
     errors: {},
-    loaded: false
+    loaded: false,
+    offlineMode: false,
+    offlineSnapshots: {}
   };
 
   let financeView = "overview";
@@ -287,19 +289,42 @@
       const rows = await apiTable(table, "select=*&limit=1000");
       state.errors[stateKey] = "";
       state.errors[table] = "";
+      if (window.KJOfflineStore && Array.isArray(rows)) {
+        try { await window.KJOfflineStore.saveSnapshot(table, rows); } catch (cacheError) { console.warn("KJ: offline snapshot save failed", table, cacheError); }
+      }
       return Array.isArray(rows) ? rows : [];
     } catch (e) {
+      // پاسخ‌های ردشده به دلیل مجوز/نشست را از کش قدیمی جایگزین نکن.
+      if (e && (e.status === 401 || e.status === 403)) {
+        state.errors[stateKey] = e.message || "دسترسی به این بخش مجاز نیست.";
+        state.errors[table] = state.errors[stateKey];
+        return [];
+      }
+      if (window.KJOfflineStore) {
+        try {
+          const cached = await window.KJOfflineStore.getSnapshot(table);
+          if (cached && Array.isArray(cached.rows)) {
+            state.errors[stateKey] = "";
+            state.errors[table] = "";
+            state.offlineMode = true;
+            state.offlineSnapshots = state.offlineSnapshots || {};
+            state.offlineSnapshots[table] = cached.savedAt;
+            return cached.rows;
+          }
+        } catch (cacheError) { console.warn("KJ: offline snapshot read failed", table, cacheError); }
+      }
       const message = e.message || "خطا در دریافت اطلاعات";
       state.errors[stateKey] = message;
       state.errors[table] = message;
       console.warn("KJ: failed to load table", table, e);
-      // در خطای موقت، داده قبلی همان بخش حفظ شود تا شکست یک درخواست اطلاعات موجود را پاک نکند.
       return Array.isArray(state[stateKey]) ? state[stateKey] : [];
     }
   }
   async function loadData() {
     if (state.loading) return;
     state.loading = true;
+    state.offlineMode = false;
+    state.offlineSnapshots = {};
     state.errors = {};
     try {
     const tables = [
@@ -384,6 +409,7 @@
       try { render(); } catch (renderError) { console.error("KJ: render after sync failed", renderError); }
       const failed = Object.values(state.errors).filter(Boolean).length;
       if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطای همان بخش را بررسی کنید.", "error");
+      else if (state.offlineMode) toast("حالت آفلاین: اطلاعات قبلاً ذخیره‌شده نمایش داده می‌شود؛ ثبت تغییرات جدید در مرحله بعد فعال خواهد شد.", "info");
       else toast("اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
     }
   }
@@ -411,6 +437,10 @@
     }
   }
   function signout() {
+    // خروج امن، داده‌های آفلاین حساب جاری را نیز از دستگاه پاک می‌کند.
+    if (window.KJOfflineStore) {
+      try { void window.KJOfflineStore.clearCurrentUserData().catch(err => console.warn("KJ: local cache cleanup failed", err)); } catch (_) {}
+    }
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     state.selectedKhadem = null;
@@ -590,14 +620,42 @@
   function normalizeSignedStorageUrl(value){const u=String(value||"");return u.startsWith("http")?u:(u.startsWith("/storage/v1/")?SUPABASE_URL+u:SUPABASE_URL+"/storage/v1"+(u.startsWith("/")?u:"/"+u));}
   async function loadKhademPhotoInto(img,path){
     if(!img||!path)return;
+    const photoKey=String(path).trim();
+    const store=window.KJOfflineStore;
+    const showBlob=blob=>{
+      if(!blob||!img.isConnected)return false;
+      try{
+        if(img.dataset.kjObjectUrl)URL.revokeObjectURL(img.dataset.kjObjectUrl);
+        const objectUrl=URL.createObjectURL(blob);
+        img.dataset.kjObjectUrl=objectUrl;img.src=objectUrl;img.style.display="block";
+        return true;
+      }catch(_){return false;}
+    };
+    const cacheLoadedImage=async()=>{
+      if(!store||!img.src||img.src.startsWith("blob:"))return;
+      try{
+        const response=await fetch(img.src,{method:"GET",credentials:"omit",cache:"no-store"});
+        if(response.ok){const blob=await response.blob();if(blob.size<=5*1024*1024)await store.savePhoto(photoKey,blob);}
+      }catch(cacheError){console.warn("KJ: photo offline cache failed",cacheError);}
+    };
+    if(!navigator.onLine&&store){
+      try{const cached=await store.getPhoto(photoKey);if(showBlob(cached))return;}catch(cacheError){console.warn("KJ: cached photo unavailable",cacheError);}
+      img.style.display="none";img.dataset.photoError="این عکس قبلاً روی این دستگاه ذخیره نشده است؛ برای دریافت آن به اینترنت وصل شوید.";return;
+    }
     try{
-      const raw=String(path).trim();
-      if(raw.startsWith("http://")||raw.startsWith("https://")){img.src=raw;img.style.display="block";return;}
+      const raw=photoKey;
+      if(raw.startsWith("http://")||raw.startsWith("https://")){
+        img.onload=()=>{void cacheLoadedImage();};img.src=raw;img.style.display="block";return;
+      }
       const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(raw),{method:"POST",body:{expiresIn:3600}});
       const url=String(signed?.signedURL||signed?.signedUrl||"");
       if(!url)throw new Error("لینک تصویر دریافت نشد.");
+      img.onload=()=>{void cacheLoadedImage();};
       img.src=normalizeSignedStorageUrl(url);img.style.display="block";
-    }catch(e){console.warn("KJ: khadem photo unavailable",e);img.style.display="none";img.dataset.photoError=String(e?.message||"بارگذاری عکس ناموفق بود");}
+    }catch(e){
+      if(store){try{const cached=await store.getPhoto(photoKey);if(showBlob(cached))return;}catch(_){}}
+      console.warn("KJ: khadem photo unavailable",e);img.style.display="none";img.dataset.photoError=String(e?.message||"بارگذاری عکس ناموفق بود");
+    }
   }
   async function uploadKhademPhoto(file,k){
     if(!file||!file.size)return null;
@@ -2081,6 +2139,11 @@
     });
     main.prepend(bar);
   }
+  function offlineNotice() {
+    if (!state.offlineMode) return "";
+    return '<div role="status" aria-live="polite" style="margin:0 0 14px;padding:12px 14px;border:1px solid #d7a84b;border-right:4px solid #c18b2c;border-radius:12px;background:#fff8e7;color:#654b16;line-height:1.9;font-size:13px"><strong>حالت آفلاین</strong> — اطلاعاتی که قبلاً روی این دستگاه ذخیره شده قابل مشاهده است. در این مرحله ثبت و ویرایش اطلاعات جدید به اتصال اینترنت نیاز دارد. عکس‌ها فقط در صورت ذخیره قبلی روی همین دستگاه نمایش داده می‌شوند.</div>';
+  }
+
   function render() {
     if (!token()) { loginPage(); return; }
     if (!canAccess(state.tab)) {
@@ -2092,7 +2155,7 @@
     if (!main) return;
     main.classList.toggle("kj-dashboard-view", state.tab === "dashboard");
     if (state.selectedKhadem !== null && state.tab === "khadems") {
-      main.innerHTML = khademProfile();
+      main.innerHTML = offlineNotice() + khademProfile();
       installGlobalExportToolbar(main);
       $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; state.profileEditOpen = false; render(); });
       $("#kj-edit-profile")?.addEventListener("click", () => { state.profileEditOpen = !state.profileEditOpen; render(); });
@@ -2121,7 +2184,7 @@
       settings: settingsPage,
       changePassword: changePasswordPage,
     };
-    main.innerHTML = (views[state.tab] || dashboard)();
+    main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
     installGlobalExportToolbar(main);
     if (state.tab === "dashboard") bindDashboardExpanders(main);
     if (state.tab === "finance") {
@@ -2301,6 +2364,17 @@
       // مدیر اصلی فقط با ایمیل تعیین‌شده در کنترل‌های سمت سرور شناسایی می‌شود.
       state.isPrimaryAdmin = String(authUser.email || "").trim().toLowerCase() === "da.adelian@gmail.com";
       state.accessLoaded = true;
+      state.offlineMode = false;
+      if (window.KJOfflineStore) {
+        try {
+          await window.KJOfflineStore.saveMeta("auth-state", {
+            user: authUser, role: state.role, accessPermissions: state.accessPermissions,
+            isPrimaryAdmin: state.isPrimaryAdmin, accessCustom: state.accessCustom,
+            accessFull: state.accessFull, verifiedAt: Date.now()
+          });
+          await window.KJOfflineStore.persistStorage();
+        } catch (cacheError) { console.warn("KJ: auth state cache failed", cacheError); }
+      }
       if (!canAccess(state.tab)) {
         state.tab = "dashboard";
         state.selectedKhadem = null;
@@ -2317,7 +2391,30 @@
         loginPage("نشست ورود معتبر نیست یا منقضی شده است؛ لطفاً دوباره وارد شوید.");
         return;
       }
-      // در خطای شبکه/سرور توکن را پاک نکن؛ ولی داده‌های محافظت‌شده را هم بارگذاری نکن.
+      // فقط هنگام خطای شبکه، و فقط تا ۱۲ ساعت از آخرین تأیید آنلاین، نشست محلی قابل استفاده است.
+      // خطای 401/403 هرگز با مجوز ذخیره‌شده دور زده نمی‌شود.
+      if ((!e || !e.status) && token() && window.KJOfflineStore) {
+        try {
+          const cachedAuth = await window.KJOfflineStore.getMeta("auth-state");
+          const age = cachedAuth && Number(cachedAuth.verifiedAt) ? Date.now() - Number(cachedAuth.verifiedAt) : Infinity;
+          const cachedUserId = cachedAuth && cachedAuth.user && (cachedAuth.user.id || cachedAuth.user.email);
+          const currentUserId = (() => { try { const u=JSON.parse(localStorage.getItem(USER_KEY)||"null"); return u&&(u.id||u.email); } catch (_) { return null; } })();
+          if (cachedAuth && cachedUserId && String(cachedUserId).toLowerCase() === String(currentUserId||"").toLowerCase() && age >= 0 && age <= 12*60*60*1000) {
+            state.role = cachedAuth.role || "user";
+            state.accessPermissions = cachedAuth.accessPermissions && typeof cachedAuth.accessPermissions === "object" ? cachedAuth.accessPermissions : null;
+            state.isPrimaryAdmin = cachedAuth.isPrimaryAdmin === true;
+            state.accessCustom = cachedAuth.accessCustom === true;
+            state.accessFull = cachedAuth.accessFull === true && !state.accessCustom;
+            state.accessLoaded = true;
+            state.offlineMode = true;
+            state.offlineAuthVerifiedAt = cachedAuth.verifiedAt;
+            if (!canAccess(state.tab)) state.tab = "dashboard";
+            toast("اینترنت در دسترس نیست؛ اطلاعات ذخیره‌شده قبلی در حالت آفلاین باز می‌شود.", "info");
+            void loadData();
+            return;
+          }
+        } catch (cacheError) { console.warn("KJ: offline session restore failed", cacheError); }
+      }
       loginPage("بررسی نشست انجام نشد: " + (e && e.message ? e.message : "خطای ناشناخته") + " اگر فرم ورود نمایش داده می‌شود، ایمیل و رمز حساب معتبر را وارد کنید.");
     }
   }
@@ -2351,6 +2448,16 @@
       toast("باز کردن ورودی فایل ناموفق بود: " + (error && error.message ? error.message : "خطای نامشخص"), "error");
     }
   }, true);
+
+  window.addEventListener("offline", function () {
+    if (!token()) return;
+    state.offlineMode = true;
+    try { render(); } catch (err) { console.warn("KJ: offline banner render failed", err); }
+  });
+  window.addEventListener("online", function () {
+    if (!token()) return;
+    void loadData();
+  });
 
   window.KJ = {
     start: startApp,
