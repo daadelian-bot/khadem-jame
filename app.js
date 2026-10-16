@@ -983,9 +983,14 @@
       <section class="kj-card kj-guide-card kj-premium-guide"><span class="kj-guide-icon">ⓘ</span><div><h3>درباره آمار این داشبورد</h3><p>شاخص‌ها از داده‌های قابل مشاهده در پایگاه داده محاسبه می‌شوند؛ بخش‌های دارای خطای دسترسی یا بارگذاری، جداگانه مشخص می‌شوند و با عدد صفرِ واقعی اشتباه گرفته نمی‌شوند.</p></div></section>`;
   }
 
+  function khademCodeNumber(k){
+    const raw=String(khademCode(k)??"").replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));
+    const digits=raw.replace(/[^0-9]/g,"");
+    return digits?Number(digits):0;
+  }
   function khademList() {
     const q = state.search.trim().toLowerCase();
-    const rows = state.khadems.filter(k => { const code=Number(String(khademCode(k)).replace(/[^0-9]/g,"")); return code>=1000 && (!q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_code"])].join(" ").toLowerCase().includes(q)); }).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
+    const rows = state.khadems.filter(k => { const code=khademCodeNumber(k); return code>=1000 && (!q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_code"])].join(" ").toLowerCase().includes(q)); }).sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
     const columns = [
       {key:"khadem_code",label:"کد خادم"},{key:"full_name",label:"نام و نام خانوادگی"},{key:"triple_name",label:"نام ثلاثی"},
       {key:"national_code",label:"کد ملی"},{key:"birth_date",label:"تاریخ تولد"},{key:"membership_date",label:"تاریخ عضویت"},
@@ -1760,7 +1765,9 @@
       let rows=[...table.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].slice(0,cols.length).map(cell));
       if(state.tab==="khadems" && state.selectedKhadem===null && state.khadems.length){
         const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
-        const records=state.khadems.filter(k=>Number(String(khademCode(k)).replace(/[^0-9]/g,""))>=1000);
+        const records=state.khadems.filter(k=>khademCodeNumber(k)>=1000).slice().sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
+        const priority=["full_name","name","khadem_name","first_name","last_name","family","family_name","triple_name","tri_name","full_name_triple","father_name","birth_date","national_code","national_id","occupation","job","membership_date","education_level","education","phone","mobile","phone_number","address","residence","home_address","blood_type"];
+        keys.sort((a,b)=>{const ai=priority.indexOf(a),bi=priority.indexOf(b);return (ai<0?1000+keys.indexOf(a):ai)-(bi<0?1000+keys.indexOf(b):bi);});
         const pairs=keys.map(key=>({key,label:fieldLabel(key)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی"].includes(p.label));
         const seen=new Set(); const usablePairs=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
         cols=usablePairs.map(p=>p.label);
