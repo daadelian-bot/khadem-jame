@@ -801,10 +801,14 @@
             worksheet.getCell(1,i+1).border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
             worksheet.getCell(2,i+1).border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
           });
-          const base64=photoDataUrl.split(",")[1]||"";
-          const extension=photoMime.includes("png")?"png":(photoMime.includes("webp")?"webp":"jpeg");
-          if(extension==="webp")throw new Error("برای جاسازی مستقیم عکس WEBP در اکسل، لطفاً تصویر را به JPG یا PNG تبدیل و دوباره ثبت کنید.");
-          const imageId=workbook.addImage({base64,extension});
+          const excelImageData=await new Promise((resolve,reject)=>{
+            const image=new Image();
+            image.onload=()=>{try{const canvas=document.createElement("canvas");canvas.width=image.naturalWidth||image.width;canvas.height=image.naturalHeight||image.height;const ctx=canvas.getContext("2d");if(!ctx)throw new Error("آماده‌سازی تصویر برای اکسل ناموفق بود.");ctx.drawImage(image,0,0);resolve(canvas.toDataURL("image/png"));}catch(err){reject(err);}};
+            image.onerror=()=>reject(new Error("بازخوانی تصویر برای جاسازی در اکسل ناموفق بود."));
+            image.src=photoDataUrl;
+          });
+          const base64=excelImageData.split(",")[1]||"";
+          const imageId=workbook.addImage({base64,extension:"png"});
           worksheet.addImage(imageId,{tl:{col:selected.findIndex(p=>p.key==="__khadem_photo__"),row:1},ext:{width:95,height:95},editAs:"oneCell"});
           const buffer=await workbook.xlsx.writeBuffer();
           const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
