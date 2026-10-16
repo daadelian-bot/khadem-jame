@@ -1,6 +1,6 @@
 /* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۱۷۴ */
-const CACHE_NAME = 'khadem-jame-shell-v174';
-const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './logo.png'];
+const CACHE_NAME = 'khadem-jame-shell-v175';
+const APP_SHELL = ['./', './index.html', './live-data.html', './manifest.webmanifest', './logo.png', './style.css', './app.js', './offline-store.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -38,17 +38,19 @@ self.addEventListener('fetch', event => {
   // Network-first navigation guarantees users receive the deployed HTML whenever online.
   if (request.mode === 'navigate') {
     const scopePath = new URL(self.registration.scope).pathname;
-    const isAppEntry = (url.pathname === scopePath || url.pathname === scopePath + 'index.html') && !url.search;
+    const isRootEntry = (url.pathname === scopePath || url.pathname === scopePath + 'index.html') && !url.search;
+    const isOfflineAppEntry = isRootEntry || url.pathname === scopePath + 'live-data.html';
+    const cachedEntry = url.pathname === scopePath + 'live-data.html' ? './live-data.html' : './index.html';
     event.respondWith(
       fetch(request, { cache: 'no-store' }).then(response => {
-        // Cache only the main app entry. Never store recovery/invitation URLs or other pages as index.html.
-        if (isAppEntry && response && response.ok) {
+        // Cache only the two public app entry documents, never recovery/invitation URLs.
+        if (isOfflineAppEntry && response && response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(cachedEntry, copy));
         }
         return response;
       }).catch(() => {
-        if (isAppEntry) return caches.match('./index.html');
+        if (isOfflineAppEntry) return caches.match(cachedEntry).then(cached => cached || Response.error());
         return Response.error();
       })
     );
@@ -60,9 +62,10 @@ self.addEventListener('fetch', event => {
     fetch(request, { cache: 'no-store' }).then(response => {
       if (response && response.ok && response.type === 'basic') {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        const cacheKey = new Request(new URL(url.pathname, self.location.origin).href);
+        caches.open(CACHE_NAME).then(cache => cache.put(cacheKey, copy));
       }
       return response;
-    }).catch(() => caches.match(request).then(cached => cached || Response.error()))
+    }).catch(() => caches.match(request, { ignoreSearch: true }).then(cached => cached || Response.error()))
   );
 });
