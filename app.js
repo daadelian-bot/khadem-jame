@@ -780,7 +780,7 @@
         }catch(e){toast("عکس خادم برای خروجی بارگذاری نشد: "+(e.message||"خطای نامشخص"),"error");return;}
       }
       const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}h1{font-size:18px}.profile-photo{display:block;margin:0 auto 16px;max-width:150px;max-height:180px;object-fit:contain;border:1px solid #ddd;padding:4px}table{width:100%;border-collapse:collapse;table-layout:auto}td,th{border:1px solid #999;padding:8px;text-align:center;vertical-align:middle;min-width:90px}th{background:#eee;font-weight:bold}td{word-break:break-word}img{display:block;margin:auto;max-width:130px;max-height:150px;object-fit:contain}@media print{body{padding:4px}table{font-size:10px}td,th{padding:4px;min-width:65px}}</style><h1>"+esc(title)+"</h1>"+(photoDataUrl?'<img class=\"profile-photo\" src="'+photoDataUrl+'" alt=\"عکس خادم\">':"")+"<table><thead><tr>"+selected.filter(p=>p.key!=="__khadem_photo__").map(p=>"<th>"+esc(p.label)+"</th>").join("")+"</tr></thead><tbody><tr>"+selected.filter(p=>p.key!=="__khadem_photo__").map(p=>"<td>"+esc(p.value).replace(/undefined/g,"")+"</td>").join("")+"</tr></tbody></table></html>";
-      if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
+      if(type==="pdf"){const w=pdfWindow;if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را برای این سایت فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
       else if(type==="excel" && photoField && photoDataUrl){
         try{
           let ExcelJS=window.ExcelJS;
@@ -1759,6 +1759,8 @@
     bar.addEventListener("click",event=>{
       const button=event.target.closest("[data-kj-export]"); if(!button)return;
       const type=button.dataset.kjExport, title=(main.querySelector("h1,h2")?.textContent||"گزارش سامانه").trim();
+      // PDF popup must be opened during the original user click, before any async photo requests.
+      const pdfWindow=type==="pdf"?window.open("about:blank","_blank"):null;
       if(state.tab==="khadems"&&state.selectedKhadem!==null){const record=selectedKhademRecord();if(record){showRecordExportChooser(record,title,type);return;}}
       const table=main.querySelector("table"); if(!table){toast("در این بخش جدول یا پرونده‌ای برای خروجی وجود ندارد.","error");return;}
       const cell=el=>String(el?.innerText||el?.textContent||"").trim();
