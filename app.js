@@ -303,60 +303,67 @@
     state.errors = {};
     render();
     const tables = [
-      ["khadems", "khadems"],
-      ["services", "service_records"],
-      ["nonattendance", "khadem_service_nonattendance"],
-      ["meetings", "meetings"],
-      ["deployments", "deployments"],
-      ["finance", "finance_transactions"],
-      ["financeAccounts", "finance_accounts"],
-      ["tuitionDues", "tuition_dues"],
-      ["financeInstallments", "finance_installments"],
-      ["fund", "fund_transactions"],
-      ["donors", "donors"],
-      ["meetingInvitees", "meeting_invitees"],
-      ["meetingAttendance", "meeting_attendance"],
-      ["vehicles", "vehicles"],
-      ["drivers", "drivers"],
-      ["equipmentIssues", "khadem_equipment_issues"],
-      ["equipmentPayments", "khadem_equipment_payments"],
-      ["equipmentReceipts", "equipment_committee_receipts"],
-      ["equipmentReceiptItems", "equipment_committee_receipt_items"],
-      ["equipmentCommitteePayments", "equipment_committee_payments"],
-      ["profiles", "profiles"],
-      ["roles", "app_roles"],
-      ["permissions", "permissions"],
-      ["rolePermissions", "role_permissions"],
-      ["audit", "audit_logs"],
-      ["systemSettings", "system_settings"],
-      ["appSettings", "app_settings"],
+      ["khadems", "khadems"], ["services", "service_records"],
+      ["nonattendance", "khadem_service_nonattendance"], ["meetings", "meetings"],
+      ["deployments", "deployments"], ["finance", "finance_transactions"],
+      ["financeAccounts", "finance_accounts"], ["tuitionDues", "tuition_dues"],
+      ["financeInstallments", "finance_installments"], ["fund", "fund_transactions"],
+      ["donors", "donors"], ["meetingInvitees", "meeting_invitees"],
+      ["meetingAttendance", "meeting_attendance"], ["vehicles", "vehicles"],
+      ["drivers", "drivers"], ["equipmentIssues", "khadem_equipment_issues"],
+      ["equipmentPayments", "khadem_equipment_payments"], ["equipmentReceipts", "equipment_committee_receipts"],
+      ["equipmentReceiptItems", "equipment_committee_receipt_items"], ["equipmentCommitteePayments", "equipment_committee_payments"],
+      ["profiles", "profiles"], ["roles", "app_roles"], ["permissions", "permissions"],
+      ["rolePermissions", "role_permissions"], ["audit", "audit_logs"],
+      ["systemSettings", "system_settings"], ["appSettings", "app_settings"],
       ["tuitionPayments", "tuition_payments"]
     ];
     const dataModule = {
-      khadems:"khadems",
-      services:"services", nonattendance:"nonattendance",
+      khadems:"khadems", services:"services", nonattendance:"nonattendance",
       meetings:"meetings", meetingInvitees:"meetings", meetingAttendance:"meetings",
       deployments:"deployments", vehicles:"deployments", drivers:"deployments",
       finance:"finance", financeAccounts:"finance", tuitionDues:"finance", financeInstallments:"finance", tuitionPayments:"finance",
-      fund:"fund", donors:"donors",
-      equipmentIssues:"equipment", equipmentPayments:"equipment", equipmentReceipts:"equipment",
-      equipmentReceiptItems:"equipment", equipmentCommitteePayments:"equipment",
+      fund:"fund", donors:"donors", equipmentIssues:"equipment", equipmentPayments:"equipment",
+      equipmentReceipts:"equipment", equipmentReceiptItems:"equipment", equipmentCommitteePayments:"equipment",
       profiles:"users", roles:"users", permissions:"users", rolePermissions:"users",
       audit:"audit", systemSettings:"settings", appSettings:"settings"
     };
-    await Promise.all(tables.map(async ([key, table]) => {
+    const allowedTables = tables.filter(([key]) => {
       const module = dataModule[key];
-      if (module && !canAccess(module)) { state[key] = []; delete state.errors[key]; return; }
-      state[key] = await loadTable(table, key);
-    }));
-    state.loading = false;
-    state.loaded = true;
-    render();
-    const failed = Object.values(state.errors).filter(Boolean).length;
-    if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ داده‌های قبلی آن بخش حفظ شدند و خطا در همان بخش نمایش داده شده است.", "error");
-    else toast("همه اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
+      if (module && !canAccess(module)) {
+        state[key] = [];
+        delete state.errors[key];
+        return false;
+      }
+      return true;
+    });
+    try {
+      // بانک خادمین جداگانه بارگذاری می‌شود؛ خطای جدول‌های جانبی نباید صفحه را معطل کند.
+      if (allowedTables.some(([key]) => key === "khadems")) {
+        state.khadems = await loadTable("khadems", "khadems");
+        state.loaded = true;
+        state.loading = false;
+        render();
+      }
+      const otherTables = allowedTables.filter(([key]) => key !== "khadems");
+      const otherLoads = Promise.all(otherTables.map(async ([key, table]) => {
+        state[key] = await loadTable(table, key);
+      }));
+      await Promise.race([
+        otherLoads,
+        new Promise(resolve => setTimeout(resolve, TIMEOUT_MS + 1500))
+      ]);
+      state.loaded = true;
+    } catch (e) {
+      state.errors.khadems = state.errors.khadems || (e?.message || "دریافت اطلاعات بانک خادمین ناموفق بود.");
+    } finally {
+      state.loading = false;
+      render();
+      const failed = Object.values(state.errors).filter(Boolean).length;
+      if (failed) toast("دریافت بعضی اطلاعات ناموفق بود؛ خطای همان بخش را بررسی کنید.", "error");
+      else toast("اطلاعات قابل‌دسترسی سامانه به‌روزرسانی شد.", "success");
+    }
   }
-
   async function login() {
     const email = ($("#kj-email")?.value || "").trim();
     const password = $("#kj-password")?.value || "";
@@ -1999,7 +2006,7 @@
       let bankRecords=[],bankPhotoCol=-1;
       if(state.tab==="khadems" && state.selectedKhadem===null && state.khadems.length){
         const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data","full_name","name","khadem_name","first_name","last_name","family","family_name"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
-        const records=state.khadems.filter(k=>khademCodeNumber(k)>=1000).slice().sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
+        const records=state.khadems.slice().sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
         const priority=["triple_name","tri_name","full_name_triple","father_name","birth_date","national_code","national_id","occupation","job","membership_date","education_level","education","phone","mobile","phone_number","address","residence","home_address","blood_type"];
         const originalKeyOrder=new Map(keys.map((key,index)=>[key,index]));
         keys.sort((a,b)=>{const ai=priority.indexOf(a),bi=priority.indexOf(b);return (ai<0?1000+originalKeyOrder.get(a):ai)-(bi<0?1000+originalKeyOrder.get(b):bi);});
@@ -2187,7 +2194,7 @@
     const main = $("#kj-main");
     if (!main) return;
     const q = state.search.trim().toLowerCase();
-    const rows = state.khadems.filter(k => Number(String(khademCode(k)).replace(/[^0-9]/g,"")) >= 1000 && (!q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(q))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
+    const rows = state.khadems.filter(k => (!q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_id","national_code"])].join(" ").toLowerCase().includes(q))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
     const photoToggle=$("#kj-show-khadem-photos");
     if(photoToggle && !photoToggle.dataset.bound){
       photoToggle.dataset.bound="1";
@@ -2224,7 +2231,7 @@
         const button=event.target.closest("[data-row]");
         if(!button||!main.contains(button)||state.tab!=="khadems")return;
         const search=state.search.trim().toLowerCase();
-        const currentRows=state.khadems.filter(k=>Number(String(khademCode(k)).replace(/[^0-9]/g,""))>=1000&&(!search||[nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(search))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
+        const currentRows=state.khadems.filter(k=>(!search||[nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_id","national_code"])].join(" ").toLowerCase().includes(search))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
         const k=currentRows[Number(button.dataset.row)];
         if(!k)return;
         state.selectedKhadem="code:"+String(khademCode(k));
