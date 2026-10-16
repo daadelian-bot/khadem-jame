@@ -301,6 +301,7 @@
     if (state.loading) return;
     state.loading = true;
     state.errors = {};
+    try {
     const tables = [
       ["khadems", "khadems"], ["services", "service_records"],
       ["nonattendance", "khadem_service_nonattendance"], ["meetings", "meetings"],
@@ -336,8 +337,8 @@
       }
       return true;
     });
-    try {
-      // بازترسیم هم داخل try باشد؛ اگر خطای رندر رخ دهد، finally حتماً قفل همگام‌سازی را آزاد می‌کند.
+      // کل مراحل آغاز همگام‌سازی، از ساخت فهرست جدول‌ها تا رندر، زیر try/finally است.
+      // بنابراین هیچ خطای پیش از اولین درخواست نمی‌تواند نشانگر را برای همیشه قفل کند.
       render();
       // بانک خادمین جداگانه بارگذاری می‌شود؛ خطای جدول‌های جانبی نباید صفحه را معطل کند.
       if (allowedTables.some(([key]) => key === "khadems")) {
