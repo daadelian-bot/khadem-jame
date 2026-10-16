@@ -745,6 +745,7 @@
     const photoPath=khademPhotoPath(exportRecord)||((state.tab==="khadems"&&state.selectedKhadem!==null)?khademPhotoPath(selectedKhademRecord()):"");
     const pairs=Object.entries(exportRecord||{}).filter(([key,value])=>!excluded.has(key)&&!["photo_path","photo_url"].includes(key)&&value!==null&&value!==undefined&&value!==""&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(key)).map(([key,value])=>({key,label:fieldLabel(key),value:key==="receipt_image_path"?"سند پیوست شده":formatValue(key,value)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی","شناسه سند","شناسه حساب"].includes(p.label));
     if(photoPath)pairs.unshift({key:"__khadem_photo__",label:"عکس خادم",value:photoPath});
+    const seen=new Set(), fields=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
     const opts=fields.map((p,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-record-export-col="'+i+'" checked> '+esc(p.label)+'</label>').join("");
     modal("انتخاب جزئیات خروجی",'<p class="kj-muted">اطلاعات قابل‌نمایش این پرونده را انتخاب کنید. شناسه‌های فنی و مسیر داخلی فایل صادر نمی‌شوند.</p><div style="display:flex;flex-wrap:wrap">'+opts+'</div><button type="button" class="kj-primary" id="kj-record-export-confirm">تهیه خروجی</button>');
     $("#kj-record-export-confirm")?.addEventListener("click",async()=>{
