@@ -1439,18 +1439,49 @@
     financeView=view;
     render();
   }
+  function financeReceiptPath(path){return String(path||"").split("/").map(encodeURIComponent).join("/");}
+  async function uploadFinanceReceipt(file){
+    if(!file||!file.size)return null;
+    const allowed=["image/jpeg","image/png","image/webp","image/gif","application/pdf"];
+    if(!allowed.includes(file.type))throw new Error("فرمت فایل مجاز نیست؛ JPG، PNG، WEBP، GIF یا PDF انتخاب کنید.");
+    if(file.size>8*1024*1024)throw new Error("حجم فایل سند نباید بیشتر از ۸ مگابایت باشد.");
+    const ext=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","application/pdf":"pdf"})[file.type];
+    const random=(window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2);
+    const path="finance/"+Date.now()+"-"+random+"."+ext;
+    const response=await fetch(SUPABASE_URL+"/storage/v1/object/khadem-receipts/"+financeReceiptPath(path),{method:"POST",headers:headers({"Content-Type":file.type,"x-upsert":"false"}),body:file,credentials:"omit",cache:"no-store"});
+    const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}
+    if(!response.ok)throw new Error(String(data&&(data.message||data.error||data.error_description)||raw||("HTTP "+response.status)));
+    return path;
+  }
+  async function removeFinanceReceipt(path){
+    if(!path)return;
+    try{await fetch(SUPABASE_URL+"/storage/v1/object/khadem-receipts/"+financeReceiptPath(path),{method:"DELETE",headers:headers(),credentials:"omit",cache:"no-store"});}catch(_){}
+  }
+  async function openFinanceReceipt(path){
+    if(!path)return;
+    const win=window.open("about:blank","_blank");
+    if(!win){toast("مرورگر اجازه باز کردن پنجره جدید را نداد؛ مجوز بازشدن پنجره‌ها را بررسی کنید.","error");return;}
+    try{
+      const data=await request("/storage/v1/object/sign/khadem-receipts/"+financeReceiptPath(path),{method:"POST",body:{expiresIn:300}});
+      const signed=String(data?.signedURL||data?.signedUrl||"");
+      if(!signed)throw new Error("لینک امن فایل دریافت نشد.");
+      win.location.href=signed.startsWith("http")?signed:(signed.startsWith("/storage/v1/")?SUPABASE_URL+signed:SUPABASE_URL+"/storage/v1"+(signed.startsWith("/")?signed:"/"+signed));
+    }catch(err){win.close();toast("نمایش سند ناموفق بود؛ دسترسی مالی یا فایل را بررسی کنید.","error");}
+  }
   async function saveFinanceEntry(form){
     const fd=new FormData(form), type=form.dataset.entryType, amountToman=Number(fd.get("amount_toman"));
     const status=$("#kj-finance-form-status"), button=form.querySelector('[type="submit"]');
+    const receiptFile=fd.get("receipt_file"); let uploadedPath=null;
     if(!Number.isFinite(amountToman)||amountToman<=0){if(status)status.textContent="مبلغ معتبر و بزرگ‌تر از صفر وارد کنید.";return;}
     const user=(()=>{try{return JSON.parse(localStorage.getItem(USER_KEY)||"null");}catch(_){return null;}})();
     const khadem=state.khadems.find(k=>String(khademId(k))===String(fd.get("khadem_id")));
     const payload={title:String(fd.get("title")||"").trim(),transaction_date:String(fd.get("transaction_date")||""),transaction_type:type,amount:Math.round(amountToman*10),category:String(fd.get("category")||""),khadem_id:fd.get("khadem_id")||null,khadem_code:khadem?khademCode(khadem):null,khadem_name:khadem?nameOf(khadem):null,account_id:fd.get("account_id")||null,party:String(fd.get("party")||"").trim()||null,payment_method:String(fd.get("payment_method")||"cash"),reference_no:String(fd.get("reference_no")||"").trim()||null,tracking_number:String(fd.get("tracking_number")||"").trim()||null,description:String(fd.get("description")||"").trim()||null,notes:String(fd.get("description")||"").trim()||null,status:"draft",created_by:user?.id||null,created_by_email:user?.email||null};
     if(!payload.title||!payload.transaction_date||!payload.category){if(status)status.textContent="عنوان، تاریخ و دسته‌بندی الزامی است.";return;}
     try{if(button){button.disabled=true;button.textContent="در حال ذخیره…";}if(status)status.textContent="در حال ثبت پیش‌نویس در پایگاه داده…";
+      if(receiptFile instanceof File && receiptFile.size){if(status)status.textContent="در حال بارگذاری تصویر سند…";uploadedPath=await uploadFinanceReceipt(receiptFile);payload.receipt_image_path=uploadedPath;}
       await request("/rest/v1/finance_transactions",{method:"POST",headers:{"Prefer":"return=representation"},body:payload});
-      toast("پیش‌نویس مالی ثبت شد؛ هنوز سند قطعی نیست.","success");await refreshFinanceAfterSave("transactions");
-    }catch(err){if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت سند مالی ناموفق بود. مجوز مالی و اطلاعات فرم را بررسی کنید.","error");}
+      toast(uploadedPath?"پیش‌نویس مالی همراه تصویر سند ثبت شد.":"پیش‌نویس مالی ثبت شد؛ هنوز سند قطعی نیست.","success");await refreshFinanceAfterSave("transactions");
+    }catch(err){if(uploadedPath)await removeFinanceReceipt(uploadedPath);if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("ثبت سند مالی ناموفق بود. مجوز مالی و اطلاعات فرم را بررسی کنید.","error");}
     finally{if(button){button.disabled=false;button.textContent="ذخیره پیش‌نویس";}}
   }
   async function saveTuitionDue(form){
@@ -1466,14 +1497,16 @@
   }
   async function saveTuitionPayment(form){
     const fd=new FormData(form),amount=Number(fd.get("amount_toman")),status=$("#kj-tuition-payment-status"),button=form.querySelector('[type="submit"]');
+    const receiptFile=fd.get("receipt_file"); let uploadedPath=null;
     if(!fd.get("tuition_due_id")||!Number.isFinite(amount)||amount<=0||!fd.get("paid_date")){if(status)status.textContent="بدهی، مبلغ و تاریخ پرداخت را کامل کنید.";return;}
     try{
       if(button){button.disabled=true;button.textContent="در حال ثبت…";}
+      if(receiptFile instanceof File && receiptFile.size){if(status)status.textContent="در حال بارگذاری تصویر رسید…";uploadedPath=await uploadFinanceReceipt(receiptFile);}
       if(status)status.textContent="در حال ثبت امن پرداخت و به‌روزرسانی مانده بدهی…";
-      await request("/rest/v1/rpc/register_tuition_payment",{method:"POST",body:{p_tuition_due_id:String(fd.get("tuition_due_id")),p_amount_toman:amount,p_paid_date:String(fd.get("paid_date")),p_payment_method:String(fd.get("payment_method")||"cash"),p_reference_no:String(fd.get("reference_no")||"").trim()||null,p_notes:String(fd.get("notes")||"").trim()||null}});
-      toast("پرداخت شهریه و سند مالی با موفقیت ثبت شد.","success");
+      await request("/rest/v1/rpc/register_tuition_payment_with_receipt",{method:"POST",body:{p_tuition_due_id:String(fd.get("tuition_due_id")),p_amount_toman:amount,p_paid_date:String(fd.get("paid_date")),p_payment_method:String(fd.get("payment_method")||"cash"),p_reference_no:String(fd.get("reference_no")||"").trim()||null,p_notes:String(fd.get("notes")||"").trim()||null,p_receipt_image_path:uploadedPath}});
+      toast(uploadedPath?"پرداخت شهریه همراه تصویر رسید ثبت شد.":"پرداخت شهریه و سند مالی با موفقیت ثبت شد.","success");
       await refreshFinanceAfterSave("new-tuition-payment");
-    }catch(err){if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("پرداخت شهریه ثبت نشد؛ مانده بدهی، مجوز مالی و اطلاعات را بررسی کنید.","error");}
+    }catch(err){if(uploadedPath)await removeFinanceReceipt(uploadedPath);if(status)status.textContent="ثبت انجام نشد: "+(err?.message||"خطای نامشخص");toast("پرداخت شهریه ثبت نشد؛ مانده بدهی، مجوز مالی و اطلاعات را بررسی کنید.","error");}
     finally{if(button){button.disabled=false;button.textContent="ثبت پرداخت و صدور رسید مالی";}}
   }
   async function saveFinanceInstallment(form){
@@ -1609,6 +1642,7 @@
       $("#kj-finance-filter-form")?.addEventListener("submit", event => { event.preventDefault(); financeSearch=$("#kj-finance-search")?.value||""; financeTypeFilter=$("#kj-finance-type")?.value||"all"; financeCategoryFilter=$("#kj-finance-category")?.value||"all"; financeStatusFilter=$("#kj-finance-status")?.value||"all"; render(); });
       $("#kj-finance-clear")?.addEventListener("click", () => { financeSearch=""; financeTypeFilter="all"; financeCategoryFilter="all"; financeStatusFilter="all"; render(); });
       $("[data-finance-detail]", main).forEach(button => button.addEventListener("click", () => { const row=state.finance[Number(button.dataset.financeDetail)]; if(row) modal("جزئیات سند مالی",dataFields(row)); }));
+      $("[data-finance-receipt]", main).forEach(button=>button.addEventListener("click",()=>openFinanceReceipt(button.dataset.financeReceipt)));
       $("[data-finance-post]", main).forEach(button=>button.addEventListener("click",()=>setFinanceStatus(button.dataset.financePost,"posted")));
       $("[data-finance-void]", main).forEach(button=>button.addEventListener("click",()=>setFinanceStatus(button.dataset.financeVoid,"void")));
       $("#kj-finance-entry-form")?.addEventListener("submit",e=>{e.preventDefault();saveFinanceEntry(e.currentTarget);});
