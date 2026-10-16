@@ -1815,15 +1815,7 @@
         input?.focus(); input?.setSelectionRange(pos,pos);
         bindKhademButtons();
       });
-      $("#kj-show-khadem-photos")?.addEventListener("change", e => {
-        state.showKhademPhotos = !!e.target.checked;
-        const main=$("#kj-main");
-        main.innerHTML=khademList();
-        installGlobalExportToolbar(main);
-        bindKhademRegistrationControls();
-        bindKhademButtons();
-        $("#kj-birthday-month")?.addEventListener("change",ev=>{state.birthdayMonth=Number(ev.target.value);render();});
-      });
+
       bindKhademButtons();
       $("#kj-birthday-month")?.addEventListener("change", e => { state.birthdayMonth = Number(e.target.value); const main=$("#kj-main"); if(main){main.innerHTML=khademList(); installGlobalExportToolbar(main); bindKhademRegistrationControls(); bindKhademButtons(); $("#kj-birthday-month")?.addEventListener("change", ev=>{state.birthdayMonth=Number(ev.target.value);render();});} });
     }
@@ -1840,6 +1832,15 @@
     if (!main) return;
     const q = state.search.trim().toLowerCase();
     const rows = state.khadems.filter(k => Number(String(khademCode(k)).replace(/[^0-9]/g,"")) >= 1000 && (!q || [nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_code"])].join(" ").toLowerCase().includes(q))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
+    $("#kj-show-khadem-photos")?.addEventListener("change", e => {
+      state.showKhademPhotos = !!e.target.checked;
+      const root=$("#kj-main");
+      root.innerHTML=khademList();
+      installGlobalExportToolbar(root);
+      bindKhademRegistrationControls();
+      bindKhademButtons();
+      $("#kj-birthday-month")?.addEventListener("change",ev=>{state.birthdayMonth=Number(ev.target.value);render();});
+    });
     if(state.tab==="khadems" && state.showKhademPhotos){
       $("img[data-khadem-photo-path]",main).forEach(img=>{
         const path=img.dataset.khademPhotoPath;
