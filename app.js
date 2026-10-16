@@ -1846,16 +1846,16 @@
       if (!tuitionByYear[year]) tuitionByYear[year] = {year, first_due:0, first_paid:0, first_balance:0, second_due:0, second_paid:0, second_balance:0, annual_paid:0, annual_balance:0};
       const periodType=String(r.period_type||"");
       const amount=num(val(r,["amount_toman","amount","total_amount_toman"])),paid=num(val(r,["paid_toman","amount_paid","paid_amount"])),balance=Math.max(0,amount-paid);
-      if(periodType==="annual"){tuitionByYear[year].annual_paid+=paid;tuitionByYear[year].annual_balance+=balance;}
+      if(periodType==="annual"){tuitionByYear[year].annual_due+=amount;tuitionByYear[year].annual_paid+=paid;tuitionByYear[year].annual_balance+=balance;}
       else {const half=periodType==="first_half"?"first":periodType==="second_half"?"second":month<=6?"first":"second";tuitionByYear[year][half+"_due"]+=amount;tuitionByYear[year][half+"_paid"]+=paid;tuitionByYear[year][half+"_balance"]+=balance;}
     });
     const tuitionHalfRows = Object.values(tuitionByYear).sort((a,b)=>String(b.year).localeCompare(String(a.year))).map(r=>({
-      year:r.year, first_paid:r.first_paid, first_balance:r.first_balance, second_paid:r.second_paid, second_balance:r.second_balance, annual_paid:r.annual_paid||0, annual_balance:r.annual_balance||0
+      year:r.year, first_due:r.first_due, first_paid:r.first_paid, first_balance:r.first_balance, second_due:r.second_due, second_paid:r.second_paid, second_balance:r.second_balance, annual_due:r.annual_due||0, annual_paid:r.annual_paid||0, annual_balance:r.annual_balance||0
     }));
     const tuitionHalfSummary = tuitionHalfRows.length
       ? '<h4 class="kj-section-title">خلاصه پرداخت شهریه در دو دوره شش‌ماهه</h4>'+tableHtml(tuitionHalfRows,[
-        {key:"year",label:"سال"},{key:"first_paid",label:"پرداخت ۶ ماه اول"},{key:"first_balance",label:"مانده ۶ ماه اول"},
-        {key:"second_paid",label:"پرداخت ۶ ماه دوم"},{key:"second_balance",label:"مانده ۶ ماه دوم"},{key:"annual_paid",label:"پرداخت سالانه"},{key:"annual_balance",label:"مانده سالانه"}
+        {key:"year",label:"سال"},{key:"first_due",label:"شهریه ۶ ماه اول"},{key:"first_paid",label:"پرداخت ۶ ماه اول"},{key:"first_balance",label:"مانده ۶ ماه اول"},
+        {key:"second_due",label:"شهریه ۶ ماه دوم"},{key:"second_paid",label:"پرداخت ۶ ماه دوم"},{key:"second_balance",label:"مانده ۶ ماه دوم"},{key:"annual_due",label:"شهریه سالانه"},{key:"annual_paid",label:"پرداخت سالانه"},{key:"annual_balance",label:"مانده سالانه"}
       ],"اطلاعات شهریه ثبت نشده است")
       : '<p class="kj-muted">برای نمایش جمع پرداخت شهریه در دو دوره شش‌ماهه، سوابق شهریه باید دارای تاریخ دوره و مبلغ پرداخت باشند.</p>';
     const serviceRows = services.map(r => ({...r, ...normalize(r, ["service_date","responsibility","service_type","description"])}));
