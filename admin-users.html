@@ -224,7 +224,7 @@ function exportAuditCsv(){
  const quote=v=>'"'+String(v??"").replaceAll('"','""')+'"';
  const header=["زمان","اقدام","ایمیل مدیر انجام‌دهنده","نام حساب هدف","ایمیل حساب هدف","شناسه حساب هدف","جزئیات"];
  const lines=[header,...rows.map(r=>[r.created_at,auditActionLabels[r.action]||r.action,r.actor_email,r.target_name,r.target_email,r.target_user_id,auditDetails(r.details)])].map(row=>row.map(quote).join(","));
- const blob=new Blob(["\\uFEFF"+lines.join("\\r\\n")],{type:"text/csv;charset=utf-8"});
+ const blob=new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="account-action-audit.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 $("refreshAuditBtn").addEventListener("click",loadAudit);
