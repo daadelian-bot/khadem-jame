@@ -1710,13 +1710,14 @@
         state.search = e.target.value;
         const main = $("#kj-main");
         main.innerHTML = khademList();
+        installGlobalExportToolbar(main);
         bindKhademRegistrationControls();
         const input = $("#kj-khadem-search");
         input?.focus(); input?.setSelectionRange(pos,pos);
         bindKhademButtons();
       });
       bindKhademButtons();
-      $("#kj-birthday-month")?.addEventListener("change", e => { state.birthdayMonth = Number(e.target.value); const main=$("#kj-main"); if(main){main.innerHTML=khademList(); bindKhademRegistrationControls(); bindKhademButtons(); $("#kj-birthday-month")?.addEventListener("change", ev=>{state.birthdayMonth=Number(ev.target.value);render();});} });
+      $("#kj-birthday-month")?.addEventListener("change", e => { state.birthdayMonth = Number(e.target.value); const main=$("#kj-main"); if(main){main.innerHTML=khademList(); installGlobalExportToolbar(main); bindKhademRegistrationControls(); bindKhademButtons(); $("#kj-birthday-month")?.addEventListener("change", ev=>{state.birthdayMonth=Number(ev.target.value);render();});} });
     }
     if (["nonattendance","meetings","deployments","finance","fund","donors"].includes(state.tab)) {
       const key = ({nonattendance:"nonattendance",meetings:"meetings",deployments:"deployments",finance:"finance",fund:"fund",donors:"donors"})[state.tab];
