@@ -2310,9 +2310,9 @@
     main.prepend(bar);
   }
   function offlineNotice() {
-    if (!state.offlineMode && !Number(state.offlinePendingCount || 0)) return "";
     const pending = Number(state.offlinePendingCount || 0);
     const review = Number(state.offlineReviewCount || 0);
+    if (!state.offlineMode && !pending && !review) return "";
     return '<div role="status" aria-live="polite" style="margin:0 0 14px;padding:12px 14px;border:1px solid #d7a84b;border-right:4px solid #c18b2c;border-radius:12px;background:#fff8e7;color:#654b16;line-height:1.9;font-size:13px"><strong>' +
       (state.offlineMode ? 'حالت آفلاین' : 'همگام‌سازی اطلاعات') +
       '</strong> — اطلاعات ذخیره‌شده روی این دستگاه قابل مشاهده است.' +
