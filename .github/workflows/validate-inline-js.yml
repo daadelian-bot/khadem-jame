@@ -9,6 +9,7 @@ on:
       - "style.css"
       - "app.js"
       - "service-worker.js"
+      - "offline-store.js"
       - "equipment-finance.js"
       - "manifest.webmanifest"
       - "admin-users.html"
@@ -117,6 +118,7 @@ jobs:
         run: |
           node --check app.js
           node --check service-worker.js
+          node --check offline-store.js
           node --check equipment-finance.js
       - name: Validate web app manifest JSON
         run: node -e "JSON.parse(require('node:fs').readFileSync('manifest.webmanifest', 'utf8')); console.log('manifest.webmanifest is valid JSON.');"
