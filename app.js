@@ -1842,7 +1842,7 @@
       $("#kj-birthday-month")?.addEventListener("change",ev=>{state.birthdayMonth=Number(ev.target.value);render();});
     });
     if(state.tab==="khadems" && state.showKhademPhotos){
-      $("img[data-khadem-photo-path]",main).forEach(img=>{
+      $$("img[data-khadem-photo-path]",main).forEach(img=>{
         const path=img.dataset.khademPhotoPath;
         const placeholder=img.parentElement?.querySelector("[data-khadem-photo-empty]");
         if(!path){if(placeholder)placeholder.textContent="بدون عکس";return;}
@@ -1850,7 +1850,7 @@
         loadKhademPhotoInto(img,path).then(()=>{if(placeholder)placeholder.style.display=img.style.display==="block"?"none":"inline";});
       });
     }
-    $("[data-row]", main).forEach(b => b.addEventListener("click", () => {
+    $$("[data-row]", main).forEach(b => b.addEventListener("click", () => {
       const k = rows[Number(b.dataset.row)];
       if (!k) return;
       state.selectedKhadem = "code:" + String(khademCode(k));
