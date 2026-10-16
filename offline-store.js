@@ -150,6 +150,42 @@
     });
     notify();
   }
+  async function applyOptimisticMutation(table, query, method, body) {
+    const verb = String(method || "").toUpperCase();
+    const existing = await getSnapshot(table);
+    const rows = existing && Array.isArray(existing.rows) ? existing.rows.slice() : [];
+    if (verb === "POST") {
+      const incoming = Array.isArray(body) ? body : [body];
+      if (!incoming.length || incoming.some(row => !row || !row.id)) throw new Error("ثبت آفلاین فقط برای رکوردهای دارای شناسه یکتای محلی پشتیبانی می‌شود.");
+      const byId = new Map(rows.map((row, index) => [String(row.id), index]));
+      for (const row of incoming) {
+        const key = String(row.id);
+        if (byId.has(key)) rows[byId.get(key)] = { ...rows[byId.get(key)], ...row };
+        else { byId.set(key, rows.length); rows.push(row); }
+      }
+      await saveSnapshot(table, rows);
+      return incoming;
+    }
+    if (verb === "PATCH" || verb === "DELETE") {
+      const params = new URLSearchParams(String(query || "").replace(/^\?/, ""));
+      const idFilter = params.get("id") || "";
+      if (!idFilter.startsWith("eq.")) throw new Error("برای تغییر آفلاین، رکورد باید با شناسه یکتای مشخص هدف‌گیری شده باشد.");
+      const id = idFilter.slice(3);
+      const index = rows.findIndex(row => String(row.id) === String(id));
+      if (index < 0) throw new Error("رکورد موردنظر در داده‌های ذخیره‌شده این دستگاه وجود ندارد؛ برای جلوگیری از تغییر اشتباه، اینترنت لازم است.");
+      const previous = rows[index];
+      if (verb === "PATCH") {
+        if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("ساختار تغییر آفلاین معتبر نیست.");
+        rows[index] = { ...previous, ...body };
+        await saveSnapshot(table, rows);
+        return [rows[index]];
+      }
+      rows.splice(index, 1);
+      await saveSnapshot(table, rows);
+      return [previous];
+    }
+    throw new Error("این نوع عملیات در حالت آفلاین پشتیبانی نمی‌شود.");
+  }
   function notify() {
     try { window.dispatchEvent(new CustomEvent("kj-offline-store-change")); } catch (_) {}
   }
@@ -159,7 +195,7 @@
   }
   window.KJOfflineStore = {
     saveSnapshot, getSnapshot, savePhoto, getPhoto, saveMeta, getMeta,
-    enqueue, listOutbox, updateOutbox, removeOutbox, clearCurrentUserData, persistStorage,
+    enqueue, listOutbox, updateOutbox, removeOutbox, applyOptimisticMutation, clearCurrentUserData, persistStorage,
     currentUserId, isSupported: () => "indexedDB" in window
   };
 })();
