@@ -559,3 +559,49 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .kj-finance-report-grid span{font-size:12px;color:#6c7f8c}.kj-finance-report-grid b{font-size:16px;color:#173b58;overflow-wrap:anywhere}
 @media(max-width:850px){.kj-finance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-finance-two-col{grid-template-columns:1fr}.kj-finance-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-finance-hero{padding:18px}.kj-finance-hero h2{font-size:20px}.kj-finance-hero-mark{font-size:38px}}
 @media(max-width:480px){.kj-finance-page-heading{align-items:flex-start}.kj-finance-metrics{gap:8px}.kj-finance-metric{padding:12px}.kj-finance-shortcuts{grid-template-columns:1fr}.kj-finance-filters{grid-template-columns:1fr}.kj-finance-hero-mark{display:none}.kj-finance-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kj-finance-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.kj-finance-nav button{padding:9px 7px}}
+
+
+/* Compact mobile dashboard and linked khadem finance summary */
+#kj-main.kj-dashboard-view{min-width:0;overflow-x:clip}
+#kj-main.kj-dashboard-view .kj-card,
+#kj-main.kj-dashboard-view .kj-grid,
+#kj-main.kj-dashboard-view .kj-module-group,
+#kj-main.kj-dashboard-view .kj-module-card{min-width:0;max-width:100%}
+#kj-main.kj-dashboard-view .kj-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.kj-finance-profile-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0 16px}
+.kj-finance-profile-summary>div{display:flex;flex-direction:column;gap:6px;min-width:0;padding:12px;border:1px solid #e1e9ee;border-radius:12px;background:#f8fbf9}
+.kj-finance-profile-summary span{font-size:11px;line-height:1.8;color:#647b70}
+.kj-finance-profile-summary b{font-size:clamp(13px,1.5vw,18px);line-height:1.8;color:#176b45;overflow-wrap:anywhere}
+.kj-khadem-finance-card .kj-card-heading{align-items:center;flex-wrap:wrap}
+@media(max-width:760px){
+  #kj-main.kj-dashboard-view .kj-workspace-head{gap:8px}
+  #kj-main.kj-dashboard-view .kj-hero-premium{padding:18px 15px 54px;border-radius:17px}
+  #kj-main.kj-dashboard-view .kj-hero-premium h1{font-size:clamp(20px,5.7vw,25px);line-height:1.65}
+  #kj-main.kj-dashboard-view .kj-hero-premium p:not(.kj-hero-subtitle){font-size:12px;line-height:1.9}
+  #kj-main.kj-dashboard-view .kj-hero-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  #kj-main.kj-dashboard-view .kj-hero-actions button{width:100%;min-width:0;white-space:normal}
+  #kj-main.kj-dashboard-view .kj-premium-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  #kj-main.kj-dashboard-view .kj-premium-stat{padding:11px;min-height:118px;border-radius:14px}
+  #kj-main.kj-dashboard-view .kj-premium-stat .kj-stat-top{gap:5px;flex-wrap:wrap}
+  #kj-main.kj-dashboard-view .kj-premium-stat .kj-stat-label{font-size:11px;line-height:1.7;overflow-wrap:anywhere}
+  #kj-main.kj-dashboard-view .kj-premium-stat .kj-stat{font-size:clamp(20px,6vw,26px);overflow-wrap:anywhere}
+  #kj-main.kj-dashboard-view .kj-analytics-layout,
+  #kj-main.kj-dashboard-view .kj-module-groups,
+  #kj-main.kj-dashboard-view .kj-activity-layout{grid-template-columns:minmax(0,1fr);gap:11px}
+  #kj-main.kj-dashboard-view .kj-module-group{padding:10px;border-radius:14px}
+  #kj-main.kj-dashboard-view .kj-module-card{width:100%;padding:10px;gap:8px}
+  #kj-main.kj-dashboard-view .kj-module-copy{overflow-wrap:anywhere}
+  #kj-main.kj-dashboard-view .kj-analytics-main,
+  #kj-main.kj-dashboard-view .kj-insight-panel,
+  #kj-main.kj-dashboard-view .kj-activity-card{padding:13px}
+  .kj-finance-profile-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kj-finance-profile-summary>div{padding:10px}
+}
+@media(max-width:380px){
+  #kj-main.kj-dashboard-view .kj-premium-stat{padding:9px;min-height:108px}
+  #kj-main.kj-dashboard-view .kj-premium-stat .kj-stat-icon{width:30px;height:30px}
+  #kj-main.kj-dashboard-view .kj-premium-stat .kj-stat-arrow{font-size:12px}
+  #kj-main.kj-dashboard-view .kj-module-icon{flex-basis:32px;width:32px;height:32px}
+  #kj-main.kj-dashboard-view .kj-module-copy b{font-size:11px}
+  #kj-main.kj-dashboard-view .kj-module-copy small{font-size:10px}
+}
