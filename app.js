@@ -1079,12 +1079,13 @@
       {key:"description",label:"شرح خدمت"}
     ];
     const financeCols = [
-      {key:"transaction_type",label:"نوع تراکنش"},
+      {key:"transaction_type",label:"نوع رکورد"},
       {key:"category",label:"دسته‌بندی"},
       {key:"title",label:"عنوان"},
-      {key:"paid_amount",label:"مبلغ پرداخت‌شده"},
-      {key:"balance",label:"مانده / بدهی"},
-      {key:"transaction_date",label:"تاریخ تراکنش"},
+      {key:"amount_display",label:"مبلغ / اصل بدهی"},
+      {key:"paid_display",label:"پرداخت‌شده"},
+      {key:"balance_display",label:"مانده / بدهی"},
+      {key:"transaction_date",label:"تاریخ"},
       {key:"description",label:"شرح"}
     ];
     const normalize = (row, keys) => Object.fromEntries(keys.map(key => [key, val(row,
@@ -1095,14 +1096,41 @@
       key==="balance" ? [key,"remaining_amount","remaining_toman","debt","balance_toman"] :
       [key]
     )]));
-    const financeTransactionRows = finances.map(r => ({...r, ...normalize(r, ["transaction_type","category","title","amount","paid_amount","balance","transaction_date","description"])}));
+    // دفتر عمومی مبالغ را به ریال نگه می‌دارد؛ پرونده خادم آن‌ها را بدون تغییر داده اصلی به تومان نمایش می‌دهد.
+    const financeTransactionRows = finances.map(r => ({
+      ...r,
+      transaction_type: val(r,["transaction_type","type","kind"]) || "تراکنش",
+      category: val(r,["category","account_category"]) || "بدون دسته‌بندی",
+      title: val(r,["title","description"]) || val(r,["category"]) || "تراکنش مالی",
+      amount_display: money(Math.round(num(val(r,["amount","total_amount"]))/10)),
+      paid_display: "—",
+      balance_display: "—",
+      transaction_date: val(r,["transaction_date","date","created_at"]),
+      description: val(r,["description","notes","note"]) || ""
+    }));
     const installmentRows = installments.map(r => ({
       ...r, transaction_type: "قسط", category: "اقساط",
-      title: "قسط شماره " + fa(r.installment_number), amount: r.amount,
-      paid_amount: r.paid_amount, balance: Math.max(0, num(r.amount) - num(r.paid_amount)),
-      transaction_date: r.due_date, description: val(r, ["notes"]) || r.status
+      title: "قسط شماره " + fa(r.installment_number),
+      amount_display: money(num(r.amount)),
+      paid_display: money(num(r.paid_amount)),
+      balance_display: money(Math.max(0, num(r.amount) - num(r.paid_amount))),
+      transaction_date: r.due_date, description: val(r, ["notes"]) || r.status || ""
     }));
-    const financeRows = [...financeTransactionRows, ...installmentRows];
+    const tuitionDueRows = tuitionDues.map(r => ({
+      ...r, transaction_type: "شهریه", category: "شهریه",
+      title: "شهریه دوره " + dateText(val(r,["period_month","due_date"]) || ""),
+      amount_display: money(num(val(r,["amount_toman","amount","total_amount_toman"]))),
+      paid_display: money(num(val(r,["paid_toman","amount_paid","paid_amount"]))),
+      balance_display: money(Math.max(0, num(val(r,["amount_toman","amount","total_amount_toman"])) - num(val(r,["paid_toman","amount_paid","paid_amount"])))),
+      transaction_date: val(r,["period_month","due_date","created_at"]),
+      description: val(r,["notes"]) || val(r,["status"]) || ""
+    }));
+    const financeRows = [...financeTransactionRows, ...tuitionDueRows, ...installmentRows];
+    const postedProfileFinances = finances.filter(r => String(val(r,["status"]) || "posted").toLowerCase() === "posted");
+    const profileIncomeToman = postedProfileFinances.filter(r => ["income","receipt","دریافت","درآمد"].includes(String(val(r,["transaction_type","type","kind"]) || "").toLowerCase())).reduce((sum,r)=>sum+num(val(r,["amount","total_amount"]))/10,0);
+    const profileExpenseToman = postedProfileFinances.filter(r => ["expense","payment","پرداخت","هزینه"].includes(String(val(r,["transaction_type","type","kind"]) || "").toLowerCase())).reduce((sum,r)=>sum+num(val(r,["amount","total_amount"]))/10,0);
+    const profileTuitionBalance = tuitionDues.reduce((sum,r)=>sum+Math.max(0,num(val(r,["amount_toman","amount","total_amount_toman"]))-num(val(r,["paid_toman","amount_paid","paid_amount"]))),0);
+    const profileInstallmentBalance = installments.reduce((sum,r)=>sum+Math.max(0,num(r.amount)-num(r.paid_amount)),0);
     const financeLoadError = state.errors.finance_transactions || state.errors.tuition_dues || state.errors.finance_installments;
     const tuitionByYear = {};
     tuitionDues.forEach(r => {
@@ -1145,7 +1173,7 @@
       </details></div>
       <div class="kj-card" style="margin-top:14px"><div class="kj-grid" style="margin:0"><div><div class="kj-muted">کد خادم</div><b>${esc(khademCode(k) || "—")}</b></div><div><div class="kj-muted">تعداد سوابق خدمت</div><b>${fa(services.length)}</b></div><div><div class="kj-muted">تعداد تراکنش‌های مالی</div><b>${fa(financeRows.length)}</b></div></div></div>
       <div class="kj-card" style="margin-top:14px">${relatedSection("سوابق خدمت","service_records",serviceRows,serviceCols,"هنوز سابقه خدمتی برای این خادم ثبت نشده است.")}</div>
-      <div class="kj-card" style="margin-top:14px"><h3 class="kj-section-title">سوابق مالی خادم</h3>${errBox("finance_transactions")}${errBox("tuition_dues")}${errBox("finance_installments")}${financeLoadError ? empty("به دلیل خطای دریافت، خالی بودن سوابق مالی قابل تأیید نیست.") : tuitionHalfSummary + tableHtml(financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است")}</div>`;
+      <div class="kj-card kj-khadem-finance-card" style="margin-top:14px"><div class="kj-card-heading"><div><span class="kj-section-eyebrow">پرونده مالی متصل</span><h3 class="kj-section-title">خلاصه امور مالی خادم</h3></div><button type="button" class="kj-text-action" data-quick-tab="finance">مشاهده دفتر مالی ←</button></div>${errBox("finance_transactions")}${errBox("tuition_dues")}${errBox("finance_installments")}${financeLoadError ? empty("به دلیل خطای دریافت، خالی بودن سوابق مالی قابل تأیید نیست.") : `<div class="kj-finance-profile-summary"><div><span>دریافت‌های قطعی‌شده</span><b>${esc(money(Math.round(profileIncomeToman)))}</b></div><div><span>پرداخت‌های قطعی‌شده</span><b>${esc(money(Math.round(profileExpenseToman)))}</b></div><div><span>مانده شهریه</span><b>${esc(money(profileTuitionBalance))}</b></div><div><span>مانده اقساط</span><b>${esc(money(profileInstallmentBalance))}</b></div></div>` + tuitionHalfSummary + tableHtml(financeRows,financeCols,"هنوز سابقه مالی ثبت نشده است")}</div>`;;
   }
   function genericPage(key, title, rows, preferredColumns) {
     // کد خادم مرجع اصلی اتصال رکوردها به پرونده خادم است؛ شناسه داخلی فقط برای تطبیق کمکی استفاده می‌شود.
@@ -1454,6 +1482,7 @@
     shell();
     const main = $("#kj-main");
     if (!main) return;
+    main.classList.toggle("kj-dashboard-view", state.tab === "dashboard");
     if (state.selectedKhadem !== null && state.tab === "khadems") {
       main.innerHTML = khademProfile();
       $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; state.profileEditOpen = false; render(); });
