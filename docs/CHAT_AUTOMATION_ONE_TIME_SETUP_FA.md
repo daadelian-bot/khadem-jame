@@ -6,7 +6,7 @@
 - عامل Codex در فضای کاری محدود اجرا می‌شود و یک Pull Request پیش‌نویس می‌سازد؛ مستقیم روی `main` نمی‌نویسد.
 - فایل OpenAPI برای Action در `docs/CHAT_AUTOMATION_GPT_ACTION.yaml` قرار دارد.
 
-## دو موردی که باید یک بار توسط مالک انجام شود
+## موارد راه‌اندازی یک‌باره
 این دو مورد از ابزارهای فعلی ChatGPT قابل تنظیم نیستند؛ من نمی‌توانم به تنظیمات حساب ChatGPT یا GitHub Secrets شما دسترسی نوشتن داشته باشم.
 
 ### ۱. افزودن کلید API برای عامل کدنویسی
@@ -18,10 +18,13 @@
 
 مقدار: کلید API از OpenAI Platform. این هزینه جداگانهٔ API دارد و با اشتراک ChatGPT یکی نیست. کلید را در Issue، چت، کد یا فایل مخزن قرار ندهید. اگر نمی‌خواهید هزینه API ایجاد شود، این معماری تا وقتی عامل کدنویسی مجاز دیگری فراهم نشود اجرا نخواهد شد.
 
-### ۲. ساخت GPT اختصاصی و اضافه‌کردن Action
+### ۲. توکن محدود برای ثبت شاخه و PR خودکار
+در همان بخش Secrets، secret دیگری با نام `GH_AUTOMATION_TOKEN` لازم است. مقدار آن یک **fine-grained personal access token** باشد که فقط به مخزن `daadelian-bot/khadem-jame` دسترسی دارد و مجوزهای `Contents: Read and write`، `Issues: Read and write` و `Pull requests: Read and write` را داشته باشد. این توکن فقط پس از پایان اجرای Codex برای ثبت تغییرات و ساخت PR استفاده می‌شود؛ اعتبارنامهٔ آن در فضای کاری عامل کدنویسی ذخیره نمی‌شود. توکن را در چت یا فایل مخزن قرار ندهید.
+
+### ۳. ساخت GPT اختصاصی و اضافه‌کردن Action
 در ChatGPT یک GPT اختصاصی بسازید/ویرایش کنید و در بخش **Actions** محتوای فایل `docs/CHAT_AUTOMATION_GPT_ACTION.yaml` را وارد کنید.
 
-برای احراز هویت Action، گزینه **API Key → Bearer** را انتخاب کنید. یک **fine-grained personal access token** بسازید که فقط به مخزن `daadelian-bot/khadem-jame` دسترسی داشته باشد و فقط مجوز **Issues: Read and write** داشته باشد. همان توکن را در تنظیمات احراز هویت Action وارد کنید. این توکن لازم نیست مجوز Contents یا Administration داشته باشد؛ خود workflow با `GITHUB_TOKEN` محدود اجرا می‌شود.
+برای احراز هویت Action، گزینه **API Key → Bearer** را انتخاب کنید. یک **fine-grained personal access token** بسازید که فقط به مخزن `daadelian-bot/khadem-jame` دسترسی داشته باشد و فقط مجوز **Issues: Read and write** داشته باشد. همان توکن را در تنظیمات احراز هویت Action وارد کنید. این توکن لازم نیست مجوز Contents یا Administration داشته باشد؛ عامل با مجوزهای محدود اجرا می‌شود؛ برای ثبت شاخه و PR از secret جداگانهٔ `GH_AUTOMATION_TOKEN` استفاده می‌شود.
 
 پس از ذخیره، در همان GPT یک درخواست آزمایشی بنویسید. برای نمونه:
 `لطفاً عنوان را [AI-DEV] بررسی خطای همگام‌سازی بگذار و مشکل همگام‌سازی آفلاین را بررسی کن؛ تغییرات را فقط در PR پیش‌نویس ارائه بده.`
