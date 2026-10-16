@@ -1015,51 +1015,28 @@
 
 
   function bindDashboardExpanders(main) {
-    if (!main || state.tab !== "dashboard") return;
-    const compact = () => window.matchMedia("(max-width: 760px)").matches;
-    const targets = [
-      [".kj-stat-card", "شاخص مدیریتی"], [".kj-chart-card", "تحلیل آماری"],
-      [".kj-insight-panel", "وضعیت سامانه"], [".kj-module-group", "دسترسی به بخش‌ها"],
-      [".kj-activity-card", "سوابق اخیر"], [".kj-guide-card", "راهنمای داشبورد"],
-      [".kj-dashboard-error", "خطاهای دریافت اطلاعات"], [".kj-loading-card", "وضعیت همگام‌سازی"]
-    ];
-    const openDetails = (card, title) => {
-      const copy = card.cloneNode(true);
-      copy.querySelectorAll("[data-dashboard-expand],.kj-dashboard-expand-trigger").forEach(n=>n.remove());
-      copy.style.cssText = "box-shadow:none!important;max-width:100%;width:100%;margin:0;max-height:none;overflow:visible";
-      copy.querySelectorAll("button").forEach(b=>{b.disabled=true;b.removeAttribute("data-quick-tab");});
-      const tab = card.dataset.quickTab || card.querySelector("[data-quick-tab]")?.dataset.quickTab;
-      const action = tab ? '<div style="margin-top:14px"><button type="button" class="kj-primary" data-dashboard-go="'+esc(tab)+'">رفتن به بخش مربوط ←</button></div>' : "";
-      modal(title, '<div class="kj-dashboard-expanded-content">'+copy.outerHTML+action+'</div>');
-      $("#kj-modal")?.querySelector("[data-dashboard-go]")?.addEventListener("click",e=>{
-        const next=e.currentTarget.dataset.dashboardGo;$("#kj-modal")?.remove();
-        if(next){state.tab=next;state.selectedKhadem=null;render();}
-      });
-    };
-    targets.forEach(([selector,title])=>{
-      $(selector,main).forEach((card,index)=>{
-        if(card.dataset.dashboardExpandable==="1")return;
-        card.dataset.dashboardExpandable="1";
-        if(card.matches(".kj-stat-card")){
-          card.addEventListener("click",e=>{
-            if(!compact())return;
-            e.preventDefault();e.stopImmediatePropagation();
-            openDetails(card,card.querySelector(".kj-stat-label")?.textContent||title);
-          },true);
-        }else{
-          card.classList.add("kj-dashboard-expandable");
-          const trigger=document.createElement("button");
-          trigger.type="button";trigger.className="kj-dashboard-expand-trigger";trigger.dataset.dashboardExpand="1";
-          trigger.setAttribute("aria-label","بزرگ‌نمایی "+title);trigger.title="نمایش جزئیات";
-          trigger.innerHTML='<span aria-hidden="true">⤢</span>';
-          trigger.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();openDetails(card,title+" "+(index+1));});
-          card.addEventListener("click",e=>{
-            if(!compact() || e.target.closest("button,a,input,select,textarea,label,[data-dashboard-expand]"))return;
-            openDetails(card,title+" "+(index+1));
-          });
-          card.insertBefore(trigger,card.firstChild);
-        }
-      });
+    if (!main || state.tab !== "dashboard" || main.dataset.dashboardPanelsBound === "1") return;
+    main.dataset.dashboardPanelsBound = "1";
+    main.addEventListener("click", event => {
+      const toggle = event.target.closest("[data-dashboard-panel-toggle]");
+      if (!toggle || !main.contains(toggle)) return;
+      event.preventDefault();
+      const key = toggle.dataset.dashboardPanelToggle;
+      const body = main.querySelector('[data-dashboard-panel-body="' + key + '"]');
+      const panel = toggle.closest("[data-dashboard-panel]");
+      if (!body || !panel) return;
+      const opening = body.hidden;
+      body.hidden = !opening;
+      toggle.setAttribute("aria-expanded", opening ? "true" : "false");
+      panel.classList.toggle("is-expanded", opening);
+      const chevron = toggle.querySelector(".kj-dashboard-panel-chevron");
+      if (chevron) chevron.textContent = opening ? "⌃" : "⌄";
+      if (opening) {
+        window.setTimeout(() => {
+          const rect = panel.getBoundingClientRect();
+          if (rect.top < 12) panel.scrollIntoView({behavior:"smooth",block:"start"});
+        }, 40);
+      }
     });
   }
 
