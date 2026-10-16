@@ -2498,7 +2498,7 @@
         window.setTimeout(mountAbsencePanel, 0);
       } else if (!document.querySelector("script[data-kj-absence-loader]")) {
         const script = document.createElement("script");
-        script.src = "./equipment-finance.js?v=20261016-42";
+        script.src = "./equipment-finance.js?v=20261017-01";
         script.dataset.kjAbsenceLoader = "1";
         script.onload = () => window.setTimeout(mountAbsencePanel, 0);
         document.head.appendChild(script);
