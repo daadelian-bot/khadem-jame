@@ -750,7 +750,7 @@
       const chosen=$$("[data-record-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.recordExportCol));
       if(!chosen.length){toast("حداقل یک مورد را انتخاب کنید.","error");return;}
       const selected=chosen.map(i=>fields[i]);
-      let photoUrl="",photoDataUrl="";
+      let photoUrl="",photoDataUrl="",photoMime="image/jpeg";
       const photoField=selected.find(p=>p.key==="__khadem_photo__");
       if(photoField){
         try{
@@ -765,12 +765,53 @@
           if(!imageResponse.ok)throw new Error("دریافت فایل تصویر ناموفق بود (HTTP "+imageResponse.status+").");
           const imageBlob=await imageResponse.blob();
           if(!String(imageBlob.type||"").startsWith("image/"))throw new Error("فایل ذخیره‌شده تصویر قابل‌شناسایی نیست.");
+          photoMime=imageBlob.type||"image/jpeg";
           photoDataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||""));reader.onerror=()=>reject(new Error("خواندن فایل تصویر ناموفق بود."));reader.readAsDataURL(imageBlob);});
           if(!photoDataUrl.startsWith("data:image/"))throw new Error("تبدیل تصویر برای فایل خروجی ناموفق بود.");
         }catch(e){toast("عکس خادم برای خروجی بارگذاری نشد: "+(e.message||"خطای نامشخص"),"error");return;}
       }
       const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}h1{font-size:18px}table{width:100%;border-collapse:collapse;table-layout:auto}td,th{border:1px solid #999;padding:8px;text-align:center;vertical-align:middle;min-width:90px}th{background:#eee;font-weight:bold}td{word-break:break-word}img{display:block;margin:auto;max-width:130px;max-height:150px;object-fit:contain}@media print{body{padding:4px}table{font-size:10px}td,th{padding:4px;min-width:65px}}</style><h1>"+esc(title)+"</h1><table><thead><tr>"+selected.map(p=>"<th>"+esc(p.label)+"</th>").join("")+"</tr></thead><tbody><tr>"+selected.map(p=>"<td>"+(p.key==="__khadem_photo__"?(photoDataUrl?'<img src="'+photoDataUrl+'" alt="عکس خادم">':"عکس موجود نیست"):esc(p.value)).replace(/undefined/g,"")+"</td>").join("")+"</tr></tbody></table></html>";
       if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
+      else if(type==="excel" && photoField && photoDataUrl){
+        try{
+          let ExcelJS=window.ExcelJS;
+          if(!ExcelJS){
+            await new Promise((resolve,reject)=>{
+              const script=document.createElement("script");
+              script.src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
+              script.onload=()=>window.ExcelJS?resolve():reject(new Error("کتابخانه ساخت فایل اکسل بارگذاری نشد."));
+              script.onerror=()=>reject(new Error("بارگذاری کتابخانه اکسل ناموفق بود؛ اتصال اینترنت را بررسی کنید."));
+              document.head.appendChild(script);
+            });
+            ExcelJS=window.ExcelJS;
+          }
+          const workbook=new ExcelJS.Workbook();
+          workbook.creator="سامانه جامع مدیریت خادمین";
+          const worksheet=workbook.addWorksheet("پرونده خادم",{views:[{rightToLeft:true}]});
+          worksheet.addRow(selected.map(p=>p.label));
+          worksheet.addRow(selected.map(p=>p.key==="__khadem_photo__"?"":String(p.value??"")));
+          worksheet.getRow(1).height=30;
+          worksheet.getRow(2).height=100;
+          selected.forEach((p,i)=>{
+            const col=worksheet.getColumn(i+1);
+            col.width=p.key==="__khadem_photo__"?18:Math.max(16,Math.min(30,String(p.label||"").length+6));
+            worksheet.getCell(1,i+1).font={bold:true,color:{argb:"FF000000"}};
+            worksheet.getCell(1,i+1).alignment={horizontal:"center",vertical:"middle",wrapText:true};
+            worksheet.getCell(2,i+1).alignment={horizontal:"center",vertical:"middle",wrapText:true};
+            worksheet.getCell(1,i+1).border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
+            worksheet.getCell(2,i+1).border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
+          });
+          const base64=photoDataUrl.split(",")[1]||"";
+          const extension=photoMime.includes("png")?"png":(photoMime.includes("webp")?"webp":"jpeg");
+          if(extension==="webp")throw new Error("برای جاسازی مستقیم عکس WEBP در اکسل، لطفاً تصویر را به JPG یا PNG تبدیل و دوباره ثبت کنید.");
+          const imageId=workbook.addImage({base64,extension});
+          worksheet.addImage(imageId,{tl:{col:selected.findIndex(p=>p.key==="__khadem_photo__"),row:1},ext:{width:95,height:95},editAs:"oneCell"});
+          const buffer=await workbook.xlsx.writeBuffer();
+          const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+          const url=URL.createObjectURL(blob),a=document.createElement("a");
+          a.href=url;a.download=title.replace(/[<>]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+        }catch(e){toast("ساخت اکسل دارای عکس ناموفق بود: "+(e.message||"خطای نامشخص"),"error");return;}
+      }
       else {const blob=new Blob(["\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
       $("#kj-modal")?.remove();
     });
