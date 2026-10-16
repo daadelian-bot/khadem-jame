@@ -1129,6 +1129,13 @@
     if(!rawRecords.length)throw new Error("ردیف داده‌ای پیدا نشد؛ ردیف عنوان ستون‌ها و ردیف‌های اطلاعات را بررسی کنید.");
     return {headers:[...new Set(rawRecords.flatMap(r=>Object.keys(r.raw)))],rawRecords};
   }
+  function importMappedValue(target,value){
+    const raw=String(value??"").trim();
+    if(["is_active","tuition_exempt"].includes(target))return ["بله","فعال","true","1","yes","آری"].includes(raw.toLowerCase());
+    if(target==="khadem_code")return raw.replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[٬،,\\s]/g,"");
+    if(["birth_date","membership_date","tuition_exempt_from","tuition_exempt_until"].includes(target))return jalaliToGregorianText(raw);
+    return raw;
+  }
   function showKhademImportMapping(){
     const d=khademImportDraft;if(!d)return;
     const options='<option value="">— وارد نشود —</option>'+khademImportFields.map(([key,label])=>'<option value="'+esc(key)+'">'+esc(label)+'</option>').join("");
@@ -1150,8 +1157,7 @@
       d.records=d.rawRecords.map(item=>{
         const payload={};
         for(const [header,value] of Object.entries(item.raw)){const target=mapping[header];if(!target)continue;
-          if(["is_active","tuition_exempt"].includes(target))payload[target]=["بله","فعال","true","1","yes","آری"].includes(String(value).trim().toLowerCase());
-          else payload[target]=String(value).trim();
+          payload[target]=importMappedValue(target,value);
         }
         return {sheet:item.sheet,raw:item.raw,payload,duplicate:null,choice:"file"};
       });
