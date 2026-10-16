@@ -273,7 +273,7 @@
     finance_transactions: "finance"
   };
   function offlineMutationDescriptor(path) {
-    const match = String(path || "").match(/^\\/rest\\/v1\\/([^/?]+)(?:\\?([^#]*))?$/);
+    const match = String(path || "").match(/^\/rest\/v1\/([^/?]+)(?:\?([^#]*))?$/);
     if (!match) return null;
     const table = decodeURIComponent(match[1]);
     if (!Object.prototype.hasOwnProperty.call(OFFLINE_MUTATION_MODULES, table)) return null;
