@@ -194,7 +194,7 @@
     const khademPaid = cache.khademPayments.reduce((s, p) => s + num(p.amount_toman), 0);
     const stockKeys = ['white_cap','cream_cap','vest','fringe'];
     const currentPrices = cache.pricing && cache.pricing.item_prices || {};
-    const pricingNotice = '<div class="card section"><h3>تعرفه‌های جاری مجموعه</h3><p class="muted">قیمت‌های این فهرست از بخش امور مالی ← تعرفه‌ها و قیمت‌ها خوانده می‌شود. هر رسید و تحویل، قیمت همان زمان را حفظ می‌کند؛ تغییر تعرفه، سابقه قبلی را عوض نمی‌کند.</p><div class="table-wrap"><table><thead><tr><th>قلم</th><th>تعرفه جاری</th></tr></thead><tbody>' + Object.keys(ITEMS).map(key=>'<tr><td>'+esc(label(key))+'</td><td>'+esc(money(num(currentPrices[key])))+'</td></tr>').join('') + '</tbody></table></div></div>';
+    const pricingNotice = '<div class="card section"><h3>تعرفه‌های جاری مجموعه</h3><p class="muted">قیمت‌های این فهرست از بخش امور مالی ← تعرفه‌ها و قیمت‌ها خوانده می‌شود. هر رسید و تحویل، قیمت همان زمان را حفظ می‌کند؛ تغییر تعرفه، سابقه قبلی را عوض نمی‌کند.</p><div class="table-wrap"><table><thead><tr><th>قلم</th><th>تعرفه جاری</th></tr></thead><tbody>' + Object.keys(ITEMS).map(key=>'<tr><td>'+esc(label(key))+'</td><td>'+(num(currentPrices[key])>0?esc(money(num(currentPrices[key]))):'تعریف نشده')+'</td></tr>').join('') + '</tbody></table></div></div>';
     const stockRows = stockKeys.map(key => {
       const total = cache.items.filter(i => i.item_key === key).reduce((s, i) => s + num(i.quantity), 0);
       const delivered = cache.issues.filter(i => i.item_key === key && i.issue_status === 'delivered').reduce((s, i) => s + num(i.quantity), 0);
