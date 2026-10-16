@@ -20,6 +20,7 @@
     accessPermissions: null,
     isPrimaryAdmin: false,
     accessCustom: false,
+    accessFull: false,
     accessLoaded: false,
     khadems: [],
     services: [],
@@ -420,7 +421,7 @@
   }
   function canAccess(tab) {
     // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
-    if (state.isPrimaryAdmin) return true;
+    if (state.isPrimaryAdmin || state.accessFull) return true;
     if (tab === "dashboard" || tab === "changePassword") return true;
     if (!state.accessLoaded) return false;
     // Fail closed: users/managers without an explicitly saved permission profile
@@ -471,6 +472,7 @@
     $$(".kj-nav [data-tab]").forEach(b => b.addEventListener("click", () => {
       const nextTab = b.dataset.tab;
       if (!nextTab) return;
+      if (!canAccess(nextTab)) { toast("دسترسی این بخش برای حساب شما فعال نیست. از مدیر اصلی بخواهید مجوز آن را در بخش «کاربران و دسترسی‌ها» تنظیم کند.", "error"); return; }
       state.tab = nextTab;
       state.selectedKhadem = null;
       $$(".kj-nav [data-tab]").forEach(n => {
@@ -1375,6 +1377,9 @@
       state.role = access.role || approvedProfile.role || "user";
       state.accessPermissions = access.permissions && typeof access.permissions === "object" ? access.permissions : null;
       state.accessCustom = !!state.accessPermissions;
+      // به پاسخ رسمی سرور احترام بگذار: حساب‌های بدون محدودیت اختصاصی full_access=true دارند؛
+      // اگر مدیر اصلی محدودیت سفارشی ثبت کرده باشد، accessFull=false می‌ماند و محدودیت‌ها اجرا می‌شوند.
+      state.accessFull = access.full_access === true && !state.accessCustom;
       if (!canAccess(state.tab)) state.tab = "dashboard";
       if (!canAccess(state.tab)) state.tab = "dashboard";
       await loadData();
@@ -2046,8 +2051,10 @@
     }
     if(state.tab==="serviceRegister") bindOfficialServiceForm();
     if (state.tab === "changePassword") $("#kj-change-password-form")?.addEventListener("submit", e => { e.preventDefault(); savePasswordChange(e.currentTarget); });
-    $$("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
-      state.tab = button.dataset.quickTab; state.selectedKhadem = null;
+    $("[data-quick-tab]", main).forEach(button => button.addEventListener("click", () => {
+      const requestedTab = button.dataset.quickTab;
+      if (!canAccess(requestedTab)) { toast("دسترسی این بخش برای حساب شما فعال نیست. از مدیر اصلی بخواهید مجوز آن را در بخش «کاربران و دسترسی‌ها» تنظیم کند.", "error"); return; }
+      state.tab = requestedTab; state.selectedKhadem = null;
       render();
       window.scrollTo({top:0,behavior:"smooth"});
     }));
