@@ -1763,6 +1763,7 @@
       const cell=el=>String(el?.innerText||el?.textContent||"").trim();
       let cols=[...table.querySelectorAll("thead th")].map(cell).filter(x=>x&&x!=="جزئیات");
       let rows=[...table.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].slice(0,cols.length).map(cell));
+      let bankRecords=[],bankPhotoCol=-1;
       if(state.tab==="khadems" && state.selectedKhadem===null && state.khadems.length){
         const keys=[...new Set(state.khadems.flatMap(k=>Object.keys(k||{})))].filter(k=>!["id","created_at","updated_at","extra_data"].includes(k)&&!/password|token|secret|api.?key|service.?role|internal.?id/i.test(k));
         const records=state.khadems.filter(k=>khademCodeNumber(k)>=1000).slice().sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
@@ -1770,18 +1771,45 @@
         keys.sort((a,b)=>{const ai=priority.indexOf(a),bi=priority.indexOf(b);return (ai<0?1000+keys.indexOf(a):ai)-(bi<0?1000+keys.indexOf(b):bi);});
         const pairs=keys.map(key=>({key,label:fieldLabel(key)})).filter(p=>p.label&&!["شناسه داخلی","شناسه خادم","شناسه شخص","شناسه پرسنلی"].includes(p.label));
         const seen=new Set(); const usablePairs=pairs.filter(p=>!seen.has(p.label)&&seen.add(p.label));
-        cols=usablePairs.map(p=>p.label);
-        rows=records.map(k=>usablePairs.map(p=>formatValue(p.key,k[p.key])));
+        bankRecords=records;
+        bankPhotoCol=0;
+        cols=["عکس خادم",...usablePairs.map(p=>p.label)];
+        rows=records.map(k=>[khademPhotoPath(k),...usablePairs.map(p=>formatValue(p.key,k[p.key]))]);
       }
       const opts=cols.map((c,i)=>'<label style="display:inline-flex;gap:6px;padding:7px;border:1px solid #ddd;border-radius:8px;margin:3px"><input type="checkbox" data-export-col="'+i+'" checked> '+esc(c)+'</label>').join("");
       modal("انتخاب جزئیات خروجی",'<p class="kj-muted">فقط اطلاعات ثبت‌شده خروجی می‌شود؛ شناسه‌ها و کدهای فنی سامانه حذف می‌شوند. ستون‌های دلخواه را انتخاب کنید.</p><div style="display:flex;flex-wrap:wrap"> '+opts+'</div><button type="button" class="kj-primary" id="kj-export-confirm">تهیه خروجی</button>');
-      $("#kj-export-confirm")?.addEventListener("click",()=>{
-        const chosen=$$("[data-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.exportCol));
+      $("#kj-export-confirm")?.addEventListener("click",async()=>{
+        const chosen=$("[data-export-col]",$("#kj-modal")).filter(x=>x.checked).map(x=>Number(x.dataset.exportCol));
         if(!chosen.length){toast("حداقل یک ستون را انتخاب کنید.","error");return;}
+        const photoData=new Map();
+        const photoIncluded=bankPhotoCol>=0&&chosen.includes(bankPhotoCol);
+        if(photoIncluded){
+          for(let ri=0;ri<bankRecords.length;ri++){
+            const path=khademPhotoPath(bankRecords[ri]);if(!path)continue;
+            try{
+              let url=path;
+              if(!/^https?:\/\//i.test(url)){const signed=await request("/storage/v1/object/sign/khadem-photos/"+financeReceiptPath(url),{method:"POST",body:{expiresIn:3600}});url=normalizeSignedStorageUrl(signed?.signedURL||signed?.signedUrl||"");}
+              const response=await fetch(url,{cache:"no-store"});if(!response.ok)throw new Error("HTTP "+response.status);
+              const blob=await response.blob();const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||""));reader.onerror=()=>reject(new Error("خواندن عکس ناموفق بود"));reader.readAsDataURL(blob);});
+              if(data.startsWith("data:image/"))photoData.set(ri,data);
+            }catch(err){console.warn("KJ: bank export photo unavailable",khademCode(bankRecords[ri]),err);}
+          }
+        }
         const head=chosen.map(i=>"<th>"+esc(cols[i])+"</th>").join("");
-        const body=rows.map(row=>"<tr>"+chosen.map(i=>"<td>"+esc(row[i]??"")+"</td>").join("")+"</tr>").join("");
+        const body=rows.map((row,ri)=>"<tr>"+chosen.map(i=>{if(photoIncluded&&i===bankPhotoCol){const src=photoData.get(ri)||"";return "<td>"+(src?'<img src="'+src+'" alt="عکس خادم" style="max-width:64px;max-height:64px;object-fit:contain">':"")+"</td>";}return "<td>"+esc(row[i]??"")+"</td>";}).join("")+"</tr>").join("");
         const html="<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>"+esc(title)+"</title><style>body{font-family:Tahoma;direction:rtl;padding:18px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px;text-align:right}th{background:#eee}</style><h1>"+esc(title)+"</h1><p>تعداد رکوردها: "+fa(rows.length)+"</p><table><thead><tr>"+head+"</tr></thead><tbody>"+body+"</tbody></table></html>";
         if(type==="pdf"){const w=window.open("","_blank");if(!w){toast("پنجره خروجی مسدود است؛ اجازه بازشو را فعال کنید.","error");return;}w.document.open();w.document.write(html);w.document.close();w.onload=()=>w.print();}
+        else if(type==="excel"&&photoIncluded){
+          try{
+            let ExcelJS=window.ExcelJS;
+            if(!ExcelJS){await new Promise((resolve,reject)=>{const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";script.onload=()=>window.ExcelJS?resolve():reject(new Error("کتابخانه اکسل بارگذاری نشد."));script.onerror=()=>reject(new Error("بارگذاری کتابخانه اکسل ناموفق بود."));document.head.appendChild(script);});ExcelJS=window.ExcelJS;}
+            const workbook=new ExcelJS.Workbook();workbook.creator="سامانه جامع مدیریت خادمین";const sheet=workbook.addWorksheet("بانک خادمین",{views:[{rightToLeft:true}]});
+            sheet.addRow(chosen.map(i=>cols[i]));rows.forEach(row=>sheet.addRow(chosen.map(i=>i===bankPhotoCol?"":String(row[i]??""))));sheet.getRow(1).height=30;
+            chosen.forEach((idx,ci)=>{sheet.getColumn(ci+1).width=idx===bankPhotoCol?16:Math.max(16,Math.min(32,String(cols[idx]).length+6));sheet.getCell(1,ci+1).font={bold:true};sheet.getCell(1,ci+1).alignment={horizontal:"center",vertical:"middle",wrapText:true};});
+            for(let ri=0;ri<rows.length;ri++){sheet.getRow(ri+2).height=photoIncluded?64:24;chosen.forEach((idx,ci)=>{const cell=sheet.getCell(ri+2,ci+1);cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};cell.border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};});const ci=chosen.indexOf(bankPhotoCol),data=photoData.get(ri);if(ci>=0&&data){const base64=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{try{const canvas=document.createElement("canvas");canvas.width=img.naturalWidth||img.width;canvas.height=img.naturalHeight||img.height;const ctx=canvas.getContext("2d");if(!ctx)throw new Error("آماده‌سازی عکس ناموفق بود.");ctx.drawImage(img,0,0);resolve(canvas.toDataURL("image/png").split(",")[1]);}catch(err){reject(err);}};img.onerror=()=>reject(new Error("تبدیل عکس ناموفق بود."));img.src=data;});const id=workbook.addImage({base64,extension:"png"});sheet.addImage(id,{tl:{col:ci,row:ri+1},ext:{width:58,height:58},editAs:"oneCell"});}}
+            const buffer=await workbook.xlsx.writeBuffer();const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=title.replace(/[<>]/g,"-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2500);
+          }catch(err){toast("ساخت فایل اکسل دارای عکس ناموفق بود: "+(err?.message||"خطای نامشخص"),"error");return;}
+        }
         else {const blob=new Blob(["\uFEFF",html],{type:type==="excel"?"application/vnd.ms-excel;charset=utf-8":"application/msword;charset=utf-8"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(title.replace(/[<>]/g,"-"))+(type==="excel"?".xls":".doc");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
         $("#kj-modal")?.remove();
       });
