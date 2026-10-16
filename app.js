@@ -2299,6 +2299,36 @@
     }
   }
 
+  // کنترل‌های بانک خادمین با رویداد سراسری مدیریت می‌شوند تا پس از بازسازی DOM هم فعال بمانند.
+  // این شنونده پیش از شروع احراز هویت ثبت می‌شود و به اتصال موفق بانک وابسته نیست.
+  document.addEventListener("click", function (event) {
+    const registrationButton = event.target && event.target.closest ? event.target.closest("#kj-open-registration") : null;
+    const importButton = event.target && event.target.closest ? event.target.closest("#kj-open-import") : null;
+    if (!registrationButton && !importButton) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+    if (state.tab !== "khadems") {
+      state.tab = "khadems";
+      state.selectedKhadem = null;
+    }
+    if (registrationButton) {
+      state.registrationOpen = !state.registrationOpen;
+      render();
+      if (state.registrationOpen) {
+        const form = document.querySelector("#kj-registration-form");
+        if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+    try {
+      openKhademImport();
+    } catch (error) {
+      console.error("KJ: opening khadem import failed", error);
+      toast("باز کردن ورودی فایل ناموفق بود: " + (error && error.message ? error.message : "خطای نامشخص"), "error");
+    }
+  }, true);
+
   window.KJ = {
     start: startApp,
     refresh: loadData,
