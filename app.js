@@ -1053,31 +1053,47 @@
   }
 
   let khademImportDraft=null;
+  // نام فیلدهای اصلی بانک خادمین ثابت است؛ فایل ورودی فقط به این فیلدها نگاشت می‌شود.
+  const khademImportFields=[
+    ["khadem_code","کد خادم"],["full_name","نام و نام خانوادگی"],["tri_name","نام ثلاثی"],
+    ["father_name","نام پدر"],["national_id","کد ملی"],["birth_date","تاریخ تولد"],
+    ["membership_date","تاریخ عضویت"],["phone","شماره تلفن"],["occupation","شغل"],
+    ["responsibility","مسئولیت اصلی"],["residence","محل سکونت"],["blood_type","گروه خونی"],
+    ["medical_history","سوابق پزشکی"],["status","وضعیت خادم"],["is_active","فعال بودن"],
+    ["photo_url","عکس خادم (نشانی عکس)"],["photo_path","مسیر ذخیره عکس خادم"],
+    ["description","شرح"],["notes","توضیحات"],["emergency_contact_name","نام تماس اضطراری"],
+    ["emergency_contact_phone","شماره تماس اضطراری"],["tuition_exempt","معاف از شهریه"],
+    ["tuition_exempt_note","توضیح معافیت شهریه"],["tuition_exempt_from","شروع معافیت شهریه"],
+    ["tuition_exempt_until","پایان معافیت شهریه"]
+  ];
   const importAliases={
     khadem_code:["کد خادم","کد","کد پرسنلی","شماره خادم","khadem code","personnel code","code"],
-    full_name:["نام و نام خانوادگی","نام کامل","نام خادم","نام و فامیل","full name","fullname","name"],
-    first_name:["نام","نام کوچک","first name"],last_name:["نام خانوادگی","فامیل","last name","family name"],
-    triple_name:["نام ثلاثی","نام سه‌گانه","triple name"],father_name:["نام پدر","father name"],
-    national_code:["کد ملی","شماره ملی","national code","national id"],birth_date:["تاریخ تولد","تولد","birth date"],
-    membership_date:["تاریخ عضویت","تاریخ شروع عضویت","membership date","join date"],
+    full_name:["نام و نام خانوادگی","نام کامل","نام خادم","نام و فامیل","نام و فامیل خادم","full name","fullname","name"],
+    tri_name:["نام ثلاثی","نام سه گانه","نام سه‌گانه","triple name"],
+    father_name:["نام پدر","father name"],national_id:["کد ملی","شماره ملی","کد شناسایی","national code","national id"],
+    birth_date:["تاریخ تولد","تولد","birth date"],membership_date:["تاریخ عضویت","تاریخ شروع عضویت","membership date","join date"],
     phone:["شماره تلفن","تلفن","موبایل","شماره موبایل","تلفن همراه","phone","mobile","phone number"],
-    occupation:["شغل","حرفه","occupation","job"],primary_responsibility:["مسئولیت اصلی","مسئولیت"],
-    address:["نشانی","آدرس","محل سکونت","address"],residence:["محل سکونت","residence"],
-    blood_type:["گروه خونی","blood type"],education_level:["مدرک تحصیلی","تحصیلات","education"],
-    marital_status:["وضعیت تأهل","وضعیت تاهل"],referrer_name:["معرف","نام معرف","معرف خادم","referrer"],
-    email:["ایمیل","پست الکترونیک","email"],notes:["توضیحات","یادداشت","شرح","notes"],status:["وضعیت","status"],is_active:["فعال","وضعیت فعالیت","active"]
+    occupation:["شغل","حرفه","occupation","job"],responsibility:["مسئولیت اصلی","مسئولیت","سمت","responsibility"],
+    residence:["محل سکونت","نشانی","آدرس","محل زندگی","address","residence"],
+    blood_type:["گروه خونی","blood type"],medical_history:["سوابق پزشکی","بیماری","medical history"],
+    status:["وضعیت","وضعیت خادم","status"],is_active:["فعال","فعال بودن","وضعیت فعالیت","active"],
+    photo_url:["عکس","عکس خادم","عکس خدام","تصویر","تصویر خادم","photo","photo url","image","image url"],
+    photo_path:["مسیر عکس","مسیر ذخیره عکس","photo path","image path"],
+    description:["شرح","شرح حال","description"],notes:["توضیحات","یادداشت","یادداشت‌ها","notes"],
+    emergency_contact_name:["نام تماس اضطراری","نام فرد اضطراری","emergency contact name"],
+    emergency_contact_phone:["شماره تماس اضطراری","تلفن اضطراری","emergency contact phone"],
+    tuition_exempt:["معاف از شهریه","معافیت شهریه","tuition exempt"],
+    tuition_exempt_note:["توضیح معافیت شهریه","دلیل معافیت","tuition exempt note"],
+    tuition_exempt_from:["شروع معافیت","شروع معافیت شهریه","tuition exempt from"],
+    tuition_exempt_until:["پایان معافیت","پایان معافیت شهریه","tuition exempt until"]
   };
   function importNormalize(v){return String(v??"").trim().toLocaleLowerCase("fa").replace(/[يى]/g,"ی").replace(/ك/g,"ک").replace(/[\u064B-\u065F\u0670\u0640]/g,"").replace(/[\s_\-./\\()（）:：]+/g,"");}
-  function importCanonicalHeader(header,known){
+  function importCanonicalHeader(header){
     const n=importNormalize(header);
     for(const [key,aliases] of Object.entries(importAliases)){
-      if(importNormalize(key)===n||aliases.some(a=>importNormalize(a)===n)){
-        if(!known.size||known.has(key))return key;
-        const fallback={full_name:["name","khadem_name"],phone:["mobile","phone_number"],national_code:["national_id"],khadem_code:["personnel_code","code"],address:["residence"]}[key]||[];
-        return fallback.find(k=>known.has(k))||key;
-      }
+      if(importNormalize(key)===n||aliases.some(a=>importNormalize(a)===n))return key;
     }
-    return known.has(String(header).trim())?String(header).trim():"";
+    return "";
   }
   async function loadImportLibrary(url,name){
     if(window[name])return window[name];
@@ -1100,25 +1116,58 @@
       const result=await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()});sheets=[{name:"سند Word",rows:importWordRows(result.value)}];
     }else throw new Error("نوع فایل پشتیبانی نمی‌شود. فایل xlsx، xls، csv یا docx انتخاب کنید؛ فایل قدیمی doc را ابتدا به docx تبدیل کنید.");
     const rawRecords=[];
-    for(const sh of sheets){if(!sh.rows.length)continue;const hi=sh.rows.findIndex(r=>r.filter(v=>String(v??"").trim()!=="").length>=2);if(hi<0)continue;
+    for(const sh of sheets){
+      if(!sh.rows.length)continue;
+      const hi=sh.rows.findIndex(r=>r.filter(v=>String(v??"").trim()!=="").length>=2);if(hi<0)continue;
       const headers=sh.rows[hi].map((v,i)=>String(v??"").trim()||("ستون "+(i+1)));
-      for(const cells of sh.rows.slice(hi+1)){if(!cells.some(v=>String(v??"").trim()!==""))continue;const raw={};headers.forEach((h,i)=>{if(cells[i]!==undefined&&cells[i]!==null&&String(cells[i]).trim()!=="")raw[h]=String(cells[i]).trim();});if(Object.keys(raw).length)rawRecords.push({sheet:sh.name,raw});}
+      for(const cells of sh.rows.slice(hi+1)){
+        if(!cells.some(v=>String(v??"").trim()!==""))continue;
+        const raw={};headers.forEach((h,i)=>{if(cells[i]!==undefined&&cells[i]!==null&&String(cells[i]).trim()!=="")raw[h]=String(cells[i]).trim();});
+        if(Object.keys(raw).length)rawRecords.push({sheet:sh.name,raw});
+      }
     }
-    if(!rawRecords.length)throw new Error("ردیف داده‌ای پیدا نشد؛ ردیف نخست جدول باید عنوان ستون‌ها باشد.");
-    const known=new Set(Object.keys(state.khadems[0]||{}));
-    return rawRecords.map(item=>{const payload={},extra={};
-      for(const [header,value] of Object.entries(item.raw)){const key=importCanonicalHeader(header,known);if(key&&(!known.size||known.has(key)))payload[key]=value;else extra[header]=value;}
-      if(payload.is_active!==undefined)payload.is_active=["بله","فعال","true","1","yes"].includes(String(payload.is_active).toLowerCase());
-      if(payload.status!==undefined&&!known.has("status")&&known.has("is_active")){payload.is_active=["بله","فعال","true","1","yes"].includes(String(payload.status).toLowerCase());delete payload.status;}
-      if(known.has("extra_data")&&Object.keys(extra).length)payload.extra_data={imported_fields:extra};
-      return {sheet:item.sheet,raw:item.raw,payload,duplicate:null,choice:"file"};
+    if(!rawRecords.length)throw new Error("ردیف داده‌ای پیدا نشد؛ ردیف عنوان ستون‌ها و ردیف‌های اطلاعات را بررسی کنید.");
+    return {headers:[...new Set(rawRecords.flatMap(r=>Object.keys(r.raw)))],rawRecords};
+  }
+  function showKhademImportMapping(){
+    const d=khademImportDraft;if(!d)return;
+    const options='<option value="">— وارد نشود —</option>'+khademImportFields.map(([key,label])=>'<option value="'+esc(key)+'">'+esc(label)+'</option>').join("");
+    const rows=d.headers.map((header,i)=>{
+      const guess=importCanonicalHeader(header);
+      const sample=d.rawRecords.find(r=>r.raw[header]!==undefined)?.raw[header]||"—";
+      return '<tr><td><b>'+esc(header)+'</b><br><small>نمونه: '+esc(sample).slice(0,160)+'</small></td><td><select class="kj-import-map-select" data-import-header="'+esc(header)+'">'+options+'</select></td></tr>';
+    }).join("");
+    modal("تطبیق ستون‌های فایل با بانک خادمین",'<p class="kj-muted">نام فیلدهای اصلی سامانه ثابت است و تغییر نمی‌کند. برای هر ستون فایل، فیلد مقصد را انتخاب کنید. پیشنهاد اولیه بر اساس نام ستون است و قبل از ادامه قابل اصلاح است.</p><p><b>فایل:</b> '+esc(d.fileName)+' — تعداد ستون‌ها: '+fa(d.headers.length)+' — ردیف‌های اطلاعات: '+fa(d.rawRecords.length)+'</p><div class="kj-table-wrap"><table><thead><tr><th>عنوان ستون در فایل ورودی</th><th>فیلد ثابت سامانه</th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="kj-small">ستون‌هایی مانند «عکس» یا «عکس خدام» را به «عکس خادم (نشانی عکس)» وصل کنید، مشروط بر اینکه مقدار ستون نشانی اینترنتی یا مسیر ذخیره عکس باشد. تصویر جاسازی‌شده داخل سلول Excel از این مسیر وارد نمی‌شود.</p><div id="kj-import-map-message" class="kj-muted" role="status"></div><div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-import-map-continue">تأیید تطبیق و پیش‌نمایش اطلاعات</button><button type="button" class="kj-secondary" id="kj-import-map-cancel">انصراف</button></div>');
+    d.headers.forEach(header=>{const el=$('#kj-modal [data-import-header="'+CSS.escape(header)+'"]');if(el)el.value=importCanonicalHeader(header)||"";});
+    $("#kj-import-map-cancel")?.addEventListener("click",()=>{khademImportDraft=null;$("#kj-modal")?.remove();});
+    $("#kj-import-map-continue")?.addEventListener("click",()=>{
+      const mapping={};d.headers.forEach(header=>{const el=$('#kj-modal [data-import-header="'+CSS.escape(header)+'"]');mapping[header]=el?.value||"";});
+      const selected=Object.entries(mapping).filter(([,v])=>v);
+      const targets=selected.map(([,v])=>v);
+      if(new Set(targets).size!==targets.length){const m=$("#kj-import-map-message");if(m)m.textContent="یک فیلد سامانه به بیش از یک ستون فایل وصل شده است؛ هر فیلد سامانه را فقط یک‌بار انتخاب کنید.";return;}
+      if(!selected.length){const m=$("#kj-import-map-message");if(m)m.textContent="حداقل یک ستون فایل را به فیلد سامانه وصل کنید.";return;}
+      d.mapping=mapping;
+      d.records=d.rawRecords.map(item=>{
+        const payload={};
+        for(const [header,value] of Object.entries(item.raw)){const target=mapping[header];if(!target)continue;
+          if(["is_active","tuition_exempt"].includes(target))payload[target]=["بله","فعال","true","1","yes","آری"].includes(String(value).trim().toLowerCase());
+          else payload[target]=String(value).trim();
+        }
+        return {sheet:item.sheet,raw:item.raw,payload,duplicate:null,choice:"file"};
+      });
+      d.records.forEach(r=>r.duplicate=findImportDuplicate(r.payload));
+      showKhademImportPreview();
     });
+  }
+  function openKhademImport(){
+    modal("ورودی فایل Excel یا Word",'<p class="kj-muted">فایل Excel یا جدول Word را انتخاب کنید. پیش از ذخیره، عنوان ستون‌های فایل با فیلدهای ثابت سامانه تطبیق داده می‌شود و سپس پیش‌نمایش برای تأیید نهایی نمایش داده خواهد شد.</p><label class="kj-field"><b>انتخاب فایل</b><input id="kj-import-file" type="file" accept=".xlsx,.xls,.csv,.docx"></label><p class="kj-small">پشتیبانی از xlsx، xls، csv و docx؛ فایل اصلی تا تأیید نهایی تغییر نمی‌کند.</p><div id="kj-import-message" class="kj-muted" role="status"></div><div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-import-read">خواندن و تطبیق ستون‌ها</button></div>');
+    $("#kj-import-read")?.addEventListener("click",async()=>{const b=$("#kj-import-read"),f=$("#kj-import-file")?.files?.[0],m=$("#kj-import-message");if(!f){if(m)m.textContent="ابتدا فایل را انتخاب کنید.";return;}b.disabled=true;b.textContent="در حال خواندن…";try{const parsed=await readKhademImportFile(f);khademImportDraft={fileName:f.name,headers:parsed.headers,rawRecords:parsed.rawRecords,records:[],mapping:{}};showKhademImportMapping();}catch(e){if(m)m.textContent="خواندن فایل ناموفق بود: "+(e.message||"خطای نامشخص");b.disabled=false;b.textContent="خواندن و تطبیق ستون‌ها";}});
   }
   function importIdentity(v){return importNormalize(v).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^a-z0-9\u0600-\u06ff]/g,"");}
   function findImportDuplicate(p){
-    const code=importIdentity(val(p,["khadem_code","personnel_code","code"])),national=importIdentity(val(p,["national_code","national_id"]));
+    const code=importIdentity(val(p,["khadem_code","personnel_code","code"])),national=importIdentity(val(p,["national_id","national_code"]));
     const name=importIdentity(val(p,["full_name","name","khadem_name"])||[p.first_name,p.last_name].filter(Boolean).join(" "));
-    return state.khadems.find(k=>{const ec=importIdentity(khademCode(k)),en=importIdentity(val(k,["national_code","national_id"])),em=importIdentity(nameOf(k));return !!((code&&ec&&code===ec)||(national&&en&&national===en)||(name&&em&&name===em));})||null;
+    return state.khadems.find(k=>{const ec=importIdentity(khademCode(k)),en=importIdentity(val(k,["national_id","national_code"])),em=importIdentity(nameOf(k));return !!((code&&ec&&code===ec)||(national&&en&&national===en)||(name&&em&&name===em));})||null;
   }
   function openKhademImport(){
     modal("ورودی فایل Excel یا Word",'<p class="kj-muted">فایل Excel یا جدول Word را انتخاب کنید. همه برگه‌های Excel خوانده می‌شوند و پیش از ذخیره، تکراری‌ها برای تصمیم‌گیری نمایش داده می‌شوند.</p><label class="kj-field"><b>انتخاب فایل</b><input id="kj-import-file" type="file" accept=".xlsx,.xls,.csv,.docx"></label><p class="kj-small">پشتیبانی از xlsx، xls، csv و docx؛ فایل اصلی تا تأیید نهایی تغییر نمی‌کند.</p><div id="kj-import-message" class="kj-muted" role="status"></div><div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-import-read">خواندن و بررسی فایل</button></div>');
@@ -1162,7 +1211,7 @@
 
   function khademList() {
     const q = state.search.trim().toLowerCase();
-    const rows = state.khadems.filter(k => { const code=khademCodeNumber(k); return code>=1000 && (!q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_code"])].join(" ").toLowerCase().includes(q)); }).sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
+    const rows = state.khadems.filter(k => !q || [nameOf(k), khademCode(k), val(k,["phone","mobile"]), val(k,["national_id","national_code"])].join(" ").toLowerCase().includes(q)).sort((a,b)=>khademCodeNumber(a)-khademCodeNumber(b));
     const columns = [
       {key:"khadem_code",label:"کد خادم"},{key:"full_name",label:"نام و نام خانوادگی"},{key:"triple_name",label:"نام ثلاثی"},
       {key:"national_code",label:"کد ملی"},{key:"birth_date",label:"تاریخ تولد"},{key:"membership_date",label:"تاریخ عضویت"},
@@ -1172,7 +1221,7 @@
       triple_name:val(k,["triple_name","tri_name","full_name_triple"]), national_code:val(k,["national_code","national_id"]),
       birth_date:val(k,["birth_date"]), membership_date:val(k,["membership_date"]), occupation:val(k,["occupation","job"]),
       phone:val(k,["phone","mobile","phone_number"]), residence:val(k,["residence","address","home_address"]), referrer_name:val(k,["referrer_name","introducer_name","referred_by","referrer"]) || val(k?.extra_data||{},["referrer_name","introducer_name","referred_by","referrer"]), active_label:activeLabel(k)}));
-    const emptyTableMessage = state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود." : "خادمی با کد ۱۰۰۰ به بالا ثبت نشده است.";
+    const emptyTableMessage = state.errors.khadems ? "دریافت فهرست خادمین ناموفق بود: "+state.errors.khadems : (state.loading ? "در حال دریافت اطلاعات بانک خادمین…" : "هنوز خادمی در بانک خادمین ثبت نشده است.");
     const table = state.showKhademPhotos
       ? (htmlRows.length ? '<div class="kj-table-wrap"><table><thead><tr><th>عکس خادم</th>'+columns.map(c => '<th>'+esc(c.label)+'</th>').join("")+'<th>جزئیات</th></tr></thead><tbody>'+htmlRows.map((row,i) => { const original=rows[i]; return '<tr><td style="min-width:74px;text-align:center"><img data-khadem-photo-path="'+esc(khademPhotoPath(original))+'" alt="عکس '+esc(nameOf(original))+'" style="display:none;width:56px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #d9c7a4"><span data-khadem-photo-empty style="color:#888">—</span></td>'+columns.map(c => '<td>'+esc(formatValue(c.key,row[c.key]))+'</td>').join("")+'<td><button class="kj-link" data-row="'+i+'">نمایش</button></td></tr>'; }).join("")+'</tbody></table></div>' : empty(emptyTableMessage))
       : tableHtml(htmlRows, columns, emptyTableMessage);
