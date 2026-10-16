@@ -437,6 +437,10 @@
     }
   }
   function signout() {
+    // خروج امن، داده‌های آفلاین حساب جاری را نیز از دستگاه پاک می‌کند.
+    if (window.KJOfflineStore) {
+      try { void window.KJOfflineStore.clearCurrentUserData().catch(err => console.warn("KJ: local cache cleanup failed", err)); } catch (_) {}
+    }
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     state.selectedKhadem = null;
