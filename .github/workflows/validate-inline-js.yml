@@ -15,14 +15,6 @@ on:
       - "admin-users.html"
       - ".github/workflows/validate-inline-js.yml"
   pull_request:
-    paths:
-      - "index.html"
-      - "live-data.html"
-      - "style.css"
-      - "app.js"
-      - "service-worker.js"
-      - "manifest.webmanifest"
-      - ".github/workflows/validate-inline-js.yml"
   workflow_dispatch:
 
 permissions:
