@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.24";
+  const RELEASE_VERSION = "2026.10.17.25";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -507,6 +507,30 @@
   }
   async function request(path, options = {}) {
     const method = String(options.method || "GET").toUpperCase();
+    // محافظ سراسری: جلوی ارسال مقدار نمایشی «—» به ستون‌های DATE را می‌گیرد،
+    // حتی اگر درخواست از نسخه قدیمی فرم یا صف عملیات آفلاین آمده باشد.
+    if (method !== "GET" && /^\/rest\/v1\/khadems(?:\?|$)/i.test(String(path || "")) &&
+        options.body && typeof options.body === "object" && !Array.isArray(options.body)) {
+      const safeBody = { ...options.body };
+      const dateFields = new Set([
+        "birth_date", "membership_date", "first_main_service_date", "last_main_service_date",
+        "first_friday_service_date", "last_friday_service_date", "tuition_exempt_from", "tuition_exempt_until"
+      ]);
+      const emptyDateMarkers = new Set(["", "—", "–", "-", "نامشخص", "null", "undefined"]);
+      for (const key of Object.keys(safeBody)) {
+        if (!dateFields.has(key) && !/(?:^|_)(?:date|period_month)$/i.test(key)) continue;
+        if (safeBody[key] === null || safeBody[key] === undefined) { safeBody[key] = null; continue; }
+        if (typeof safeBody[key] === "string") {
+          const value = safeBody[key].trim();
+          if (emptyDateMarkers.has(value.toLowerCase())) safeBody[key] = null;
+          else if (/^(13|14)\d{2}[/-]\d{1,2}[/-]\d{1,2}$/.test(value)) {
+            const converted = jalaliToGregorian(value);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(String(converted))) safeBody[key] = converted;
+          }
+        }
+      }
+      options = { ...options, body: safeBody };
+    }
     // صف آفلاین فقط برای تغییرات REST مشخص و دارای مجوز است؛ ورود، بررسی مجوزها و Edge Functionها
     // باید هرگز به صف CRUD فرستاده نشوند. navigator.onLine نیز فقط یک نشانه تقریبی از اتصال است.
     const offlineDescriptor = offlineMutationDescriptor(path);
