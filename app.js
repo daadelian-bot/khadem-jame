@@ -11,7 +11,10 @@
   const SUPABASE_URL = "https://fxxtyfurdzpzfvweoppo.supabase.co";
   const SUPABASE_KEY = "sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
   const TOKEN_KEY = "kj_access_token";
+  const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
+  const RELEASE_VERSION = "2026.10.17.2";
+  const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
   const state = {
@@ -247,6 +250,76 @@
   function token() {
     return localStorage.getItem(TOKEN_KEY) || "";
   }
+
+  // Refresh tokens are kept locally and are never exposed in the UI or sent to non-auth endpoints.
+  let refreshInFlight = null;
+  let sessionExpiredMessage = "";
+  async function refreshSession() {
+    if (refreshInFlight) return refreshInFlight;
+    refreshInFlight = (async function () {
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY) || "";
+      if (!refreshToken) {
+        const error = new Error("نشست ورود منقضی شده است؛ برای ادامه یک‌بار دوباره وارد سامانه شوید.");
+        error.status = 401;
+        throw error;
+      }
+      const response = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token", {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        credentials: "omit",
+        cache: "no-store"
+      });
+      const raw = await response.text();
+      let result = null;
+      try { result = raw ? JSON.parse(raw) : null; } catch (_) {}
+      if (!response.ok || !result || !result.access_token) {
+        const message = result && (result.message || result.msg || result.error_description || result.error) || raw || "تمدید نشست ناموفق بود.";
+        const error = new Error(String(message));
+        error.status = response.status === 400 ? 401 : (response.status || 401);
+        throw error;
+      }
+      localStorage.setItem(TOKEN_KEY, result.access_token);
+      if (result.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, result.refresh_token);
+      if (result.user) localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+      return result.access_token;
+    })();
+    try { return await refreshInFlight; }
+    finally { refreshInFlight = null; }
+  }
+
+  async function showReleaseIntroIfNeeded() {
+    if (localStorage.getItem(RELEASE_SEEN_KEY) === RELEASE_VERSION) return;
+    const app = ensureRoot();
+    return new Promise(resolve => {
+      app.innerHTML = `
+        <main dir="rtl" style="max-width:760px;margin:24px auto;padding:clamp(16px,4vw,28px);font-family:Tahoma,Arial,sans-serif;color:#1c3045;line-height:2">
+          <section style="background:#fff;border:1px solid #dfe6ed;border-bottom:4px solid #c6a66a;border-radius:18px;padding:clamp(18px,4vw,30px);box-shadow:0 10px 28px #10283f12">
+            <p style="display:inline-block;background:#173b58;color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">نسخه ${RELEASE_VERSION}</p>
+            <h1 style="font-size:22px;color:#173b58;margin:8px 0">به نسخهٔ جدید سامانه خوش آمدید</h1>
+            <p>پیش از ورود به داشبورد، خلاصهٔ تغییرات این نسخه را مرور کنید.</p>
+            <h2 style="font-size:17px;color:#173b58">تغییرات این نسخه</h2>
+            <ul>
+              <li><strong>تمدید نشست ورود:</strong> سامانه اکنون هنگام دریافت خطای انقضای JWT تلاش می‌کند نشست معتبر را با توکن تمدید کند؛ اگر تمدید ممکن نباشد، ورود دوباره درخواست می‌شود.</li>
+              <li><strong>گزارش نسخه‌ها:</strong> تاریخچهٔ تغییرات از صفحهٔ گزارش نسخه‌ها قابل مشاهده است و در انتشارهای بعدی باید با تغییرات واقعی به‌روزرسانی شود.</li>
+              <li><strong>حفظ امنیت:</strong> این اصلاح مجوزهای سرور را دور نمی‌زند و داده‌های پایگاه را تغییر نمی‌دهد.</li>
+            </ul>
+            <p style="font-size:13px;color:#617487">آزمون‌های خودکار و انتشار سایت باید جداگانه تأیید شوند؛ این پیام به‌تنهایی به معنی تأیید انتشار نیست.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+              <a href="./release-notes.html" target="_blank" rel="noopener" style="display:inline-block;border:1px solid #c6a66a;border-radius:10px;padding:10px 14px;color:#173b58;font-weight:bold;text-decoration:none">مشاهدهٔ گزارش کامل نسخه‌ها</a>
+              <button id="kj-release-continue" type="button" style="border:0;border-radius:10px;background:#173b58;color:#fff;padding:11px 18px;font:inherit;font-weight:bold;cursor:pointer">ادامه به داشبورد</button>
+            </div>
+          </section>
+        </main>`;
+      const button = document.getElementById("kj-release-continue");
+      if (!button) { resolve(); return; }
+      button.addEventListener("click", function () {
+        localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION);
+        resolve();
+      }, { once: true });
+    });
+  }
+
   function headers(extra = {}) {
     const h = { apikey: SUPABASE_KEY, Accept: "application/json", ...extra };
     const t = token();
@@ -454,6 +527,31 @@
     try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
     if (!response.ok) {
       const message = data && (data.message || data.msg || data.error_description || data.error) || raw || ("HTTP " + response.status);
+      // Retry only explicit JWT-expiry failures; never retry arbitrary writes or permission denials.
+      const isExpiredJwt = response.status === 401 && /jwt expired|expired jwt|token expired/i.test(String(message));
+      const isAuthEndpoint = String(path).startsWith("/auth/v1/token");
+      if (isExpiredJwt && !options.__authRetry && !isAuthEndpoint) {
+        if (!localStorage.getItem(REFRESH_TOKEN_KEY)) {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          sessionExpiredMessage = "نشست ورود منقضی شده است؛ لطفاً دوباره وارد سامانه شوید.";
+          const error = new Error(sessionExpiredMessage);
+          error.status = 401;
+          throw error;
+        }
+        try {
+          await refreshSession();
+          return request(path, { ...options, __authRetry: true });
+        } catch (refreshError) {
+          if (refreshError && refreshError.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(REFRESH_TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+            sessionExpiredMessage = "نشست ورود تمدید نشد؛ لطفاً دوباره وارد سامانه شوید.";
+          }
+          throw refreshError;
+        }
+      }
       const error = new Error(String(message));
       error.status = response.status;
       throw error;
@@ -608,6 +706,7 @@
       });
       if (!result || !result.access_token) throw new Error("توکن ورود از سرور دریافت نشد.");
       localStorage.setItem(TOKEN_KEY, result.access_token);
+      if (result.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, result.refresh_token);
       localStorage.setItem(USER_KEY, JSON.stringify(result.user || { email }));
       toast("ورود موفق بود.", "success");
       await startApp();
@@ -622,6 +721,7 @@
       try { void window.KJOfflineStore.clearCurrentUserData().catch(err => console.warn("KJ: local cache cleanup failed", err)); } catch (_) {}
     }
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     state.selectedKhadem = null;
     state.role = "user";
@@ -2443,7 +2543,7 @@
   }
 
   function render() {
-    if (!token()) { loginPage(); return; }
+    if (!token()) { const message = sessionExpiredMessage; sessionExpiredMessage = ""; loginPage(message); return; }
     if (!canAccess(state.tab)) {
       state.tab = "dashboard";
       state.selectedKhadem = null;
@@ -2702,6 +2802,8 @@
         state.selectedKhadem = null;
         history.replaceState(null, "", window.location.pathname + window.location.search + "#dashboard");
       }
+      // معرفی هر نسخهٔ جدید فقط یک بار برای همین مرورگر و حسابِ واردشده نمایش داده می‌شود.
+      await showReleaseIntroIfNeeded();
       // رابط سامانه را فوراً نمایش بده؛ دریافت جدول‌های متعدد در پس‌زمینه ادامه پیدا می‌کند.
       // loadData ابتدا وضعیت بارگذاری را رندر می‌کند و پس از پایان، اطلاعات را جایگزین می‌کند.
       void (async function () { await syncOfflineOutbox(); await loadData(); })();
@@ -2709,6 +2811,7 @@
       console.error("KJ: startup/auth verification failed", e);
       if (e && (e.status === 401 || e.status === 403)) {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         loginPage("نشست ورود معتبر نیست یا منقضی شده است؛ لطفاً دوباره وارد شوید.");
         return;
@@ -2733,6 +2836,7 @@
             try { const outbox = await window.KJOfflineStore.listOutbox(); state.offlinePendingCount = outbox.filter(row => row.status === "pending").length; state.offlineReviewCount = outbox.length - state.offlinePendingCount; } catch (_) {}
             if (!canAccess(state.tab)) state.tab = "dashboard";
             toast("اینترنت در دسترس نیست؛ اطلاعات ذخیره‌شده قبلی در حالت آفلاین باز می‌شود.", "info");
+            await showReleaseIntroIfNeeded();
             void loadData();
             return;
           }
