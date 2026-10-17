@@ -108,6 +108,7 @@ function drawList(){
 }
 async function openDirect(otherId){
  if(!otherId||otherId===me.id)return;
+ listMode="chats";document.querySelectorAll("[data-list]").forEach(x=>x.classList.toggle("active",x.dataset.list==="chats"));
  try{
   const mine=await sb.from("chat_members").select("conversation_id").eq("user_id",me.id);
   if(mine.error)throw mine.error;
