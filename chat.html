@@ -228,11 +228,26 @@ async function startCall(){
  }catch(e){cleanupCall();toast("تماس آغاز نشد؛ اجازه دسترسی میکروفون را بررسی کنید.")}
 }
 function showCallScreen(text,inCall){
- $("overlayRoot").innerHTML='<div class="call-overlay"><div class="call-card"><div class="call-avatar">📞</div><h2>'+esc(call?personName(call.peerId):"تماس صوتی")+'</h2><p id="callStatus">'+esc(text)+'</p><audio id="remoteAudio" autoplay playsinline></audio><div class="call-controls"><button id="muteCall" style="background:#f6f0dd;color:#634f1f" title="قطع/وصل میکروفون">🎙️</button><button id="endCall" style="background:#b84040;color:#fff" title="پایان تماس">📵</button></div></div></div>';
- $("endCall").onclick=()=>endCall(true);$("muteCall").onclick=toggleMute;
+ callMinimized=false;
+ $("overlayRoot").innerHTML='<div class="call-overlay"><div class="call-card"><div class="call-avatar">📞</div><h2>'+esc(call?personName(call.peerId):"تماس صوتی")+'</h2><p id="callStatus">'+esc(text)+'</p><audio id="remoteAudio" autoplay></audio><div class="call-controls"><button id="muteCall" style="background:#f6f0dd;color:#634f1f" title="قطع/وصل میکروفون">🎙️</button><button id="speakerCall" style="background:#e6f2e8;color:#175c45" title="پخش صدا">🔊</button><button id="minimizeCall" style="background:#f6f0dd;color:#634f1f" title="کوچک‌کردن پنجره تماس">▁</button><button id="endCall" style="background:#b84040;color:#fff" title="پایان تماس">📵</button></div></div></div>';
+ $("endCall").onclick=()=>endCall(true);$("muteCall").onclick=toggleMute;$("speakerCall").onclick=toggleSpeaker;$("minimizeCall").onclick=minimizeCall;
+ attachRemoteAudio();notifyParentCall(inCall?"active":(call?.role==="caller"?"ringing":"incoming"));
+}
+function minimizeCall(){
+ if(!call)return;callMinimized=true;
+ $("overlayRoot").innerHTML='<button class="call-banner" id="restoreCall" style="position:absolute;left:12px;right:12px;top:12px;width:calc(100% - 24px);z-index:12;border-radius:14px;border:1px solid #e6d6a8;cursor:pointer"><strong>📞 '+esc(personName(call.peerId))+' · '+(callConnectedAt?"در حال مکالمه":"در انتظار پاسخ")+'</strong><span>بازگشت به تماس</span></button>';
+ $("restoreCall").onclick=()=>showCallScreen(callConnectedAt?"تماس برقرار است 🤍":"در حال زنگ خوردن…",!!callConnectedAt);
+ notifyParentCall(callConnectedAt?"active":"ringing");
+}
+async function toggleSpeaker(){
+ speakerEnabled=!speakerEnabled;
+ const audio=$("remoteAudio");
+ if(audio){audio.volume=speakerEnabled?1:0;if(typeof audio.setSinkId==="function"){try{await audio.setSinkId("default")}catch{}}}
+ const b=$("speakerCall");if(b)b.textContent=speakerEnabled?"🔊":"🔈";
+ toast(speakerEnabled?"صدای تماس فعال است.":"صدای تماس بی‌صدا شد؛ مسیریابی اسپیکر به دستگاه وابسته است.");
 }
 async function drainIce(){if(!call||!call.pc.remoteDescription)return;const items=call.pendingIce.splice(0);for(const candidate of items){try{await call.pc.addIceCandidate(new RTCIceCandidate(candidate))}catch{}}}
-function attachRemoteAudio(){const audio=$("remoteAudio");if(audio&&call){audio.srcObject=call.remoteStream;audio.play().catch(()=>{})}}
+function attachRemoteAudio(){const audio=$("remoteAudio");if(audio&&call){audio.srcObject=call.remoteStream;audio.volume=speakerEnabled?1:0;audio.play().catch(()=>{})}}
 function toggleMute(){if(!call)return;const tracks=call.stream.getAudioTracks();tracks.forEach(t=>t.enabled=!t.enabled);$("muteCall").textContent=tracks.some(t=>t.enabled)?"🎙️":"🔇"}
 async function handleSignal(s){
  if(!s||s.sender_id===me.id)return;
