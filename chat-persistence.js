@@ -23,6 +23,7 @@
   const name=String(state.name||"کاربر سامانه").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const actions=state.state==="incoming"?'<button data-a="answer">پاسخ 📞</button><button data-a="reject">رد تماس ✖</button>':state.state==="active"?'<button data-a="mute">🎙️ میکروفون</button><button data-a="speaker">🔊 صدا</button><button data-a="expand">بازگشت به تماس</button><button data-a="end">پایان 📵</button>':'<button data-a="expand">بازگشت به تماس</button><button data-a="end">پایان تماس 📵</button>';
   d.innerHTML='<strong>'+title+'</strong><div style="font-size:12px;opacity:.9;margin:4px 0 9px">'+name+(state.duration?" · "+state.duration:"")+'</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+actions+'</div>';
+  if(state.state==="active"){const mb=d.querySelector('[data-a="mute"]');if(mb)mb.textContent=state.muted?"🔊 وصل میکروفون":"🔇 قطع میکروفون"}
   d.querySelectorAll("button").forEach(b=>{b.style.cssText="border:0;border-radius:10px;padding:8px 10px;background:#f4edd9;color:#123c35;font:inherit;font-size:12px;font-weight:bold";b.addEventListener("click",()=>{const a=b.dataset.a;if(a==="expand"){document.querySelector('[data-tab="chat"]')?.click();setTimeout(()=>send("expand"),500)}else send(a)})});
  }
  document.addEventListener("click",e=>{
