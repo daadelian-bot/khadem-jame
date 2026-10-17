@@ -1293,7 +1293,7 @@
   function empty(text) { return `<div class="kj-empty">${esc(text)}</div>`; }
   function tableHtml(rows, columns, emptyText = "موردی برای نمایش وجود ندارد") {
     if (!rows.length) return empty(emptyText);
-    return `<div class="kj-table-wrap"><table><thead><tr>${columns.map(c => `<th>${esc(c.label)}</th>`).join("")}<th>جزئیات</th></tr></thead><tbody>${rows.map((row,i) => `<tr>${columns.map(c => `<td>${esc(formatValue(c.key, row[c.key]))}</td>`).join("")}<td><button class="kj-link" data-row="${i}">نمایش</button></td></tr>`).join("")}</tbody></table></div>`;
+    return `<div class="kj-table-wrap"><table><thead><tr>${columns.map(c => `<th>${esc(c.label)}</th>`).join("")}<th>جزئیات</th></tr></thead><tbody>${rows.map((row,i) => `<tr>${columns.map(c => `<td>${esc(formatValue(c.key, row[c.key]))}</td>`).join("")}<td><button class="kj-link" data-row="${i}" data-record-key="${esc(row.__recordKey||"")}">نمایش</button></td></tr>`).join("")}</tbody></table></div>`;
   }
   function showRecordExportChooser(row,title,type) {
     // در خروجی پرونده خادم، رکورد انتخاب‌شده مرجع نهایی است؛ مسیر عکس از همان رکورد خوانده شود.
@@ -1782,11 +1782,11 @@
       : tableHtml(htmlRows, columns, emptyTableMessage);
     const currentJalaliMonth = Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(new Date()).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
     if (!state.birthdayMonth) state.birthdayMonth = currentJalaliMonth;
-    const birthdayRows = rows.filter(k => { const raw=String(val(k,["birth_date"])||"").trim(); let month=0; const jm=raw.match(/^(?:13|14)\d{2}[/-](\d{1,2})[/-]\d{1,2}$/); if(jm) month=Number(jm[1]); else { const d=new Date(raw); if(!Number.isNaN(d.getTime())) month=Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(d).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))); } return month===Number(state.birthdayMonth); }).map(k=>({full_name:nameOf(k),birth_date:val(k,["birth_date"])}));
+    const birthdayRows = rows.filter(k => { const raw=String(val(k,["birth_date"])||"").trim(); let month=0; const jm=raw.match(/^(?:13|14)\d{2}[/-](\d{1,2})[/-]\d{1,2}$/); if(jm) month=Number(jm[1]); else { const d=new Date(raw); if(!Number.isNaN(d.getTime())) month=Number(new Intl.DateTimeFormat("fa-IR-u-ca-persian",{month:"numeric"}).format(d).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))); } return month===Number(state.birthdayMonth); }).map(k=>({full_name:nameOf(k),birth_date:val(k,["birth_date"]),__recordKey:khademId(k)!==null&&khademId(k)!==undefined&&String(khademId(k))!==""?"id:"+String(khademId(k)):"code:"+String(khademCode(k))}));
     const monthOptions = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"].map((m,i)=>`<option value="${i+1}" ${Number(state.birthdayMonth)===i+1?"selected":""}>${m}</option>`).join("");
-    const birthdays = `<section class="kj-card" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین ماه انتخابی</h2><label class="kj-field"><b>انتخاب ماه</b><select id="kj-birthday-month">${monthOptions}</select></label><p class="kj-muted">فهرست خادمین متولد ماه انتخاب‌شده بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
+    const birthdays = `<section class="kj-card kj-birthday-list" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین ماه انتخابی</h2><label class="kj-field"><b>انتخاب ماه</b><select id="kj-birthday-month">${monthOptions}</select></label><p class="kj-muted">فهرست خادمین متولد ماه انتخاب‌شده بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
-      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><label class="kj-pill" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="kj-show-khadem-photos" ${state.showKhademPhotos?"checked":""}> نمایش عکس خادمین</label><span class="kj-pill">تعداد: ${fa(rows.length)}</span>${canPerform("khadems","create")?'<button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button><button type="button" class="kj-secondary" id="kj-open-import">📥 ورودی فایل Excel / Word</button>':""}</div>
+      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><label class="kj-primary" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin:0"><input type="checkbox" id="kj-show-khadem-photos" style="width:16px;height:16px;accent-color:#fff" ${state.showKhademPhotos?"checked":""}> نمایش عکس خادمین</label><span class="kj-pill">تعداد: ${fa(rows.length)}</span>${canPerform("khadems","create")?'<button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button><button type="button" class="kj-primary" id="kj-open-import">ثبت فایل</button>':""}</div>
       ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>${birthdays}`;
   }
 
@@ -2996,6 +2996,12 @@
       main.addEventListener("click",event=>{
         const button=event.target.closest("[data-row]");
         if(!button||!main.contains(button)||state.tab!=="khadems")return;
+        if(button.closest(".kj-birthday-list")&&button.dataset.recordKey){
+          const key=button.dataset.recordKey;
+          const record=key.startsWith("id:")?state.khadems.find(x=>String(khademId(x))===key.slice(3)):khademByCode(key.slice(5));
+          if(record){state.selectedKhadem="code:"+String(khademCode(record));render();}
+          return;
+        }
         const search=state.search.trim().toLowerCase();
         const currentRows=state.khadems.filter(k=>(!search||[nameOf(k),khademCode(k),val(k,["phone","mobile"]),val(k,["national_id","national_code"])].join(" ").toLowerCase().includes(search))).sort((a,b)=>Number(String(khademCode(a)).replace(/[^0-9]/g,""))-Number(String(khademCode(b)).replace(/[^0-9]/g,"")));
         const k=currentRows[Number(button.dataset.row)];
