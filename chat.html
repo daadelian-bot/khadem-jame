@@ -208,6 +208,7 @@ async function sendSignal(type,payload){
  const res=await sb.from("chat_call_signals").insert({conversation_id:call.conversationId,call_id:call.id,sender_id:me.id,recipient_id:call.peerId,event_type:type,payload:payload||{}});if(res.error)throw res.error;
 }
 async function startCall(){
+ if(call){toast("در حال حاضر تماس فعالی دارید.");return}
  if(!activeConversation){return}
  if(activeConversation.kind==="group"){toast("تماس صوتی فعلاً در گفت‌وگوی خصوصی فعال است.");return}
  const peer=(activeConversation.members||[]).find(m=>m.user_id!==me.id);if(!peer){toast("مخاطب تماس پیدا نشد.");return}
@@ -215,14 +216,15 @@ async function startCall(){
  try{
   const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
-  call={id:crypto.randomUUID(),conversationId:activeConversation.id,peerId:peer.user_id,pc:pc,stream:stream,role:"caller",remoteStream:new MediaStream(),pendingIce:[]};
+  call={id:crypto.randomUUID(),conversationId:activeConversation.id,peerId:peer.user_id,pc:pc,stream:stream,role:"caller",remoteStream:new MediaStream(),pendingIce:[]};callMinimized=false;speakerEnabled=true;
   stream.getTracks().forEach(t=>pc.addTrack(t,stream));
   pc.onicecandidate=e=>{if(e.candidate)sendSignal("ice",{candidate:e.candidate.toJSON()}).catch(()=>{})};
   pc.ontrack=e=>{e.streams[0].getTracks().forEach(t=>call&&call.remoteStream.addTrack(t));attachRemoteAudio()};
   pc.onconnectionstatechange=()=>{if(call&&["failed","disconnected"].includes(pc.connectionState))showCallScreen("اتصال ناپایدار است",true)};
+  showCallScreen("در حال زنگ خوردن…",false);notifyParentCall("ringing");
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   await sendSignal("offer",{sdp:offer.sdp});
-  showCallScreen("در حال تماس با "+personName(peer.user_id)+"…",false);
+  clearTimeout(callTimeout);callTimeout=setTimeout(()=>{if(call&&call.role==="caller"&&!callConnectedAt){toast("پاسخی دریافت نشد.");endCall(true)}},45000);
  }catch(e){cleanupCall();toast("تماس آغاز نشد؛ اجازه دسترسی میکروفون را بررسی کنید.")}
 }
 function showCallScreen(text,inCall){
