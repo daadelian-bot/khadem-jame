@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.16";
+  const RELEASE_VERSION = "2026.10.17.17";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -2819,7 +2819,7 @@
     }
     const views = {
       dashboard,
-      chat: () => '<iframe title="ارتباطات خادمین" src="./chat.html?embedded=1&v=20261017-chat1" allow="microphone; autoplay" style="width:100%;height:calc(100dvh - 260px);min-height:640px;border:0;border-radius:18px;display:block;background:#fbfaf6"></iframe>',
+      chat: () => '<iframe title="ارتباطات خادمین" src="./chat.html?embedded=1&v=20261017-chat3" allow="microphone; autoplay" style="width:100%;height:calc(100dvh - 260px);min-height:640px;border:0;border-radius:18px;display:block;background:#fbfaf6"></iframe>',
       khadems: khademList,
       serviceRegister: serviceRegisterPage,
       services: officialServicesPage,
