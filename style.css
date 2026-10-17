@@ -1229,3 +1229,23 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
 #kj-modal .kj-import-map-select:focus{outline:2px solid #c6a66a;outline-offset:1px}
 #kj-modal .kj-small{line-height:1.9}
 @media(max-width:680px){#kj-modal .kj-import-map-select{min-width:145px;font-size:12px}#kj-modal .kj-table-wrap table{min-width:460px}}
+
+
+/* سربرگ فشرده: برچسب مدیر و دکمه‌های اصلی در یک ردیف */
+.kj-top{gap:10px;}
+.kj-actions{flex:0 1 auto;min-width:0;flex-wrap:nowrap;gap:6px;}
+.kj-action-buttons{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:5px;min-width:0;}
+.kj-user-title{flex:0 0 auto;width:auto;padding:3px 7px;border:1px solid var(--kj-border);border-radius:8px;background:#f8fafc;font-size:11px;line-height:1.35;white-space:nowrap;}
+.kj-action-buttons button{flex:0 0 auto;padding:7px 9px;font-size:12px;white-space:nowrap;}
+@media(max-width:850px){
+  .kj-top{align-items:flex-start;}
+  .kj-actions{width:100%;flex:1 1 100%;justify-content:flex-start;}
+  .kj-action-buttons{width:100%;display:flex;flex-wrap:nowrap;justify-content:space-between;gap:4px;}
+  .kj-action-buttons button{flex:0 1 auto;min-width:0;padding:6px 5px;font-size:11px;}
+  .kj-user-title{width:auto;flex:0 0 auto;padding:3px 6px;font-size:10px;}
+}
+@media(max-width:380px){
+  .kj-action-buttons{gap:3px;}
+  .kj-action-buttons button{padding:5px 3px;font-size:10px;}
+  .kj-user-title{padding:3px 4px;font-size:9px;}
+}
