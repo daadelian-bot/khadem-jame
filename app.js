@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.15";
+  const RELEASE_VERSION = "2026.10.17.16";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -744,6 +744,7 @@
   function canAccess(tab) {
     // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
     if (state.isPrimaryAdmin) return true;
+    if (tab === "chat") return state.accessLoaded && (!state.accessCustom || state.accessPermissions?.chat !== false);
     if (tab === "dashboard" || tab === "changePassword" || tab === "updateCheck") return true;
     if (!state.accessLoaded) return false;
     // Fail closed: users/managers without an explicitly saved permission profile
