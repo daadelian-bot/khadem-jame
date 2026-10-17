@@ -86,7 +86,7 @@ end; $function$;
 drop policy if exists account_access_gate on public.chat_messages;
 drop policy if exists chat_read_public_or_participant on public.chat_messages;
 drop policy if exists chat_insert_own_public_or_private on public.chat_messages;
-drop policy if exists chat update own on public.chat_messages;
+drop policy if exists "chat update own" on public.chat_messages;
 drop policy if exists chat_conversations_select_member on public.chat_conversations;
 create policy chat_conversations_select_member on public.chat_conversations for select to authenticated using(created_by=auth.uid() or public.chat_is_member(id));
 drop policy if exists chat_conversations_insert_authorized on public.chat_conversations;
@@ -99,19 +99,23 @@ drop policy if exists chat_members_insert_owner on public.chat_members;
 create policy chat_members_insert_owner on public.chat_members for insert to authenticated with check(public.has_app_permission('chat.create') and exists(select 1 from public.chat_conversations c where c.id=chat_members.conversation_id and c.created_by=auth.uid()));
 drop policy if exists chat_members_update_self on public.chat_members;
 create policy chat_members_update_self on public.chat_members for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+drop policy if exists chat_messages_select_authorized on public.chat_messages;
 create policy chat_messages_select_authorized on public.chat_messages for select to authenticated using(
  deleted_at is null and public.has_app_permission('chat.view') and
  ((conversation_type='public' and recipient_id is null and conversation_id is null) or
  (conversation_type='private' and (sender_id=auth.uid() or recipient_id=auth.uid()) and conversation_id is null) or
  (conversation_type='group' and public.chat_is_member(conversation_id))
 );
+drop policy if exists chat_messages_insert_authorized on public.chat_messages;
 create policy chat_messages_insert_authorized on public.chat_messages for insert to authenticated with check(
  sender_id=auth.uid() and public.has_app_permission('chat.create') and
  ((conversation_type='public' and recipient_id is null and conversation_id is null) or
  (conversation_type='private' and recipient_id is not null and recipient_id<>auth.uid() and conversation_id is null) or
  (conversation_type='group' and recipient_id is null and public.chat_is_member(conversation_id)))
 );
+drop policy if exists chat_messages_update_own_authorized on public.chat_messages;
 create policy chat_messages_update_own_authorized on public.chat_messages for update to authenticated using(sender_id=auth.uid() and public.has_app_permission('chat.update')) with check(sender_id=auth.uid() and public.has_app_permission('chat.update'));
+drop policy if exists chat_messages_delete_own_authorized on public.chat_messages;
 create policy chat_messages_delete_own_authorized on public.chat_messages for delete to authenticated using(sender_id=auth.uid() and public.has_app_permission('chat.delete'));
 drop policy if exists chat_calls_select_members on public.chat_call_signals;
 create policy chat_calls_select_members on public.chat_call_signals for select to authenticated using(public.has_app_permission('chat.view') and (sender_id=auth.uid() or recipient_id=auth.uid()) and public.chat_is_member(conversation_id));
