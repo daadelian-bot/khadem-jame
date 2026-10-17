@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.12";
+  const RELEASE_VERSION = "2026.10.17.13";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -754,7 +754,8 @@
   function canPerform(moduleKey, action) {
     if (state.isPrimaryAdmin || state.accessFull) return true;
     if (!state.accessLoaded || !state.accessCustom) return false;
-    return state.accessPermissions?.[moduleKey + "." + action] === true;
+    const permissionModule = moduleKey === "friday" ? "services" : (moduleKey === "serviceRegister" && action !== "create" ? "services" : moduleKey);
+    return state.accessPermissions?.[permissionModule + "." + action] === true;
   }
   function applyCrudVisibility(root) {
     if (!root) return;
