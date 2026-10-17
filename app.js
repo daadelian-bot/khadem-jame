@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.29";
+  const RELEASE_VERSION = "2026.10.17.30";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -262,13 +262,18 @@
       }
       close();
     },true);
-    document.addEventListener("change",e=>{
-      if(e.target.matches&&e.target.matches("[data-month],[data-year]")){
-        const p=jalaliPartsFromDate(anchor);
-        anchor=monthStart(e.target.matches("[data-year]")?Number(e.target.value):p.year,e.target.matches("[data-month]")?Number(e.target.value):p.month);
-        render();place();
-      }
-    });
+    // تغییر سال/ماه مستقیماً روی خود تقویم شنیده می‌شود؛ در WebView اندروید اتکا به شنوندهٔ document گاهی قابل اعتماد نیست.
+    const updateCalendarPeriod = e => {
+      if(!e.target.matches||!e.target.matches("[data-month],[data-year]")) return;
+      const p=jalaliPartsFromDate(anchor);
+      const year=e.target.matches("[data-year]")?Number(e.target.value):p.year;
+      const month=e.target.matches("[data-month]")?Number(e.target.value):p.month;
+      const next=monthStart(year,month);
+      if(next) anchor=next;
+      render();place();
+    };
+    picker.addEventListener("change",updateCalendarPeriod);
+    picker.addEventListener("input",updateCalendarPeriod);
     document.addEventListener("input",e=>{if(activeInput&&e.target===activeInput){anchor=dateFromInput(activeInput);render();place();}});
     document.addEventListener("focusin",e=>{if(e.target.matches&&e.target.matches(jalaliDateInputSelector()))open(e.target);});
     document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!picker.hidden)close();});
