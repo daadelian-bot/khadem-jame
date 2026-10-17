@@ -814,27 +814,35 @@
       const lastSeen = presence?.last_seen_at
         ? esc(new Intl.DateTimeFormat("fa-IR-u-ca-persian", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(presence.last_seen_at)))
         : "هنوز ثبت نشده";
-      const dot = online ? "#1eaa70" : "#9aa7b5";
+      const dot = online ? "#16a36a" : "#9aa7b5";
       const status = online ? "آنلاین" : "آفلاین";
-      return '<article style="display:flex;align-items:flex-start;gap:10px;min-width:0;padding:12px;border:1px solid #e3eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #173b5808">' +
-        '<span aria-hidden="true" style="flex:0 0 10px;width:10px;height:10px;margin-top:5px;border-radius:50%;background:' + dot + ';box-shadow:0 0 0 4px ' + (online ? '#e2f7ed' : '#edf1f5') + '"></span>' +
-        '<div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong style="font-size:13px;color:#173b58;overflow-wrap:anywhere">' + name + '</strong><span style="font-size:11px;font-weight:700;color:' + (online ? '#16734a' : '#778392') + ';background:' + (online ? '#e7f8ef' : '#f0f3f6') + ';border-radius:20px;padding:4px 8px">' + status + '</span></div>' +
-        '<div style="margin-top:5px;color:#718093;font-size:11px;overflow-wrap:anywhere;direction:ltr;text-align:right">' + email + '</div>' +
-        '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f5;color:#596b7e;font-size:11px"><span aria-hidden="true">🕒</span><span>آخرین حضور: <b style="font-weight:600;color:#34495e">' + lastSeen + '</b></span></div></div></article>';
+      return '<article class="kj-presence-person" style="display:flex;align-items:flex-start;gap:12px;min-width:0;padding:14px;border:1px solid ' + (online ? '#d5efe1' : '#e3e9ef') + ';border-radius:15px;background:' + (online ? 'linear-gradient(135deg,#ffffff,#f4fcf7)' : '#fff') + ';box-shadow:0 3px 12px #173b5808">' +
+        '<span aria-hidden="true" style="flex:0 0 11px;width:11px;height:11px;margin-top:5px;border-radius:50%;background:' + dot + ';box-shadow:0 0 0 4px ' + (online ? '#e2f7ed' : '#edf1f5') + '"></span>' +
+        '<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong style="font-size:13px;line-height:1.8;color:#173b58;overflow-wrap:anywhere">' + name + '</strong><span style="white-space:nowrap;font-size:11px;font-weight:800;color:' + (online ? '#16734a' : '#778392') + ';background:' + (online ? '#e7f8ef' : '#f0f3f6') + ';border-radius:20px;padding:5px 10px">' + status + '</span></div>' +
+        '<div style="margin-top:4px;color:#718093;font-size:11px;line-height:1.8;overflow-wrap:anywhere;direction:ltr;text-align:right">' + email + '</div>' +
+        '<div style="display:flex;gap:7px;align-items:flex-start;margin-top:10px;padding-top:9px;border-top:1px solid #edf1f5;color:#596b7e;font-size:11px;line-height:1.8"><span aria-hidden="true">🕒</span><span>آخرین حضور: <b style="font-weight:700;color:#34495e">' + lastSeen + '</b></span></div></div></article>';
     }).join("");
-    return '<section id="kj-admin-presence-panel" style="flex:' + (state.presenceExpanded ? '1 1 100%;width:100%;' : '0 1 auto;max-width:100%;') + 'min-width:0;align-self:center;margin-top:0;padding:' + (state.presenceExpanded ? '10px 12px' : '5px 9px') + ';border:1px solid ' + (state.presenceExpanded ? '#dfe7ee' : '#d4e0e9') + ';border-right:3px solid #c6a66a;border-radius:12px;background:' + (state.presenceExpanded ? 'linear-gradient(135deg,#fff 0%,#f8fafc 100%)' : '#ffffff12') + ';box-shadow:0 3px 12px #10283f0a">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
-      '<button type="button" id="kj-admin-presence-toggle" aria-expanded="' + (state.presenceExpanded ? 'true' : 'false') + '" aria-controls="kj-admin-presence-list" style="display:flex;flex:1 1 auto;min-width:0;align-items:center;gap:8px;border:0;background:transparent;padding:2px 0;color:' + (state.presenceExpanded ? '#173b58' : '#fff') + ';text-align:right;font:inherit;cursor:pointer">' +
-      '<span style="display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:9px;background:' + (state.presenceExpanded ? '#eaf0f6' : '#ffffff1c') + ';font-size:15px">👥</span>' +
-      '<span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong style="font-size:12px;line-height:1.5">وضعیت کاربران</strong>' +
-      (state.presenceExpanded ? '<small style="display:block;color:#718093;font-size:10px;font-weight:400">آخرین حضور و وضعیت اتصال کاربران</small>' : '<span style="font-size:10px;font-weight:700;color:#d8f8e8;background:#16734a;border-radius:20px;padding:2px 7px">آنلاین ' + fa(onlineCount) + '</span>') +
-      '</span><span aria-hidden="true" style="margin-right:auto;font-size:13px;color:' + (state.presenceExpanded ? '#718093' : '#fff') + '">' + (state.presenceExpanded ? '▲' : '⌄') + '</span></button>' +
-      (state.presenceExpanded ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="padding:5px 8px;border:1px solid #e0e8ef;border-radius:8px;background:#fff;color:#40556a;font-size:11px">کل <b>' + fa(profiles.length) + '</b></span><span style="padding:5px 8px;border:1px solid #cceedd;border-radius:8px;background:#effaf4;color:#16734a;font-size:11px">آنلاین <b>' + fa(onlineCount) + '</b></span><span style="padding:5px 8px;border:1px solid #e2e7ed;border-radius:8px;background:#f4f6f8;color:#66788a;font-size:11px">آفلاین <b>' + fa(offlineCount) + '</b></span><button type="button" id="kj-presence-refresh" class="kj-secondary" style="padding:5px 8px;font-size:10px">↻ تازه‌سازی</button></div>' : '') +
-      '</div>' +
-      '<div id="kj-admin-presence-list" ' + (state.presenceExpanded ? '' : 'hidden') + ' style="margin-top:10px;padding-top:10px;border-top:1px solid #e5ebf0"><div style="margin-bottom:8px;color:#718093;font-size:10px">به‌روزرسانی خودکار هر ۳۰ ثانیه · نمایش تاریخ و ساعت آخرین حضور</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px;align-items:stretch">' +
-      (cards || '<div style="padding:15px;text-align:center;color:#718093;font-size:12px;border:1px dashed #dce4eb;border-radius:10px;background:#fff">در حال دریافت فهرست کاربران…</div>') +
-      '</div></div></section>';
+    const modal = state.presenceExpanded
+      ? '<div id="kj-presence-backdrop" style="position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:clamp(10px,3vw,28px);background:rgba(13,29,45,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)">' +
+        '<section id="kj-presence-dialog" role="dialog" aria-modal="true" aria-labelledby="kj-presence-title" style="display:flex;flex-direction:column;width:min(920px,100%);max-height:min(88dvh,900px);min-height:0;overflow:hidden;border:1px solid #dfe7ee;border-radius:22px;background:#f7f9fc;box-shadow:0 24px 80px #061a2e55">' +
+        '<header style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;background:linear-gradient(125deg,#173b58,#245b78);color:#fff">' +
+        '<div style="display:flex;align-items:center;gap:12px;min-width:0"><span style="display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid #ffffff30;border-radius:14px;background:#ffffff18;font-size:23px">👥</span><div style="min-width:0"><h2 id="kj-presence-title" style="margin:0;font-size:18px;line-height:1.6;color:#fff">وضعیت آنلاین کاربران</h2><p style="margin:2px 0 0;color:#dce9f1;font-size:11px;line-height:1.8">نمایش وضعیت اتصال و آخرین حضور حساب‌های سامانه</p></div></div>' +
+        '<button type="button" id="kj-presence-close" aria-label="بستن پنجره وضعیت کاربران" style="flex:0 0 38px;width:38px;height:38px;border:1px solid #ffffff40;border-radius:12px;background:#ffffff16;color:#fff;font-size:23px;line-height:1;cursor:pointer">×</button></header>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid #e4eaf0;background:#fff">' +
+        '<div style="flex:1 1 115px;min-width:0;padding:10px 13px;border:1px solid #e3eaf0;border-radius:13px;background:#f8fafc"><div style="font-size:11px;color:#718093">کل حساب‌ها</div><strong style="display:block;margin-top:3px;font-size:22px;color:#173b58">' + fa(profiles.length) + '</strong></div>' +
+        '<div style="flex:1 1 115px;min-width:0;padding:10px 13px;border:1px solid #cceedd;border-radius:13px;background:#effaf4"><div style="font-size:11px;color:#16734a">آنلاین</div><strong style="display:block;margin-top:3px;font-size:22px;color:#16734a">' + fa(onlineCount) + '</strong></div>' +
+        '<div style="flex:1 1 115px;min-width:0;padding:10px 13px;border:1px solid #e2e7ed;border-radius:13px;background:#f4f6f8"><div style="font-size:11px;color:#66788a">آفلاین</div><strong style="display:block;margin-top:3px;font-size:22px;color:#66788a">' + fa(offlineCount) + '</strong></div>' +
+        '<button type="button" id="kj-presence-refresh" class="kj-secondary" style="align-self:stretch;min-height:54px;padding:0 15px;border-radius:12px;font-size:12px;white-space:nowrap">↻ تازه‌سازی فهرست</button></div>' +
+        '<div style="padding:12px 18px 4px;color:#718093;font-size:11px;line-height:1.9">به‌روزرسانی خودکار هر ۳۰ ثانیه · فهرست زیر به‌صورت کارت‌های مرتب نمایش داده می‌شود.</div>' +
+        '<div id="kj-admin-presence-list" style="flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:10px 18px 20px"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;align-items:stretch">' +
+        (cards || '<div style="grid-column:1/-1;padding:28px 15px;text-align:center;color:#718093;font-size:13px;border:1px dashed #dce4eb;border-radius:14px;background:#fff">فهرست کاربران هنوز دریافت نشده است. دکمه تازه‌سازی را بزنید.</div>') +
+        '</div></div></section></div>'
+      : "";
+    return '<section id="kj-admin-presence-panel" style="position:relative;flex:0 1 auto;width:auto;max-width:100%;min-width:0;align-self:center;margin-top:0;padding:4px 8px;border:1px solid #d4e0e9;border-right:3px solid #c6a66a;border-radius:12px;background:#ffffff12;box-shadow:0 3px 12px #10283f0a">' +
+      '<button type="button" id="kj-admin-presence-toggle" aria-expanded="' + (state.presenceExpanded ? 'true' : 'false') + '" aria-controls="kj-presence-dialog" style="display:flex;align-items:center;gap:8px;min-width:0;border:0;background:transparent;padding:2px 0;color:#fff;text-align:right;font:inherit;cursor:pointer">' +
+      '<span aria-hidden="true" style="display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:9px;background:#ffffff1c;font-size:15px">👥</span>' +
+      '<span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><strong style="font-size:12px;line-height:1.5;white-space:nowrap">وضعیت کاربران</strong><span style="font-size:10px;font-weight:800;color:#d8f8e8;background:#16734a;border-radius:20px;padding:3px 8px;white-space:nowrap">آنلاین ' + fa(onlineCount) + '</span></span><span aria-hidden="true" style="font-size:13px;color:#fff;margin-right:2px">⌄</span></button>' +
+      modal + '</section>';
   }
   function renderAdminPresencePanel() {
     const panel = $("#kj-admin-presence-panel");
@@ -845,7 +853,30 @@
     if (replacement) {
       panel.replaceWith(replacement);
       $("#kj-presence-refresh")?.addEventListener("click", () => void refreshPresenceDirectory());
-      $("#kj-admin-presence-toggle")?.addEventListener("click", () => { state.presenceExpanded = !state.presenceExpanded; renderAdminPresencePanel(); });
+      $("#kj-admin-presence-toggle")?.addEventListener("click", () => {
+        state.presenceExpanded = !state.presenceExpanded;
+        renderAdminPresencePanel();
+        if (state.presenceExpanded) $("#kj-presence-close")?.focus();
+      });
+      $("#kj-presence-close")?.addEventListener("click", () => {
+        state.presenceExpanded = false;
+        renderAdminPresencePanel();
+        $("#kj-admin-presence-toggle")?.focus();
+      });
+      $("#kj-presence-backdrop")?.addEventListener("click", event => {
+        if (event.target?.id !== "kj-presence-backdrop") return;
+        state.presenceExpanded = false;
+        renderAdminPresencePanel();
+      });
+      if (state.presenceExpanded) {
+        $("#kj-presence-dialog")?.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            state.presenceExpanded = false;
+            renderAdminPresencePanel();
+            $("#kj-admin-presence-toggle")?.focus();
+          }
+        });
+      }
     }
   }
   async function refreshPresenceDirectory() {
