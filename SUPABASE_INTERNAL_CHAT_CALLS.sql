@@ -75,7 +75,7 @@ begin
  end if;
  select uap.permissions into v_user_permissions from public.user_access_profiles uap where uap.user_id=v_uid and uap.is_custom=true limit 1;
  if v_user_permissions is null or jsonb_typeof(v_user_permissions)<>'object' then return false; end if;
- if p_permission ~ '^[a-zA-Z0-9_]+\\.(create|update|delete|view|manage)$' then
+ if p_permission ~ '^[a-zA-Z0-9_]+[.](create|update|delete|view|manage)$' then
   v_module:=split_part(p_permission,'.',1); v_action:=split_part(p_permission,'.',2);
   if v_action='view' or v_action='manage' then return v_user_permissions->>v_module='true'; end if;
   if v_user_permissions ? p_permission then return v_user_permissions->>p_permission='true'; end if;
