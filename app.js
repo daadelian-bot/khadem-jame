@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.18";
+  const RELEASE_VERSION = "2026.10.17.19";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -745,7 +745,7 @@
     // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
     if (state.isPrimaryAdmin) return true;
     if (tab === "chat") return state.accessLoaded && (!state.accessCustom || state.accessPermissions?.chat !== false);
-    if (tab === "dashboard" || tab === "changePassword" || tab === "updateCheck") return true;
+    if (tab === "dashboard" || tab === "changePassword" || tab === "updateCheck" || tab === "aboutApp") return true;
     if (!state.accessLoaded) return false;
     // Fail closed: users/managers without an explicitly saved permission profile
     // must not inherit unrestricted access by default.
@@ -908,7 +908,8 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],...(state.isPrimaryAdmin ? [["developerConsole","🧠 توسعه هوشمند"]] : []),["changePassword","🔐 تغییر رمز عبور"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],...(state.isPrimaryAdmin ? [["developerConsole","🧠 توسعه هوشمند"]] : []),["changePassword","🔐 تغییر رمز عبور"]]],
+      ["درباره برنامه", [["aboutApp","ℹ️ سازنده و تغییرات نسخه"]]]
     ];
     for (let i = groups.length - 1; i >= 0; i--) {
       groups[i][1] = groups[i][1].filter(([id]) => canAccess(id));
@@ -2583,6 +2584,31 @@
     return `<h1 class="kj-page-title">مدیریت سامانه و تنظیمات</h1><p class="kj-muted">این صفحه فقط تنظیمات قابل مشاهده را می‌خواند؛ هیچ مقداری را تغییر نمی‌دهد و مقادیر حساس را نمایش نمی‌دهد.</p><div class="kj-card">${errBox("systemSettings")}${genericPage("systemSettings","تنظیمات عمومی",safeRows(state.systemSettings),[{key:"key",label:"کلید تنظیم"},{key:"description",label:"شرح"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px">${errBox("appSettings")}${genericPage("appSettings","تنظیمات برنامه",safeRows(state.appSettings),[{key:"key",label:"کلید تنظیم"},{key:"description",label:"شرح"},{key:"status",label:"وضعیت"}])}</div><div class="kj-card" style="margin-top:14px"><h3>اتصال سامانه</h3><p>نشانی پروژه: <code>${esc(SUPABASE_URL)}</code></p><p class="kj-small">تلاش برای دریافت اطلاعات: ${state.loaded ? "انجام شده" : "در انتظار"}؛ موفقیت هر جدول در پیام همان بخش مشخص می‌شود.</p><button class="kj-primary" id="kj-settings-refresh">دریافت دوباره اطلاعات</button></div>`;
   }
 
+  function aboutAppPage() {
+    return `
+      <h1 class="kj-page-title">درباره برنامه</h1>
+      <p class="kj-muted">اطلاعات سازنده، شماره نسخه و فهرست تغییرات این نسخه نسبت به نسخه قبلی.</p>
+      <section class="kj-card" style="max-width:850px">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+          <div style="width:58px;height:58px;border-radius:16px;background:#173b58;color:#fff;display:grid;place-items:center;font-size:28px">🕌</div>
+          <div><h2 style="margin:0 0 4px;color:var(--kj-ink)">سامانه جامع مدیریت خادمین</h2><div class="kj-muted">سازنده این اپلیکیشن: خادم الحسین داراب عادلیان</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+          <div style="padding:14px;border:1px solid var(--kj-border);border-radius:12px"><div class="kj-muted">شماره نسخه</div><strong style="font-size:18px">۲۰۲۶.۱۰.۱۷.۱۹</strong></div>
+          <div style="padding:14px;border:1px solid var(--kj-border);border-radius:12px"><div class="kj-muted">تاریخ نسخه</div><strong>۲۵ مهر ۱۴۰۵</strong></div>
+        </div>
+        <h2 style="margin-top:22px">تغییرات این نسخه نسبت به نسخه قبلی</h2>
+        <ul style="padding-right:22px;line-height:2.1">
+          <li>افزودن صفحه «درباره برنامه» به‌عنوان آخرین بخش منوی اصلی.</li>
+          <li>نمایش نام سازنده اپلیکیشن: خادم الحسین داراب عادلیان.</li>
+          <li>نمایش شماره نسخه فعلی و ایجاد محل مشخص برای شرح تغییرات هر انتشار.</li>
+          <li>افزایش شناسه نسخه پوسته آفلاین برای شناسایی فایل‌های جدید و کاهش نمایش نسخه کش‌شده قبلی.</li>
+        </ul>
+        <p class="kj-muted" style="margin-top:18px">در نسخه‌های آینده، شماره نسخه و فهرست تغییرات باید هم‌زمان با هر به‌روزرسانی در این صفحه و گزارش کامل تغییرات ثبت شود.</p>
+        <p><a href="./release-notes.html" target="_blank" rel="noopener" style="color:var(--kj-primary);font-weight:700">مشاهده گزارش کامل تغییرات نسخه‌ها ←</a></p>
+      </section>`;
+  }
+
   function changePasswordPage() {
     return `<h1 class="kj-page-title">تغییر رمز عبور</h1><p class="kj-muted">رمز عبور حساب فعلی را تغییر دهید. این گزینه فقط در زیرمنوی «مدیریت سامانه» قرار دارد.</p><div class="kj-card" style="max-width:620px"><form id="kj-change-password-form" autocomplete="off"><div class="kj-field"><label for="kj-new-password">رمز عبور جدید</label><input id="kj-new-password" name="password" type="password" minlength="8" autocomplete="new-password" required placeholder="حداقل ۸ نویسه"></div><div class="kj-field"><label for="kj-confirm-password">تکرار رمز عبور جدید</label><input id="kj-confirm-password" name="password_confirm" type="password" minlength="8" autocomplete="new-password" required placeholder="رمز جدید را دوباره وارد کنید"></div><p id="kj-change-password-message" class="kj-small" role="status" aria-live="polite"></p><button class="kj-primary" id="kj-change-password-submit" type="submit">ذخیره رمز جدید</button></form></div>`;
   }
@@ -2838,6 +2864,7 @@
       settings: settingsPage,
       updateCheck: updateCheckPage,
       changePassword: changePasswordPage,
+      aboutApp: aboutAppPage,
     };
     main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
     applyCrudVisibility(main);
