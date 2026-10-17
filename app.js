@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.21";
+  const RELEASE_VERSION = "2026.10.17.22";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -1910,9 +1910,10 @@
     const codes = [khademCode(khadem)].filter(v => v !== undefined && v !== null).map(String);
     const rowIds = [row.khadem_id, row.person_id, row.personnel_id].filter(v => v !== undefined && v !== null).map(String);
     const rowCodes = [row.khadem_code, row.personnel_code, row.code].filter(v => v !== undefined && v !== null).map(String);
-    // اگر کد خادم در رکورد وجود دارد، همان مرجع قطعی است؛ شناسه داخلی فقط وقتی کد نیست بررسی می‌شود.
-    if (rowCodes.length) return rowCodes.some(x => codes.includes(x));
+    // شناسه داخلی UUID مرجع قطعی هویت خادم است؛ کد فقط برای رکوردهای قدیمیِ بدون شناسه استفاده می‌شود.
+    // پس از جابه‌جایی کدها، سوابق هرگز نباید صرفاً به دلیل یکسان بودن کد به فرد دیگری منتسب شوند.
     if (rowIds.length) return rowIds.some(x => ids.includes(x));
+    if (rowCodes.length) return rowCodes.some(x => codes.includes(x));
     const rowName = val(row, ["khadem_name", "person_name", "full_name"]);
     return Boolean(rowName && nameOf(khadem).trim().toLocaleLowerCase("fa") === String(rowName).trim().toLocaleLowerCase("fa"));
   }
@@ -1930,7 +1931,6 @@
     const fields = [
       ["full_name","نام و نام خانوادگی","text",nameOf(k)],
       ["referrer_name","معرف خادم","text",val(k,["referrer_name","introducer_name","referred_by","referrer","referrer_full_name","introducer"]) || val(k?.extra_data||{},["referrer_name","introducer_name","referred_by","referrer"])],
-      ["khadem_code","کد خادم","text",khademCode(k)],
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
       ["national_code","کد ملی","text",val(k,["national_code","national_id"])],
@@ -1972,7 +1972,6 @@
       put(["first_name"], parts.shift() || "");
       put(["last_name","family_name","family"], parts.join(" "));
     }
-    put(["khadem_code","personnel_code","code"], fd.get("khadem_code"));
     put(["triple_name","tri_name","full_name_triple"], fd.get("triple_name"));
     put(["father_name"], fd.get("father_name"));
     put(["national_code","national_id"], fd.get("national_code"));
