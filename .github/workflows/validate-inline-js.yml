@@ -13,6 +13,7 @@ on:
       - "equipment-finance.js"
       - "manifest.webmanifest"
       - "admin-users.html"
+      - "developer-console.html"
       - ".github/workflows/validate-inline-js.yml"
   pull_request:
   workflow_dispatch:
@@ -122,6 +123,35 @@ jobs:
           } else if (failed > 0) {
             process.exitCode = 1;
           }
+          NODE
+      - name: Parse inline JavaScript in developer-console.html
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
+          const html = fs.readFileSync('developer-console.html', 'utf8');
+          const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+          const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khadem-developer-inline-js-'));
+          let match, checked = 0, failed = 0;
+          while ((match = re.exec(html)) !== null) {
+            const attrs = match[1] || '';
+            const code = (match[2] || '').trim();
+            if (!code || /\bsrc\s*=/.test(attrs)) continue;
+            checked++;
+            const file = path.join(dir, 'developer-inline-' + checked + '.mjs');
+            fs.writeFileSync(file, code, 'utf8');
+            const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (result.status !== 0) {
+              failed++;
+              console.error('FAILED: developer-console.html inline script #' + checked);
+              console.error(result.stderr || result.stdout || 'Syntax check failed.');
+            }
+          }
+          console.log('Checked ' + checked + ' developer-console inline script(s); failures: ' + failed + '.');
+          if (checked === 0 || failed > 0) process.exitCode = 1;
           NODE
       - name: Parse inline JavaScript in admin-users.html
         shell: bash
