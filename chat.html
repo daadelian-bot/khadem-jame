@@ -190,7 +190,7 @@ async function sendMessage(e){
   box.value="";drawMessages();
   await sb.from("chat_conversations").update({updated_at:new Date().toISOString()}).eq("id",activeConversation.id);
   refreshConversations();
- }catch(e){toast("ارسال پیام انجام نشد. اتصال یا مجوز نوشتن را بررسی کنید.")}finally{btn.disabled=false;box.focus()}
+ }catch(e){toast("ارسال پیام انجام نشد: "+String(e?.message||e?.details||"خطای دسترسی یا اتصال").slice(0,160))}finally{btn.disabled=false;box.focus()}
 }
 function showMembers(){
  if(!activeConversation)return;
