@@ -10,7 +10,7 @@
   <title>سامانه جامع مدیریت خادمین | اتصال داده‌ها</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" as="image" href="./logo.png">
-  <link id="kj-style" rel="stylesheet" href="./style.css?v=20261016-108">
+  <link id="kj-style" rel="stylesheet" href="./style.css?v=20261017-12">
   <style>
     html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#f3f5f8;color:#1c3045}
     #app{min-height:100vh}
@@ -36,12 +36,12 @@
   </div>
   <aside id="kj-update-widget" aria-label="به‌روزرسانی سامانه">
     <button id="kj-update-check" type="button">بررسی به‌روزرسانی</button>
-    <a id="kj-release-notes" href="./release-notes.html?v=20261017-2">گزارش کامل تغییرات نسخه</a>
+    <a id="kj-release-notes" href="./release-notes.html?v=20261017-3">گزارش کامل تغییرات نسخه</a>
     <span id="kj-update-status" role="status" aria-live="polite" hidden></span>
   </aside>
   <noscript><main class="boot"><h1>جاوااسکریپت غیرفعال است</h1><p>برای استفاده از سامانه، جاوااسکریپت مرورگر را فعال کنید.</p></main></noscript>
-  <script src="./offline-store.js?v=20261016-108" defer></script>
-  <script src="./app.js?v=20261017-11" defer onerror="document.getElementById(\'app\').innerHTML=\'<main class=\\\"boot\\\"><h1>بارگذاری سامانه ناموفق بود</h1><p>فایل برنامه بارگذاری نشد. اتصال اینترنت را بررسی کنید و صفحه را دوباره باز کنید.</p></main>\'"></script>
+  <script src="./offline-store.js?v=20261017-12" defer></script>
+  <script src="./app.js?v=20261017-12" defer onerror="document.getElementById(\'app\').innerHTML=\'<main class=\\\"boot\\\"><h1>بارگذاری سامانه ناموفق بود</h1><p>فایل برنامه بارگذاری نشد. اتصال اینترنت را بررسی کنید و صفحه را دوباره باز کنید.</p></main>\'"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
@@ -62,76 +62,107 @@
       }
 
       let registration = null;
-      let updateDetected = false;
+      let updateReady = false;
+      let applying = false;
       const controllerAtStart = navigator.serviceWorker.controller;
 
       function showStatus(message) {
         status.textContent = message;
         status.hidden = false;
       }
+      function markReady() {
+        updateReady = true;
+        button.disabled = false;
+        button.textContent = "اعمال نسخه جدید";
+        showStatus("نسخهٔ جدید آماده است. ابتدا تغییرات ثبت‌نشده را ذخیره کنید، سپس «اعمال نسخه جدید» را بزنید.");
+      }
+      function watchRegistration(reg) {
+        registration = reg;
+        if (registration.waiting) markReady();
+        registration.addEventListener("updatefound", function () {
+          const worker = registration.installing;
+          if (!worker) return;
+          showStatus("نسخهٔ جدید پیدا شد؛ در حال دریافت فایل‌ها…");
+          worker.addEventListener("statechange", function () {
+            if (worker.state === "installed" && (navigator.serviceWorker.controller || controllerAtStart)) markReady();
+            if (worker.state === "activated") {
+              updateReady = true;
+              if (!applying) markReady();
+            }
+          });
+        });
+      }
 
       navigator.serviceWorker.addEventListener("controllerchange", function () {
-        if (!controllerAtStart) return;
-        updateDetected = true;
-        button.textContent = "اعمال نسخه جدید";
-        showStatus("نسخه جدید آماده است. برای جلوگیری از ازدست‌رفتن اطلاعات، تغییرات ثبت‌نشده را ذخیره کنید و سپس «اعمال نسخه جدید» را بزنید.");
+        if (applying) {
+          showStatus("نسخهٔ جدید فعال شد؛ در حال بارگذاری مجدد…");
+          window.location.reload();
+          return;
+        }
+        if (controllerAtStart && !updateReady) markReady();
       });
 
       button.addEventListener("click", async function () {
-        if (updateDetected) {
-          window.location.reload();
+        if (updateReady) {
+          applying = true;
+          button.disabled = true;
+          showStatus("در حال اعمال نسخهٔ جدید…");
+          try {
+            const worker = registration && (registration.waiting || registration.installing);
+            if (worker && worker.state !== "activated") {
+              worker.postMessage({ type: "SKIP_WAITING" });
+              await new Promise(function (resolve) {
+                let done = false;
+                const finish = function () { if (done) return; done = true; resolve(); };
+                navigator.serviceWorker.addEventListener("controllerchange", finish, { once: true });
+                window.setTimeout(finish, 5000);
+              });
+            }
+            window.location.reload();
+          } catch (_) {
+            applying = false;
+            button.disabled = false;
+            showStatus("اعمال نسخهٔ جدید ناموفق بود؛ صفحه را دوباره بارگذاری کنید.");
+          }
           return;
         }
 
         button.disabled = true;
-        showStatus("در حال بررسی نسخه جدید…");
-        let timeoutId = null;
+        showStatus("در حال بررسی نسخهٔ منتشرشده…");
         try {
-          registration = registration || await navigator.serviceWorker.getRegistration();
           if (!registration) {
-            registration = await navigator.serviceWorker.register("./service-worker.js");
+            registration = await navigator.serviceWorker.getRegistration();
+            if (!registration) registration = await navigator.serviceWorker.register("./service-worker.js");
+            watchRegistration(registration);
           }
-
-          let newWorkerInstalled = false;
-          const updateFound = new Promise(function (resolve) {
-            const inspectWorker = function () {
-              const worker = registration.installing;
-              if (!worker) {
-                resolve(false);
-                return;
-              }
-              const onStateChange = function () {
-                if (worker.state === "installed" && navigator.serviceWorker.controller) {
-                  newWorkerInstalled = true;
-                  resolve(true);
-                } else if (worker.state === "redundant") {
-                  resolve(false);
-                }
-              };
-              worker.addEventListener("statechange", onStateChange);
-            };
-            registration.addEventListener("updatefound", inspectWorker, { once: true });
-            timeoutId = window.setTimeout(function () { resolve(false); }, 7000);
-          });
-
           await registration.update();
-          const installed = await updateFound;
-          if (timeoutId !== null) window.clearTimeout(timeoutId);
-
-          if (updateDetected || installed || newWorkerInstalled || registration.waiting) {
-            updateDetected = true;
-            button.textContent = "اعمال نسخه جدید";
-            showStatus("نسخه جدید دریافت شد. برای جلوگیری از ازدست‌رفتن اطلاعات، تغییرات ثبت‌نشده را ذخیره کنید و سپس «اعمال نسخه جدید» را بزنید.");
+          if (registration.waiting || updateReady) {
+            markReady();
+          } else if (registration.installing) {
+            const worker = registration.installing;
+            await new Promise(function (resolve) {
+              let done = false;
+              const finish = function () { if (done) return; done = true; resolve(); };
+              worker.addEventListener("statechange", function () {
+                if (worker.state === "installed" || worker.state === "activated" || worker.state === "redundant") finish();
+              });
+              window.setTimeout(finish, 15000);
+            });
+            if (registration.waiting || updateReady) markReady();
+            else showStatus("در حال حاضر نسخهٔ جدیدی برای دریافت شناسایی نشد. پس از انتشار نسخه، دوباره بررسی کنید.");
           } else {
-            showStatus("نسخه جدیدی پیدا نشد. اگر نسخه‌ای همین الان منتشر شده، چند لحظه بعد دوباره بررسی کنید.");
+            showStatus("این نسخه به‌روز است؛ اگر تغییرات همین حالا منتشر شده‌اند، چند ثانیه بعد دوباره بررسی کنید.");
           }
-        } catch (error) {
-          showStatus("بررسی به‌روزرسانی ناموفق بود؛ اتصال اینترنت را بررسی کنید.");
+        } catch (_) {
+          showStatus("بررسی به‌روزرسانی ناموفق بود؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.");
         } finally {
-          if (timeoutId !== null) window.clearTimeout(timeoutId);
-          button.disabled = false;
+          if (!updateReady) button.disabled = false;
         }
       });
+
+      navigator.serviceWorker.getRegistration().then(function (reg) {
+        if (reg) watchRegistration(reg);
+      }).catch(function () {});
     })();
   </script>
 
