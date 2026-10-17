@@ -26,7 +26,7 @@ const KEY="sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
 const TOKEN_KEY="kj_access_token",REFRESH_KEY="kj_refresh_token",USER_KEY="kj_user";
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,presenceChannel=null,onlineIds=new Set(),call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,ringTimer=null,ringContext=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false,muted=false,typingTimer=null,typingHideTimer=null;
+let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,presenceChannel=null,onlineIds=new Set(),call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,ringTimer=null,ringContext=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false,muted=false,typingTimer=null,typingHideTimer=null,conversationLoadError="",conversationLoadInFlight=null;
 const BUZZ_BODY="⁣KJ_NIMBUZZ⁣",ADMIN_REMOVED="🗑️ این پیام توسط مدیر اصلی حذف شد.";
 const emojis=["🤍","🌹","🕌","📿","🤲","❤️","🌙","✨","🙏","😊","👍","🌿","☪️","💚","🌸","🌟","🕋","🫶"];
 function toast(msg){const root=$("overlayRoot");if(!root)return;root.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=String(msg);root.appendChild(t);setTimeout(()=>{if(t.isConnected)t.remove()},3500)}
@@ -83,20 +83,26 @@ function bindUi(){
  document.querySelectorAll("[data-list]").forEach(b=>b.addEventListener("click",()=>{listMode=b.dataset.list;document.querySelectorAll("[data-list]").forEach(x=>x.classList.toggle("active",x===b));drawList()}));
 }
 async function refreshConversations(){
+ if(conversationLoadInFlight)return conversationLoadInFlight;
+ conversationLoadInFlight=(async()=>{
  try{
-  const {data:mine,error}=await sb.from("chat_members").select("conversation_id,member_role,last_read_at").eq("user_id",me.id);
+  conversationLoadError="";
+  const {data:mine,error}=await Promise.race([sb.from("chat_members").select("conversation_id,member_role,last_read_at").eq("user_id",me.id),new Promise((_,reject)=>setTimeout(()=>reject(new Error("timeout")),10000))]);
   if(error)throw error;
   const ids=(mine||[]).map(x=>x.conversation_id);
   if(!ids.length){conversations=[];drawList();return}
-  const [cs,ms]=await Promise.all([
+  const [cs,ms]=await Promise.race([Promise.all([
     sb.from("chat_conversations").select("id,kind,title,created_by,created_at,updated_at").in("id",ids).order("updated_at",{ascending:false}),
     sb.from("chat_members").select("conversation_id,user_id,member_role,last_read_at").in("conversation_id",ids)
-  ]);
+  ]),new Promise((_,reject)=>setTimeout(()=>reject(new Error("timeout")),10000))]);
   if(cs.error)throw cs.error;if(ms.error)throw ms.error;
   conversations=(cs.data||[]).map(c=>({...c,members:(ms.data||[]).filter(m=>m.conversation_id===c.id)}));
   drawList();
   if(activeConversation){const fresh=conversations.find(c=>c.id===activeConversation.id);if(fresh)activeConversation=fresh;else{activeConversation=null;showWelcome()}}
- }catch(e){sayStatus("اتصال محدود");toast("دریافت گفت‌وگوها ناموفق بود؛ مجوز یا اتصال پایگاه داده را بررسی کنید.")}
+ }catch(e){conversationLoadError="گفت‌وگوها دریافت نشدند. اتصال اینترنت یا مجوز گفت‌وگو را بررسی و دوباره تلاش کنید.";sayStatus("اتصال محدود");drawList();toast("دریافت گفت‌وگوها ناموفق بود؛ برای تلاش دوباره دکمهٔ دریافت را بزنید.")}
+ finally{conversationLoadInFlight=null}
+ })();
+ return conversationLoadInFlight;
 }
 function convoName(c){
  if(!c)return"گفت‌وگو";
@@ -108,6 +114,7 @@ function convoSub(c){if(c.kind==="group")return "☪️ گروه · "+(c.members
 function drawList(){
  const q=$("search").value.trim().toLocaleLowerCase("fa");
  const root=$("list");
+ if(listMode==="chats"&&conversationLoadError&&!conversations.length){root.innerHTML='<div class="empty"><div class="big">📡</div>'+esc(conversationLoadError)+'<div style="margin-top:12px"><button type="button" class="btn btn-green" id="retryConversations">↻ دریافت دوباره</button></div></div>';$("retryConversations")?.addEventListener("click",()=>{conversationLoadError="";root.innerHTML='<div class="empty">در حال دریافت گفت‌وگوها…</div>';refreshConversations()});return}
  if(listMode==="people"){
   const rows=people.filter(p=>p.id!==me.id&&(!q||p.display_name.toLocaleLowerCase("fa").includes(q)||roleLabel(p.role).includes(q)));
   root.innerHTML=rows.length?rows.map(p=>'<button class="list-row" data-person="'+p.id+'"><span class="avatar">'+esc(initials(p.display_name))+'</span><span class="row-info"><span class="row-title">'+esc(p.display_name)+'</span><span class="row-sub">'+(isOnline(p.id)?'<span style="color:#23834d">● آنلاین</span>':esc(roleLabel(p.role))+' · آفلاین')+'</span></span><span class="badge">پیام</span></button>').join(""):'<div class="empty">کاربری پیدا نشد.</div>';
@@ -198,7 +205,7 @@ async function markConversationRead(){
  const member=(activeConversation.members||[]).find(m=>m.user_id===me.id);if(member&&data)member.last_read_at=data.last_read_at||stamp;drawMessages();
 }
 function sendTyping(typing){if(!messageChannel||!activeConversation||!me)return;messageChannel.send({type:"broadcast",event:"typing",payload:{conversation_id:activeConversation.id,user_id:me.id,name:me.name,typing:!!typing}}).catch(()=>{})}
-async async function sendBuzz(){
+async function sendBuzz(){
  if(!activeConversation||!sb||!me)return;
  if(activeConversation.kind!=="direct"){toast("ارسال تکان فقط در گفت‌وگوی خصوصی فعال است.");return}
  const {data,error}=await sb.from("chat_messages").insert({conversation_id:activeConversation.id,sender_id:me.id,sender_name:me.name,body:BUZZ_BODY,conversation_type:"group",recipient_id:null}).select("id,conversation_id,sender_id,sender_name,body,created_at,deleted_at,conversation_type").single();
@@ -218,7 +225,9 @@ function drawMessages(){
  if(!activeMessages.length){root.innerHTML='<div class="empty"><div class="big">🌸</div>هنوز پیامی ارسال نشده است.<br>با سلام و صلوات گفت‌وگو را آغاز کنید.</div>';return}
  root.innerHTML=activeMessages.map(m=>{
   const mine=m.sender_id===me.id,readers=(activeConversation.members||[]).filter(x=>x.user_id!==m.sender_id&&x.last_read_at&&new Date(x.last_read_at).getTime()>=new Date(m.created_at).getTime());
-  const receipt=mine?(readers.length?'<span class="receipt">✓✓ خوانده شد توسط '+esc(readers.map(x=>personName(x.user_id)).join("، "))+'</span>':'<span class="receipt">✓ ارسال شد</span>'):"";
+  const recipients=(activeConversation.members||[]).filter(x=>x.user_id!==m.sender_id);
+  const delivered=recipients.some(x=>isOnline(x.user_id));
+  const receipt=mine?(readers.length?'<span class="receipt" title="پیام مشاهده شده است" style="color:#159447"><b aria-label="خوانده شد" style="font-size:14px;letter-spacing:-3px">✓✓</b> خوانده شد'+(activeConversation.kind==="group"?' توسط '+esc(readers.map(x=>personName(x.user_id)).join("، ")):'')+'</span>':delivered?'<span class="receipt" title="مخاطب آنلاین است؛ پیام تحویل‌شده در نظر گرفته می‌شود" style="color:#8a9691"><b aria-label="دریافت شد" style="font-size:14px;letter-spacing:-3px">✓✓</b> دریافت شد</span>':'<span class="receipt" title="مخاطب آفلاین است" style="color:#8a9691"><b aria-label="ارسال شد" style="font-size:14px">✓</b> ارسال شد</span>'):"";
   const body=m.body===BUZZ_BODY?(mine?"📳 تکان ارسال شد":"📳 تکان دریافت شد"):esc(m.body);
   const deleted=m.body===ADMIN_REMOVED;
   return '<article class="bubble '+(mine?"mine":"")+(deleted?" removed":"")+'">'+(activeConversation.kind==="group"&&!mine?'<div class="sender">'+esc(personName(m.sender_id))+'</div>':"")+body+'<span class="time">'+esc(fmtTime(m.created_at))+'</span>'+receipt+(me?.role==="admin"&&!deleted?'<button type="button" class="delete-message" data-delete-message="'+esc(m.id)+'">🗑️ حذف برای همه</button>':"")+'</article>';
