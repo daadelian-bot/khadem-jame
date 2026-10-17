@@ -191,7 +191,7 @@ async function sendMessage(e){
   await loadMessages();
   await sb.from("chat_conversations").update({updated_at:new Date().toISOString()}).eq("id",target.id);
   await refreshConversations();
- }catch(e){console.error("chat send failed",e);toast("ارسال پیام ناموفق بود: "+String(e?.message||e?.details||"خطای دسترسی یا اتصال").slice(0,180))}
+ }catch(e){console.error("chat send failed",e);toast("ارسال پیام ناموفق بود: "+String(e?.message||e?.details||e?.hint||"خطای دسترسی یا اتصال").slice(0,180))}
  finally{btn.disabled=false;box.disabled=false;box.focus()}
 }
 function showMembers(){
