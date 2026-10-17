@@ -182,15 +182,16 @@ function toggleEmoji(){
 async function sendMessage(e){
  e.preventDefault();if(!activeConversation)return;
  const box=$("messageText"),body=box.value.trim();if(!body)return;
- const btn=$(".send");btn.disabled=true;
+ const target=activeConversation,btn=$(".send");btn.disabled=true;box.disabled=true;
  try{
-  const res=await sb.from("chat_messages").insert({conversation_id:activeConversation.id,sender_id:me.id,sender_name:me.name,body:body,conversation_type:"group",recipient_id:null}).select("id,conversation_id,sender_id,sender_name,body,created_at,conversation_type").single();
+  const res=await sb.from("chat_messages").insert({conversation_id:target.id,sender_id:me.id,sender_name:me.name,body:body,conversation_type:"group",recipient_id:null});
   if(res.error)throw res.error;
-  if(!activeMessages.some(m=>m.id===res.data.id))activeMessages.push(res.data);
-  box.value="";drawMessages();
-  await sb.from("chat_conversations").update({updated_at:new Date().toISOString()}).eq("id",activeConversation.id);
-  refreshConversations();
- }catch(e){toast("ارسال پیام انجام نشد: "+String(e?.message||e?.details||"خطای دسترسی یا اتصال").slice(0,160))}finally{btn.disabled=false;box.focus()}
+  box.value="";
+  await loadMessages();
+  await sb.from("chat_conversations").update({updated_at:new Date().toISOString()}).eq("id",target.id);
+  await refreshConversations();
+ }catch(e){console.error("chat send failed",e);toast("ارسال پیام ناموفق بود: "+String(e?.message||e?.details||"خطای دسترسی یا اتصال").slice(0,180))}
+ finally{btn.disabled=false;box.disabled=false;box.focus()}
 }
 function showMembers(){
  if(!activeConversation)return;
