@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.9";
+  const RELEASE_VERSION = "2026.10.17.10";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -750,6 +750,11 @@
     // must not inherit unrestricted access by default.
     if (!state.accessCustom) return false;
     return state.accessPermissions?.[tab] === true;
+  }
+  function canPerform(moduleKey, action) {
+    if (state.isPrimaryAdmin || state.accessFull) return true;
+    if (!state.accessLoaded || !state.accessCustom) return false;
+    return state.accessPermissions?.[moduleKey + "." + action] === true;
   }
   const PRESENCE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
   let presenceHeartbeatTimer = null;
@@ -1794,6 +1799,7 @@
     bindPhotoPreview("#kj-registration-photo","#kj-registration-photo-preview");
   }
   async function saveKhademFromForm(form) {
+    if (!canPerform("khadems","create")) { const m=$("#kj-registration-message"); if(m)m.textContent="مجوز ثبت اطلاعات بانک خادمین برای این حساب فعال نیست."; return; }
     const message = $("#kj-registration-message"), button = $("#kj-save-registration"), fd = new FormData(form);
     const fullName = String(fd.get("full_name") || "").trim();
     if (!fullName) { if(message) message.textContent = "لطفاً نام و نام خانوادگی خادم را وارد کنید."; return; }
@@ -1885,6 +1891,7 @@
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
   }
   async function saveKhademProfile(form) {
+    if (!canPerform("khadems","update")) { const m=$("#kj-profile-edit-message"); if(m)m.textContent="مجوز ویرایش اطلاعات بانک خادمین برای این حساب فعال نیست."; return; }
     const k = selectedKhademRecord();
     const message = $("#kj-profile-edit-message"), button = $("#kj-save-profile");
     if (!k) { if(message) message.textContent = "پرونده خادم پیدا نشد."; return; }
