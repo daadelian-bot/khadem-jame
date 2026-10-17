@@ -200,7 +200,13 @@
       return utcDay(new Date());
     };
     const monthStart = (year, month) => {
-      // ماه‌های پایانی سال شمسی ممکن است در سال میلادی بعد قرار بگیرند؛ از ابتدای سال میلادیِ قبل جست‌وجو می‌کنیم و بازه را تا ۸۰۰ روز می‌گیریم تا همه ماه‌ها، از فروردین تا اسفند، پیدا شوند.
+      // اول از تبدیل شمسی به میلادی استفاده کن تا انتخاب سال‌های آینده در Android WebView به Intl وابسته نباشد.
+      const iso = jalaliToGregorian(String(year)+"/"+String(month).padStart(2,"0")+"/01");
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) {
+        const parts=iso.split("-").map(Number);
+        const converted=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));
+        if(!Number.isNaN(converted.getTime())) return converted;
+      }
       const startYear=year+620,start=new Date(Date.UTC(startYear,0,1));
       for(let i=0;i<800;i++){const d=shiftDay(start,i),p=jalaliPartsFromDate(d);if(p.year===year&&p.month===month&&p.day===1)return d;}
       return utcDay(anchor);
