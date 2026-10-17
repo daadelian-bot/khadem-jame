@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.25";
+  const RELEASE_VERSION = "2026.10.17.26";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -1820,11 +1820,7 @@
     const name=importIdentity(val(p,["full_name","name","khadem_name"])||[p.first_name,p.last_name].filter(Boolean).join(" "));
     return state.khadems.find(k=>{const ec=importIdentity(khademCode(k)),en=importIdentity(val(k,["national_id","national_code"])),em=importIdentity(nameOf(k));return !!((code&&ec&&code===ec)||(national&&en&&national===en)||(name&&em&&name===em));})||null;
   }
-  function openKhademImport(){
-    modal("ورودی فایل Excel یا Word",'<p class="kj-muted">فایل Excel یا جدول Word را انتخاب کنید. همه برگه‌های Excel خوانده می‌شوند و پیش از ذخیره، تکراری‌ها برای تصمیم‌گیری نمایش داده می‌شوند.</p><label class="kj-field"><b>انتخاب فایل</b><input id="kj-import-file" type="file" accept=".xlsx,.xls,.csv,.docx"></label><p class="kj-small">پشتیبانی از xlsx، xls، csv و docx؛ فایل اصلی تا تأیید نهایی تغییر نمی‌کند.</p><div id="kj-import-message" class="kj-muted" role="status"></div><div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-import-read">خواندن و بررسی فایل</button></div>');
-    $("#kj-import-read")?.addEventListener("click",async()=>{const b=$("#kj-import-read"),f=$("#kj-import-file")?.files?.[0],m=$("#kj-import-message");if(!f){if(m)m.textContent="ابتدا فایل را انتخاب کنید.";return;}b.disabled=true;b.textContent="در حال خواندن…";try{const records=await readKhademImportFile(f);records.forEach(r=>r.duplicate=findImportDuplicate(r.payload));khademImportDraft={fileName:f.name,records};showKhademImportPreview();}catch(e){if(m)m.textContent="خواندن فایل ناموفق بود: "+(e.message||"خطای نامشخص");b.disabled=false;b.textContent="خواندن و بررسی فایل";}});
-  }
-  function showKhademImportPreview(){
+    function showKhademImportPreview(){
     const d=khademImportDraft;if(!d)return;const dup=d.records.filter(r=>r.duplicate),fresh=d.records.length-dup.length;
     const rows=d.records.slice(0,12).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(val(r.payload,["khadem_code","personnel_code","code"])||"—")+'</td><td>'+esc(val(r.payload,["full_name","name","khadem_name"])||[r.payload.first_name,r.payload.last_name].filter(Boolean).join(" ")||"—")+'</td><td>'+(r.duplicate?"تکراری — "+esc(nameOf(r.duplicate)):"جدید")+'</td></tr>').join("");
     const conflicts=dup.map((r,i)=>'<tr><td>'+esc(nameOf(r.duplicate))+'<br><small>کد سامانه: '+esc(khademCode(r.duplicate)||"—")+' | کد فایل: '+esc(val(r.payload,["khadem_code","personnel_code","code"])||"—")+'</small></td><td><label><input type="radio" name="kj-import-choice-'+i+'" value="file" checked> اولویت فایل</label><br><label><input type="radio" name="kj-import-choice-'+i+'" value="system"> اولویت سامانه</label><br><label><input type="radio" name="kj-import-choice-'+i+'" value="skip"> رد این مورد</label></td></tr>').join("");
