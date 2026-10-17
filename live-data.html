@@ -10,7 +10,7 @@
   <title>سامانه جامع مدیریت خادمین | اتصال داده‌ها</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" as="image" href="./logo.png">
-  <link id="kj-style" rel="stylesheet" href="./style.css?v=20261017-15">
+  <link id="kj-style" rel="stylesheet" href="./style.css?v=20261017-16">
   <style>
     html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#f3f5f8;color:#1c3045}
     #app{min-height:100vh}
@@ -19,11 +19,7 @@
     .boot p{color:#65798a}
   
     #kj-update-widget{position:fixed;left:10px;bottom:10px;z-index:10000;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:min(320px,calc(100vw - 20px));font-family:Tahoma,Arial,sans-serif}
-    #kj-update-check{border:1px solid #173b58;border-radius:10px;background:#173b58;color:#fff;padding:9px 12px;font-size:12px;font-weight:700;box-shadow:0 3px 12px #10283f26;cursor:pointer}
-    #kj-update-check:disabled{opacity:.65;cursor:wait}
     #kj-release-notes,#kj-developer-console{display:inline-block;text-decoration:none;border:1px solid #c6a66a;border-radius:10px;background:#fff;color:#173b58;padding:8px 11px;font-size:12px;font-weight:700;box-shadow:0 3px 12px #10283f18}
-    #kj-update-status{background:#fff;color:#1c3045;border:1px solid #dfe6ed;border-radius:9px;padding:8px 10px;font-size:11px;line-height:1.8;box-shadow:0 3px 12px #10283f18}
-    #kj-update-status[hidden]{display:none}
     #kj-developer-console{display:none;text-decoration:none;border:1px solid #173b58;border-radius:10px;background:#fff;color:#173b58;padding:8px 11px;font-size:12px;font-weight:700;box-shadow:0 3px 12px #10283f18}
     #kj-developer-console.ready{display:inline-block}
   </style>
@@ -36,15 +32,13 @@
       <p>برای مشاهده اطلاعات، با حساب کاربری معتبر سامانه وارد شوید.</p>
     </main>
   </div>
-  <aside id="kj-update-widget" aria-label="به‌روزرسانی سامانه">
-    <button id="kj-update-check" type="button">بررسی به‌روزرسانی</button>
-    <a id="kj-release-notes" href="./release-notes.html?v=20261017-6">گزارش کامل تغییرات نسخه</a>
+  <aside id="kj-update-widget" aria-label="پیوندهای سامانه">
+    <a id="kj-release-notes" href="./release-notes.html?v=20261017-7">گزارش کامل تغییرات نسخه</a>
     <a id="kj-developer-console" href="./developer-console.html?v=20261017-3" hidden>توسعه هوشمند (مدیر اصلی)</a>
-    <span id="kj-update-status" role="status" aria-live="polite" hidden></span>
   </aside>
   <noscript><main class="boot"><h1>جاوااسکریپت غیرفعال است</h1><p>برای استفاده از سامانه، جاوااسکریپت مرورگر را فعال کنید.</p></main></noscript>
   <script src="./offline-store.js?v=20261017-14" defer></script>
-  <script src="./app.js?v=20261017-15" defer onerror="document.getElementById(\'app\').innerHTML=\'<main class=\\\"boot\\\"><h1>بارگذاری سامانه ناموفق بود</h1><p>فایل برنامه بارگذاری نشد. اتصال اینترنت را بررسی کنید و صفحه را دوباره باز کنید.</p></main>\'"></script>
+  <script src="./app.js?v=20261017-16" defer onerror="document.getElementById(\'app\').innerHTML=\'<main class=\\\"boot\\\"><h1>بارگذاری سامانه ناموفق بود</h1><p>فایل برنامه بارگذاری نشد. اتصال اینترنت را بررسی کنید و صفحه را دوباره باز کنید.</p></main>\'"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
@@ -53,120 +47,6 @@
         });
       });
     }
-  </script>
-
-  <script>
-    (function () {
-      const button = document.getElementById("kj-update-check");
-      const status = document.getElementById("kj-update-status");
-      if (!button || !status || !("serviceWorker" in navigator)) {
-        if (button) button.hidden = true;
-        return;
-      }
-
-      let registration = null;
-      let updateReady = false;
-      let applying = false;
-      const controllerAtStart = navigator.serviceWorker.controller;
-
-      function showStatus(message) {
-        status.textContent = message;
-        status.hidden = false;
-      }
-      function markReady() {
-        updateReady = true;
-        button.disabled = false;
-        button.textContent = "اعمال نسخه جدید";
-        showStatus("نسخهٔ جدید آماده است. ابتدا تغییرات ثبت‌نشده را ذخیره کنید، سپس «اعمال نسخه جدید» را بزنید.");
-      }
-      function watchRegistration(reg) {
-        registration = reg;
-        if (registration.waiting) markReady();
-        registration.addEventListener("updatefound", function () {
-          const worker = registration.installing;
-          if (!worker) return;
-          showStatus("نسخهٔ جدید پیدا شد؛ در حال دریافت فایل‌ها…");
-          worker.addEventListener("statechange", function () {
-            if (worker.state === "installed" && (navigator.serviceWorker.controller || controllerAtStart)) markReady();
-            if (worker.state === "activated") {
-              updateReady = true;
-              if (!applying) markReady();
-            }
-          });
-        });
-      }
-
-      navigator.serviceWorker.addEventListener("controllerchange", function () {
-        if (applying) {
-          showStatus("نسخهٔ جدید فعال شد؛ در حال بارگذاری مجدد…");
-          window.location.reload();
-          return;
-        }
-        if (controllerAtStart && !updateReady) markReady();
-      });
-
-      button.addEventListener("click", async function () {
-        if (updateReady) {
-          applying = true;
-          button.disabled = true;
-          showStatus("در حال اعمال نسخهٔ جدید…");
-          try {
-            const worker = registration && (registration.waiting || registration.installing);
-            if (worker && worker.state !== "activated") {
-              worker.postMessage({ type: "SKIP_WAITING" });
-              await new Promise(function (resolve) {
-                let done = false;
-                const finish = function () { if (done) return; done = true; resolve(); };
-                navigator.serviceWorker.addEventListener("controllerchange", finish, { once: true });
-                window.setTimeout(finish, 5000);
-              });
-            }
-            window.location.reload();
-          } catch (_) {
-            applying = false;
-            button.disabled = false;
-            showStatus("اعمال نسخهٔ جدید ناموفق بود؛ صفحه را دوباره بارگذاری کنید.");
-          }
-          return;
-        }
-
-        button.disabled = true;
-        showStatus("در حال بررسی نسخهٔ منتشرشده…");
-        try {
-          if (!registration) {
-            registration = await navigator.serviceWorker.getRegistration();
-            if (!registration) registration = await navigator.serviceWorker.register("./service-worker.js");
-            watchRegistration(registration);
-          }
-          await registration.update();
-          if (registration.waiting || updateReady) {
-            markReady();
-          } else if (registration.installing) {
-            const worker = registration.installing;
-            await new Promise(function (resolve) {
-              let done = false;
-              const finish = function () { if (done) return; done = true; resolve(); };
-              worker.addEventListener("statechange", function () {
-                if (worker.state === "installed" || worker.state === "activated" || worker.state === "redundant") finish();
-              });
-              window.setTimeout(finish, 15000);
-            });
-            if (registration.waiting || updateReady) markReady();
-            else showStatus("در حال حاضر نسخهٔ جدیدی برای دریافت شناسایی نشد. پس از انتشار نسخه، دوباره بررسی کنید.");
-          } else {
-            showStatus("این نسخه به‌روز است؛ اگر تغییرات همین حالا منتشر شده‌اند، چند ثانیه بعد دوباره بررسی کنید.");
-          }
-        } catch (_) {
-          showStatus("بررسی به‌روزرسانی ناموفق بود؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.");
-        } finally {
-          if (!updateReady) button.disabled = false;
-        }
-      });
-
-      navigator.serviceWorker.getRegistration().then(function (reg) {
-        if (reg) watchRegistration(reg);
-      }).catch(function () {});
-    })();
   </script>
 
   <script>
