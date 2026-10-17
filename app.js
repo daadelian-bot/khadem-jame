@@ -665,6 +665,30 @@
       return Array.isArray(state[stateKey]) ? state[stateKey] : [];
     }
   }
+  async function refreshDataAndCheckApp() {
+    if (state.loading) return;
+    // APK is a WebView shell: refreshing Supabase data alone does not fetch a newly published app.js.
+    if (navigator.onLine) {
+      const button = $("#kj-refresh");
+      if (button) { button.disabled = true; button.textContent = "در حال بررسی نسخه…"; }
+      try {
+        const response = await fetch("./live-data.html?kj-version-check=" + Date.now(), { cache: "no-store", credentials: "same-origin" });
+        if (response.ok) {
+          const html = await response.text();
+          const published = html.match(/<script[^>]+src=["'][^"']*app\.js\?v=([^"'&]+)[^"']*["']/i);
+          const currentScript = Array.from(document.scripts).find(node => /(?:^|\/)app\.js(?:\?|$)/i.test(node.src));
+          let currentVersion = "";
+          try { currentVersion = currentScript ? new URL(currentScript.src, window.location.href).searchParams.get("v") || "" : ""; } catch (_) {}
+          if (published && published[1] && currentVersion && published[1] !== currentVersion) {
+            if (button) { button.disabled = false; button.textContent = "به‌روزرسانی اطلاعات و برنامه"; }
+            const apply = window.confirm("نسخه جدید برنامه منتشر شده است. برای اعمال اصلاحات، صفحه دوباره بارگذاری می‌شود. اگر اطلاعاتی وارد کرده‌اید و هنوز ذخیره نکرده‌اید، ابتدا انصراف دهید و آن را ذخیره کنید. اکنون به‌روزرسانی شود؟");
+            if (apply) { window.location.replace("./live-data.html?app-refresh=" + Date.now()); return; }
+          }
+        }
+      } catch (error) { console.warn("KJ: app version check failed; refreshing data only", error); }
+    }
+    await loadData();
+  }
   async function loadData() {
     if (state.loading) return;
     state.loading = true;
@@ -1119,7 +1143,7 @@
       sidebar.classList.toggle("kj-mobile-open", open);
       $("#kj-mobile-menu-toggle").setAttribute("aria-expanded", open ? "true" : "false");
     });
-    $("#kj-refresh").addEventListener("click", loadData);
+    $("#kj-refresh").addEventListener("click", refreshDataAndCheckApp);
     $("#kj-signout").addEventListener("click", signout);
   }
 
