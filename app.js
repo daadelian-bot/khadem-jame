@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.28";
+  const RELEASE_VERSION = "2026.10.17.29";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -200,7 +200,8 @@
       return utcDay(new Date());
     };
     const monthStart = (year, month) => {
-      const startYear=year+620,start=new Date(Date.UTC(startYear,0,1));
+      // سال شمسی معمولاً از حوالی مارسِ سال میلادیِ بعد آغاز می‌شود؛ +620 باعث می‌شد جست‌وجو قبل از رسیدن به ماه انتخابی تمام شود و تقویم روی ۱۴۰۵ بماند.
+      const startYear=year+621,start=new Date(Date.UTC(startYear,0,1));
       for(let i=0;i<400;i++){const d=shiftDay(start,i),p=jalaliPartsFromDate(d);if(p.year===year&&p.month===month&&p.day===1)return d;}
       return utcDay(anchor);
     };
