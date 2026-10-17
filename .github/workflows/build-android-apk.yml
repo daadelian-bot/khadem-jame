@@ -140,8 +140,8 @@ jobs:
                   applicationId "ir.sayedazainab.khademjame"
                   minSdk 23
                   targetSdk 28
-                  versionCode 109
-                  versionName "1.0.9"
+                  versionCode 110
+                  versionName "1.1.0"
               }
 
               compileOptions {
@@ -180,7 +180,11 @@ jobs:
           package ir.sayedazainab.khademjame;
 
           import android.app.Activity;
+          import android.content.ActivityNotFoundException;
+          import android.content.Intent;
+          import android.net.Uri;
           import android.os.Bundle;
+          import android.webkit.ValueCallback;
           import android.webkit.WebChromeClient;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
@@ -188,8 +192,10 @@ jobs:
 
           public class MainActivity extends Activity {
               private WebView webView;
+              private ValueCallback<Uri[]> filePathCallback;
+              private static final int FILE_CHOOSER_REQUEST_CODE = 4107;
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261017-18";
+                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261018-android-file-picker";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -210,7 +216,27 @@ jobs:
                               || "http".equalsIgnoreCase(scheme));
                       }
                   });
-                  webView.setWebChromeClient(new WebChromeClient());
+                  webView.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public boolean onShowFileChooser(
+                              WebView view,
+                              ValueCallback<Uri[]> callback,
+                              FileChooserParams fileChooserParams) {
+                          if (filePathCallback != null) {
+                              filePathCallback.onReceiveValue(null);
+                          }
+                          filePathCallback = callback;
+                          try {
+                              Intent chooserIntent = fileChooserParams.createIntent();
+                              startActivityForResult(chooserIntent, FILE_CHOOSER_REQUEST_CODE);
+                              return true;
+                          } catch (ActivityNotFoundException exception) {
+                              filePathCallback = null;
+                              callback.onReceiveValue(null);
+                              return false;
+                          }
+                      }
+                  });
 
                   if (savedInstanceState != null) {
                       webView.restoreState(savedInstanceState);
@@ -225,6 +251,20 @@ jobs:
                       webView.saveState(outState);
                   }
                   super.onSaveInstanceState(outState);
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
+                      ValueCallback<Uri[]> callback = filePathCallback;
+                      filePathCallback = null;
+                      if (callback != null) {
+                          Uri[] results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+                          callback.onReceiveValue(results);
+                      }
+                      return;
+                  }
+                  super.onActivityResult(requestCode, resultCode, data);
               }
 
               @Override
@@ -292,12 +332,12 @@ jobs:
           test -s "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.9-debug.apk"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.0-debug.apk"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.0.9 (کد نسخه 109)
-          نوع ساخت: Debug APK
+          نسخه: 1.1.0 (کد نسخه 110)
+          نوع ساخت: Debug APK\n\nاین نسخه پشتیبانی انتخاب عکس از گالری/فایل را در WebView اندروید اضافه می‌کند.\nامضای این بسته آزمایشی باید با نسخه نصب‌شده سازگار باشد تا به‌صورت به‌روزرسانی نصب شود؛ اگر ناسازگار بود، آن را روی نسخه فعلی نصب نکنید.
 
           این برنامه یک پوسته WebView است و نسخه منتشرشده سامانه را از اینترنت باز می‌کند.
           برای استفاده، اتصال اینترنت لازم است. تغییرات منتشرشده در GitHub Pages در اجرای برنامه
@@ -310,7 +350,7 @@ jobs:
           EOF
 
           test -s "dist/README-FA.txt"
-          (cd dist && zip -q "Samane-Jame-Khademin-1.0.9.zip" "Samane-Jame-Khademin-1.0.9-debug.apk" "README-FA.txt")
+          (cd dist && zip -q "Samane-Jame-Khademin-1.1.0.zip" "Samane-Jame-Khademin-1.0.9-debug.apk" "README-FA.txt")
           sha256sum dist/Samane-Jame-Khademin-1.0.9-debug.apk dist/Samane-Jame-Khademin-1.0.9.zip > dist/SHA256SUMS.txt
           test -s "dist/SHA256SUMS.txt"
           test -s "dist/Samane-Jame-Khademin-1.0.9.zip"
