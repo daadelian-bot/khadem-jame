@@ -765,40 +765,48 @@
     return profile?.display_name || profile?.full_name || profile?.username || profile?.email || "کاربر بدون نام";
   }
   function adminPresencePanelHtml() {
-    if (!state.isPrimaryAdmin) return '<section class="kj-card"><h2>وضعیت کاربران سامانه</h2><p>این بخش فقط برای مدیر اصلی قابل مشاهده است.</p></section>';
+    if (!state.isPrimaryAdmin) return "";
     const now = Date.now();
     const profiles = Array.isArray(state.presenceProfiles) ? state.presenceProfiles : [];
     const presenceByUser = new Map((state.presenceRows || []).map(row => [String(row.user_id), row]));
     const onlineCount = profiles.filter(profile => profile.is_active === true && isPresenceOnline(presenceByUser.get(String(profile.id)), now)).length;
     const offlineCount = Math.max(0, profiles.length - onlineCount);
-    const rows = profiles.map(profile => {
+    const cards = profiles.map(profile => {
       const presence = presenceByUser.get(String(profile.id));
       const online = profile.is_active === true && isPresenceOnline(presence, now);
       const name = esc(presencePersonName(profile));
-      const email = esc(profile.email || "—");
-      const status = online
-        ? '<span style="display:inline-flex;align-items:center;gap:5px;color:#16734a;font-weight:bold"><i style="width:8px;height:8px;border-radius:50%;background:#20a464;display:inline-block"></i>آنلاین</span>'
-        : '<span style="display:inline-flex;align-items:center;gap:5px;color:#778392"><i style="width:8px;height:8px;border-radius:50%;background:#9aa5b1;display:inline-block"></i>آفلاین</span>';
+      const email = esc(profile.email || "ایمیل ثبت نشده");
       const lastSeen = presence?.last_seen_at
         ? esc(new Intl.DateTimeFormat("fa-IR-u-ca-persian", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(presence.last_seen_at)))
-        : "ثبت نشده";
-      return '<div style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(130px,1fr) auto minmax(145px,auto);gap:8px;align-items:center;padding:10px;border-bottom:1px solid #e6ebf0;font-size:12px"><span style="font-weight:700;overflow-wrap:anywhere">' + name + '</span><span style="color:#66788a;overflow-wrap:anywhere">' + email + '</span><span>' + status + '</span><span style="color:#66788a;white-space:nowrap">' + lastSeen + '</span></div>';
+        : "هنوز ثبت نشده";
+      const dot = online ? "#1eaa70" : "#9aa7b5";
+      const status = online ? "آنلاین" : "آفلاین";
+      return '<article style="display:flex;align-items:flex-start;gap:10px;min-width:0;padding:12px;border:1px solid #e3eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #173b5808">' +
+        '<span aria-hidden="true" style="flex:0 0 10px;width:10px;height:10px;margin-top:5px;border-radius:50%;background:' + dot + ';box-shadow:0 0 0 4px ' + (online ? '#e2f7ed' : '#edf1f5') + '"></span>' +
+        '<div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong style="font-size:13px;color:#173b58;overflow-wrap:anywhere">' + name + '</strong><span style="font-size:11px;font-weight:700;color:' + (online ? '#16734a' : '#778392') + ';background:' + (online ? '#e7f8ef' : '#f0f3f6') + ';border-radius:20px;padding:4px 8px">' + status + '</span></div>' +
+        '<div style="margin-top:5px;color:#718093;font-size:11px;overflow-wrap:anywhere;direction:ltr;text-align:right">' + email + '</div>' +
+        '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f5;color:#596b7e;font-size:11px"><span aria-hidden="true">🕒</span><span>آخرین حضور: <b style="font-weight:600;color:#34495e">' + lastSeen + '</b></span></div></div></article>';
     }).join("");
-    return '<section id="kj-admin-presence-panel" class="kj-card" style="padding:14px;border:1px solid #dfe6ed;border-right:3px solid #c6a66a;border-radius:12px;background:#fff;box-shadow:0 3px 12px #10283f0a">' +
-      '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><div><h2 style="margin:0 0 5px;color:#173b58;font-size:18px">وضعیت کاربران سامانه</h2><div style="font-size:12px;color:#66788a">آخرین حضور هر کاربر به تاریخ و ساعت نمایش داده می‌شود؛ فهرست هر ۳۰ ثانیه به‌روز می‌شود.</div></div><button type="button" class="kj-secondary" id="kj-presence-refresh">به‌روزرسانی فهرست</button></div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:13px"><b>کل حساب‌ها: ' + fa(profiles.length) + '</b><b style="color:#16734a">آنلاین: ' + fa(onlineCount) + '</b><b style="color:#778392">آفلاین: ' + fa(offlineCount) + '</b></div>' +
-      '<div style="overflow:auto;border:1px solid #e6ebf0;border-radius:8px"><div style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(130px,1fr) auto minmax(145px,auto);gap:8px;padding:9px 10px;background:#f5f7fa;color:#66788a;font-size:11px;font-weight:bold"><span>نام کاربر</span><span>ایمیل</span><span>وضعیت فعلی</span><span>آخرین حضور (تاریخ و ساعت)</span></div>' +
-      (rows || "") + (profiles.length ? "" : '<div style="padding:16px;text-align:center;color:#66788a;font-size:12px">در حال دریافت فهرست کاربران…</div>') + '</div></section>';
+    return '<section id="kj-admin-presence-panel" style="flex:1 1 100%;width:100%;min-width:0;margin-top:12px;padding:12px;border:1px solid #dfe7ee;border-right:4px solid #c6a66a;border-radius:14px;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);box-shadow:0 4px 14px #10283f0a">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+      '<button type="button" id="kj-admin-presence-toggle" aria-expanded="' + (state.presenceExpanded ? "true" : "false") + '" style="display:flex;flex:1;min-width:180px;align-items:center;gap:10px;border:0;background:transparent;padding:3px 0;color:#173b58;text-align:right;font:inherit;cursor:pointer">' +
+      '<span style="display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:11px;background:#eaf0f6;font-size:18px">👥</span><span><strong style="display:block;font-size:14px">وضعیت کاربران سامانه</strong><small style="display:block;margin-top:3px;color:#718093;font-size:11px;font-weight:400">نمایش آخرین زمان حضور و وضعیت اتصال کاربران</small></span></button>' +
+      '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="padding:6px 10px;border:1px solid #e0e8ef;border-radius:9px;background:#fff;color:#40556a;font-size:12px">کل <b>' + fa(profiles.length) + '</b></span><span style="padding:6px 10px;border:1px solid #cceedd;border-radius:9px;background:#effaf4;color:#16734a;font-size:12px">آنلاین <b>' + fa(onlineCount) + '</b></span><span style="padding:6px 10px;border:1px solid #e2e7ed;border-radius:9px;background:#f4f6f8;color:#66788a;font-size:12px">آفلاین <b>' + fa(offlineCount) + '</b></span><button type="button" id="kj-presence-refresh" class="kj-secondary" style="padding:7px 10px;font-size:11px">↻ تازه‌سازی</button></div></div>' +
+      '<div id="kj-admin-presence-list" ' + (state.presenceExpanded ? "" : "hidden") + ' style="margin-top:12px;padding-top:12px;border-top:1px solid #e5ebf0"><div style="margin-bottom:9px;color:#718093;font-size:11px">به‌روزرسانی خودکار هر ۳۰ ثانیه · آخرین حضور با تاریخ و ساعت</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:9px;align-items:stretch">' +
+      (cards || '<div style="padding:18px;text-align:center;color:#718093;font-size:12px;border:1px dashed #dce4eb;border-radius:10px;background:#fff">در حال دریافت فهرست کاربران…</div>') +
+      '</div></div></section>';
   }
   function renderAdminPresencePanel() {
     const panel = $("#kj-admin-presence-panel");
-    if (!panel || !state.isPrimaryAdmin || state.tab !== "presence") return;
+    if (!panel || !state.isPrimaryAdmin) return;
     const wrapper = document.createElement("div");
     wrapper.innerHTML = adminPresencePanelHtml();
     const replacement = wrapper.firstElementChild;
     if (replacement) {
       panel.replaceWith(replacement);
       $("#kj-presence-refresh")?.addEventListener("click", () => void refreshPresenceDirectory());
+      $("#kj-admin-presence-toggle")?.addEventListener("click", () => { state.presenceExpanded = !state.presenceExpanded; renderAdminPresencePanel(); });
     }
   }
   async function refreshPresenceDirectory() {
@@ -865,7 +873,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],...(state.isPrimaryAdmin ? [["presence","🟢 وضعیت کاربران سامانه"]] : []),["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],...(state.isPrimaryAdmin ? [["developerConsole","🧠 توسعه هوشمند"]] : []),["changePassword","🔐 تغییر رمز عبور"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],...(state.isPrimaryAdmin ? [["developerConsole","🧠 توسعه هوشمند"]] : []),["changePassword","🔐 تغییر رمز عبور"]]]
     ];
     for (let i = groups.length - 1; i >= 0; i--) {
       groups[i][1] = groups[i][1].filter(([id]) => canAccess(id));
@@ -877,6 +885,7 @@
           <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small><div class="kj-header-clock" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;margin-top:5px;color:var(--kj-muted)"><span id="kj-header-jalali-date"></span><b id="kj-header-digital-clock" style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--kj-gold)"></b></div></div>
           <div class="kj-actions"><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><button class="kj-secondary" id="kj-signout">خروج ←</button></div></div>
 
+                  ${adminPresencePanelHtml()}
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
@@ -2779,7 +2788,6 @@
       deployments: () => genericPage("deployments","مأموریت‌ها",state.deployments),
       equipment: equipmentPage,
       users: usersPage,
-      presence: adminPresencePanelHtml,
       audit: auditPage,
       finance: financePage,
       fund: () => genericPage("fund","صندوق",state.fund),
@@ -2791,7 +2799,6 @@
     };
     main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
     installGlobalExportToolbar(main);
-    if (state.tab === "presence") $("#kj-presence-refresh")?.addEventListener("click", () => void refreshPresenceDirectory());
     if (state.tab === "updateCheck") bindUpdateCheckPage(main);
     if (state.tab === "dashboard") bindDashboardExpanders(main);
     if (state.tab === "finance") {
