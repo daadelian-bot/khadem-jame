@@ -2844,7 +2844,7 @@
   }
 
   async function startApp() {
-    const allowedTabs = new Set(["dashboard","khadems","serviceRegister","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings","changePassword"]);
+    const allowedTabs = new Set(["dashboard","khadems","serviceRegister","services","friday","nonattendance","deployments","meetings","finance","fund","donors","equipment","reports","audit","users","settings","updateCheck","developerConsole","changePassword"]);
     const requestedTab = window.location.hash.replace(/^#/, "");
     if (allowedTabs.has(requestedTab)) state.tab = requestedTab;
     if (!token()) { loginPage(); return; }
