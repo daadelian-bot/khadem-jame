@@ -1249,3 +1249,20 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
   .kj-action-buttons button{padding:5px 3px;font-size:10px;}
   .kj-user-title{padding:3px 4px;font-size:9px;}
 }
+
+
+/* چیدمان نهایی سربرگ: منو و به‌روزرسانی کنار هم، خروج در چپ، ارتفاع یکسان */
+.kj-action-buttons{direction:rtl;}
+.kj-action-buttons #kj-refresh{order:0;}
+.kj-action-buttons #kj-mobile-menu-toggle{order:-1;}
+.kj-action-buttons #kj-signout{order:3;}
+.kj-action-buttons .kj-user-title{order:2;display:inline-flex;align-items:center;justify-content:center;align-self:stretch;min-height:32px;height:32px;box-sizing:border-box;line-height:1;padding:0 9px;}
+.kj-action-buttons button{height:32px;min-height:32px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;}
+@media(max-width:850px){
+  .kj-action-buttons .kj-user-title{height:29px;min-height:29px;padding:0 6px;}
+  .kj-action-buttons button{height:29px;min-height:29px;}
+}
+@media(max-width:380px){
+  .kj-action-buttons .kj-user-title{height:27px;min-height:27px;padding:0 4px;}
+  .kj-action-buttons button{height:27px;min-height:27px;}
+}
