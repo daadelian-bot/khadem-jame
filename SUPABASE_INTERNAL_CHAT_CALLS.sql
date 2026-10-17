@@ -98,7 +98,7 @@ create policy chat_members_select_member on public.chat_members for select to au
 drop policy if exists chat_members_insert_owner on public.chat_members;
 create policy chat_members_insert_owner on public.chat_members for insert to authenticated with check(public.has_app_permission('chat.create') and exists(select 1 from public.chat_conversations c where c.id=chat_members.conversation_id and c.created_by=auth.uid()));
 drop policy if exists chat_members_update_self on public.chat_members;
-create policy chat_members_update_self on public.chat_members for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+drop policy if exists chat_members_update_self on public.chat_members;
 drop policy if exists chat_messages_select_authorized on public.chat_messages;
 create policy chat_messages_select_authorized on public.chat_messages for select to authenticated using(
  deleted_at is null and public.has_app_permission('chat.view') and
