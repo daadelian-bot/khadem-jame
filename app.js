@@ -200,9 +200,9 @@
       return utcDay(new Date());
     };
     const monthStart = (year, month) => {
-      // سال شمسی معمولاً از حوالی مارسِ سال میلادیِ بعد آغاز می‌شود؛ +620 باعث می‌شد جست‌وجو قبل از رسیدن به ماه انتخابی تمام شود و تقویم روی ۱۴۰۵ بماند.
-      const startYear=year+621,start=new Date(Date.UTC(startYear,0,1));
-      for(let i=0;i<400;i++){const d=shiftDay(start,i),p=jalaliPartsFromDate(d);if(p.year===year&&p.month===month&&p.day===1)return d;}
+      // ماه‌های پایانی سال شمسی ممکن است در سال میلادی بعد قرار بگیرند؛ از ابتدای سال میلادیِ قبل جست‌وجو می‌کنیم و بازه را تا ۸۰۰ روز می‌گیریم تا همه ماه‌ها، از فروردین تا اسفند، پیدا شوند.
+      const startYear=year+620,start=new Date(Date.UTC(startYear,0,1));
+      for(let i=0;i<800;i++){const d=shiftDay(start,i),p=jalaliPartsFromDate(d);if(p.year===year&&p.month===month&&p.day===1)return d;}
       return utcDay(anchor);
     };
     const setInputValue = value => {
