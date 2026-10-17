@@ -236,6 +236,11 @@
         '<div class="kj-jalali-calendar-head"><button type="button" data-move="-1" aria-label="ماه قبل">‹</button><div class="kj-jalali-month-selects"><select data-month aria-label="انتخاب ماه">'+months+'</select><select data-year aria-label="انتخاب سال">'+years+'</select></div><button type="button" data-move="1" aria-label="ماه بعد">›</button></div>'+
         '<div class="kj-jalali-week">'+week.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="kj-jalali-days">'+cells+'</div>'+
         '<div class="kj-jalali-calendar-foot"><button type="button" data-today="1" class="kj-jalali-today">امروز</button><button type="button" data-clear="1" class="kj-jalali-clear">پاک‌کردن تاریخ</button></div>';
+      // اتصال مستقیم به فهرست‌ها برای سازگاری بیشتر با Android WebView.
+      picker.querySelectorAll("[data-month],[data-year]").forEach(select => {
+        select.onchange = updateCalendarPeriod;
+        select.onblur = updateCalendarPeriod;
+      });
     };
     const place=()=>{
       if(!activeInput||picker.hidden)return;
