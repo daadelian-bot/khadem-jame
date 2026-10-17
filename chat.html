@@ -215,7 +215,7 @@ async function startCall(){
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("مرورگر یا این محیط از تماس صوتی پشتیبانی نمی‌کند.");return}
  try{
   const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-  const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+  const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun.cloudflare.com:3478"}]});
   call={id:crypto.randomUUID(),conversationId:activeConversation.id,peerId:peer.user_id,pc:pc,stream:stream,role:"caller",remoteStream:new MediaStream(),pendingIce:[]};callMinimized=false;speakerEnabled=true;
   stream.getTracks().forEach(t=>pc.addTrack(t,stream));
   pc.onicecandidate=e=>{if(e.candidate)sendSignal("ice",{candidate:e.candidate.toJSON()}).catch(()=>{})};
