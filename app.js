@@ -756,6 +756,29 @@
     if (!state.accessLoaded || !state.accessCustom) return false;
     return state.accessPermissions?.[moduleKey + "." + action] === true;
   }
+  function applyCrudVisibility(root) {
+    if (!root) return;
+    const moduleByTab = { friday:"services", serviceRegister:"serviceRegister" };
+    const moduleKey = moduleByTab[state.tab] || state.tab;
+    if (["dashboard","updateCheck","changePassword"].includes(moduleKey)) return;
+    root.querySelectorAll("button").forEach(button => {
+      const label = String(button.innerText || button.textContent || "").replace(/\s+/g," ").trim();
+      if (!label) return;
+      const form = button.closest("form");
+      const formId = String(form?.id || "");
+      const id = String(button.id || "");
+      const createAction = /ثبت|افزودن|ایجاد/.test(label) || /import|registration|create/i.test(id);
+      const updateAction = /ویرایش|ذخیره تغییرات|به.?روزرسانی/.test(label) || /edit|update/i.test(id);
+      const deleteAction = /حذف (?:خادم|رکورد|تراکنش|جلسه|خدمت|مورد|اطلاعات)|^حذف$/.test(label) || /delete|remove/i.test(id);
+      const genericSave = /^(ذخیره|ذخیره اطلاعات|تأیید|تایید|ثبت تغییرات)$/.test(label);
+      if (createAction && !canPerform(moduleKey,"create")) button.hidden = true;
+      if (updateAction && !canPerform(moduleKey,"update")) button.hidden = true;
+      if (deleteAction && !canPerform(moduleKey,"delete")) button.hidden = true;
+      if (genericSave && !canPerform(moduleKey,"create") && !canPerform(moduleKey,"update")) button.hidden = true;
+      if (formId.toLowerCase().includes("registration") && !canPerform(moduleKey,"create")) button.hidden = true;
+      if ((formId.toLowerCase().includes("edit") || formId.toLowerCase().includes("profile")) && !canPerform(moduleKey,"update")) button.hidden = true;
+    });
+  }
   const PRESENCE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
   let presenceHeartbeatTimer = null;
   let presencePollTimer = null;
@@ -2781,6 +2804,7 @@
     main.classList.toggle("kj-dashboard-view", state.tab === "dashboard");
     if (state.selectedKhadem !== null && state.tab === "khadems") {
       main.innerHTML = offlineNotice() + khademProfile();
+      applyCrudVisibility(main);
       installGlobalExportToolbar(main);
       $("#kj-back")?.addEventListener("click", () => { state.selectedKhadem = null; state.profileEditOpen = false; render(); });
       $("#kj-edit-profile")?.addEventListener("click", () => { state.profileEditOpen = !state.profileEditOpen; render(); });
@@ -2811,6 +2835,7 @@
       changePassword: changePasswordPage,
     };
     main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
+    applyCrudVisibility(main);
     installGlobalExportToolbar(main);
     if (state.tab === "updateCheck") bindUpdateCheckPage(main);
     if (state.tab === "dashboard") bindDashboardExpanders(main);
