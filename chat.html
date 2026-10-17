@@ -198,7 +198,7 @@ async function markConversationRead(){
  const member=(activeConversation.members||[]).find(m=>m.user_id===me.id);if(member&&data)member.last_read_at=data.last_read_at||stamp;drawMessages();
 }
 function sendTyping(typing){if(!messageChannel||!activeConversation||!me)return;messageChannel.send({type:"broadcast",event:"typing",payload:{conversation_id:activeConversation.id,user_id:me.id,name:me.name,typing:!!typing}}).catch(()=>{})}
-async function sendBuzz(){
+async async function sendBuzz(){
  if(!activeConversation||!sb||!me)return;
  if(activeConversation.kind!=="direct"){toast("ارسال تکان فقط در گفت‌وگوی خصوصی فعال است.");return}
  const {data,error}=await sb.from("chat_messages").insert({conversation_id:activeConversation.id,sender_id:me.id,sender_name:me.name,body:BUZZ_BODY,conversation_type:"group",recipient_id:null}).select("id,conversation_id,sender_id,sender_name,body,created_at,deleted_at,conversation_type").single();
@@ -209,7 +209,7 @@ async function deleteMessage(id){
  if(me?.role!=="admin"){toast("حذف دوطرفه فقط برای مدیر اصلی فعال است.");return}
  const row=activeMessages.find(m=>m.id===id);if(!row||row.body===ADMIN_REMOVED)return;
  if(!confirm("این پیام برای همه اعضای گفت‌وگو حذف شود؟"))return;
- const {data,error}=await sb.from("chat_messages").update({body:ADMIN_REMOVED,edited_at:new Date().toISOString()}).eq("id",id).select("id,conversation_id,sender_id,sender_name,body,created_at,deleted_at,conversation_type").single();
+ const {data,error}=await sb.from("chat_messages").update({body:ADMIN_REMOVED}).eq("id",id).select("id,conversation_id,sender_id,sender_name,body,created_at,deleted_at,conversation_type").single();
  if(error){toast("حذف دوطرفه انجام نشد: "+String(error.message||"خطای مجوز").slice(0,100));return}
  const i=activeMessages.findIndex(m=>m.id===id);if(i>=0)activeMessages[i]=data;drawMessages();toast("پیام برای همه اعضا حذف شد.");
 }
