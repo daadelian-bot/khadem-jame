@@ -45,7 +45,7 @@ alter table public.chat_messages enable row level security;
 alter table public.chat_call_signals enable row level security;
 create or replace function public.chat_is_member(p_conversation_id uuid)
 returns boolean language sql stable security definer set search_path=public,auth
-as $$ select auth.uid() is not null and exists(select 1 from public.chat_members m where m.conversation_id=p_conversation_id and m.user_id=auth.uid()) $$;
+as $$ select auth.uid() is not null and public.has_app_permission('chat.view') and exists(select 1 from public.chat_members m where m.conversation_id=p_conversation_id and m.user_id=auth.uid()) $$;
 revoke all on function public.chat_is_member(uuid) from public,anon;
 grant execute on function public.chat_is_member(uuid) to authenticated;
 create or replace function public.chat_directory()
