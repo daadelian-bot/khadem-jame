@@ -82,9 +82,22 @@ function draw(items){
   const state=item.state!=="open"?"بسته‌شده":stale?"بدون پاسخ؛ بررسی لازم":"در حال بررسی";
   const latest=comments.slice(-3).map(c=>'<div class="comment">'+esc(c.body||"")+'<div class="meta">'+esc(c.created_at||"")+'</div></div>'+prLink(c.body)).join("");
   const workflowLink=stale?'<p><a href="https://github.com/daadelian-bot/khadem-jame/actions/workflows/chat-code-agent.yml" target="_blank" rel="noopener noreferrer">بررسی اجرای گردش‌کار GitHub Actions</a></p>':"";
-  const fallback=stale?'<div class="comment">بیش از ۳۵ دقیقه پاسخی ثبت نشده است؛ احتمال دارد گردش‌کار اجرا نشده یا متوقف شده باشد. وضعیت GitHub Actions و وجود Secretهای لازم را بررسی کنید.</div>'+workflowLink:'<div class="comment">در انتظار پاسخ گردش‌کار توسعه…</div>';
+  const fallback=stale?'<div class="comment">بیش از ۳۵ دقیقه پاسخی ثبت نشده است؛ احتمال دارد گردش‌کار اجرا نشده یا متوقف شده باشد. وضعیت GitHub Actions و وجود Secretهای لازم را بررسی کنید.</div>'+workflowLink+'<div class="actions"><button class="btn" type="button" data-retry="'+esc(item.number)+'">بازاجرای گردش‌کار</button></div>':'<div class="comment">در انتظار پاسخ گردش‌کار توسعه…</div>';
   return '<article class="request"><h3>#'+esc(item.number)+' ـ '+esc(item.title)+'</h3><div class="meta">وضعیت درخواست: '+state+' · ثبت: '+esc(item.created_at||"")+'</div>'+ (latest||fallback)+'</article>';
  }).join("");
+ history.querySelectorAll("[data-retry]").forEach(button=>button.addEventListener("click",()=>retryWorkflow(Number(button.dataset.retry),button)));
+}
+async function retryWorkflow(issueNumber,button){
+ if(!Number.isSafeInteger(issueNumber)||issueNumber<1)return;
+ button.disabled=true;button.textContent="در حال راه‌اندازی دوباره…";
+ try{
+  const result=await call({action:"retry",issue_number:issueNumber});
+  message.classList.remove("hidden");note(message,result.message||"درخواست برای اجرای دوباره ارسال شد.","ok");
+  await loadHistory();
+ }catch(error){
+  message.classList.remove("hidden");note(message,error.message||"بازاجرای گردش‌کار ناموفق بود.","error");
+  button.disabled=false;button.textContent="بازاجرای گردش‌کار";
+ }
 }
 async function loadHistory(){
  try{const d=await call({action:"list"});draw(d.requests||[])}
