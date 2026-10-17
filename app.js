@@ -103,6 +103,7 @@
   }
   function jalaliToGregorian(value) {
     const raw=String(value??"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    if (!raw || ["—","–","-","نامشخص"].includes(raw)) return "";
     const m=raw.match(/^(13|14)(\d{2})[/-](\d{1,2})[/-](\d{1,2})$/);
     if(!m) return value;
     let jy=Number(raw.split(/[/-]/)[0]), jm=Number(raw.split(/[/-]/)[1]), jd=Number(raw.split(/[/-]/)[2]);
@@ -129,7 +130,8 @@
     return p.year+"/"+p.month+"/"+p.day;
   }
   function jalaliToGregorianText(value) {
-    const raw=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replaceAll("-","/");
+    const raw=String(value??"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replaceAll("-","/");
+    if (!raw || ["—","–","-","نامشخص"].includes(raw)) return "";
     const m=raw.match(/^(13|14)\d{2}[/](\d{1,2})[/](\d{1,2})$/);
     if (!m) return raw;
     let jy=Number(m[1]), jm=Number(m[2]), jd=Number(m[3]);
@@ -145,6 +147,12 @@
     const monthDays=[0,31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
     let gm=1; while(gm<=12&&gd>monthDays[gm]){gd-=monthDays[gm];gm++;}
     return String(gy)+"-"+String(gm).padStart(2,"0")+"-"+String(gd).padStart(2,"0");
+  }
+  function dateInputText(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw || ["—","–","-","نامشخص","null","undefined"].includes(raw.toLowerCase())) return "";
+    const rendered = dateText(value);
+    return rendered === "—" ? "" : rendered;
   }
   function dateText(value) {
     if (!value) return "—";
@@ -1934,8 +1942,8 @@
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
       ["national_code","کد ملی","text",val(k,["national_code","national_id"])],
-      ["birth_date","تاریخ تولد (هجری شمسی)","text",dateText(val(k,["birth_date"]))],
-      ["membership_date","تاریخ عضویت (هجری شمسی)","text",dateText(val(k,["membership_date"]))],
+      ["birth_date","تاریخ تولد (هجری شمسی)","text",dateInputText(val(k,["birth_date"]))],
+      ["membership_date","تاریخ عضویت (هجری شمسی)","text",dateInputText(val(k,["membership_date"]))],
       ["occupation","شغل","text",val(k,["occupation","job"])],
       ["phone","شماره تلفن","tel",val(k,["phone","mobile","phone_number"])],
       ["residence","محل سکونت","text",val(k,["residence","address","home_address"])],
