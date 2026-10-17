@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.32";
+  const RELEASE_VERSION = "2026.10.18.33";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -2040,7 +2040,7 @@
   }
   function khademEditForm(k) {
     const skillOptions = ["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","مدیریت جمعیت و راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"];
-    const rawSkills = val(k,["skills","skill_list","abilities","special_skills"]);
+    let extraSkills=k?.extra_data; if(typeof extraSkills==="string"){try{extraSkills=JSON.parse(extraSkills);}catch(_){extraSkills={};}} const rawSkills = val(k,["skills","skill_list","abilities","special_skills"]) || val(extraSkills,["skills","skill_list","abilities","special_skills"]);
     let currentSkills = [];
     if (Array.isArray(rawSkills)) currentSkills = rawSkills.map(x=>String(x).trim()).filter(Boolean);
     else if (rawSkills && typeof rawSkills === "object") currentSkills = Object.values(rawSkills).map(x=>String(x).trim()).filter(Boolean);
@@ -2117,6 +2117,8 @@
     }
     const extraKey = known.has("extra_data") ? "extra_data" : null;
     let existingExtra = k.extra_data; if (typeof existingExtra === "string") { try { existingExtra = JSON.parse(existingExtra); } catch (_) { existingExtra = {}; } } const extra = extraKey && existingExtra && typeof existingExtra === "object" && !Array.isArray(existingExtra) ? {...existingExtra} : {};
+    // اگر جدول ستون مستقیمی برای مهارت‌ها ندارد، مهارت‌ها را در extra_data ذخیره کن و داده‌های قبلی را نگه دار.
+    if (extraKey && !skillsKey) extra.skills = allSkills;
     const setExtraFallback = (aliases, formKey) => {
       const value = String(fd.get(formKey) || "").trim();
       if (!aliases.some(x => known.has(x)) && extraKey) {
@@ -2130,7 +2132,7 @@
       setExtraValue("referrer_name", fd.get("referrer_name"));
       setExtraValue("emergency_contact_name_2", fd.get("emergency_contact_name_2"));
       setExtraValue("emergency_contact_phone_2", fd.get("emergency_contact_phone_2"));
-      if (Object.keys(extra).length || Object.keys(existingExtra || {}).length) payload.extra_data = extra;
+      if (Object.keys(extra).length || Object.keys(existingExtra || {}).length || allSkills.length === 0 || !skillsKey) payload.extra_data = extra;
     }
     const activeValue = String(fd.get("active") || "").toLowerCase();
     if (activeValue) { if (known.has("is_active")) payload.is_active = activeValue === "true"; else if (known.has("active")) payload.active = activeValue === "true"; else if (known.has("status")) payload.status = activeValue === "true" ? "active" : "inactive"; }
@@ -2277,7 +2279,7 @@
       </details></div>
       <div class="kj-card" style="margin-top:14px"><details class="kj-profile-subsection">
         <summary class="kj-section-title">🧰 مهارت‌ها و توانمندی‌ها</summary>
-        ${(() => { const raw=val(k,["skills","skill_list","abilities","special_skills"]); let current=[]; if(Array.isArray(raw)) current=raw; else if(raw && typeof raw==="object") current=Object.values(raw); else if(String(raw||"").trim()) current=String(raw).split(/[,،;؛\n]+/).map(x=>x.trim()).filter(Boolean); const options=["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","مدیریت جمعیت و راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"]; return '<div><b>مهارت‌های ثبت‌شده:</b> ' + (current.length ? current.map(x=>'<span class="kj-pill">' + esc(x) + '</span>').join(" ") : "مهارتی در پرونده ثبت نشده است.") + '</div><p class="kj-muted">فهرست پیشنهادی مهارت‌هایی که می‌توان برای خادم ثبت کرد:</p><div class="kj-skill-list">' + options.map(x=>'<span class="kj-pill">' + esc(x) + '</span>').join(" ") + '</div><p class="kj-muted">در نسخه فعلی این بخش نمایشی است؛ برای ذخیره یا ویرایش مهارت‌ها باید قابلیت ثبت با مجوز پایگاه داده فعال شود.</p>'; })()}
+        ${(() => { let extraSkills=k?.extra_data; if(typeof extraSkills==="string"){try{extraSkills=JSON.parse(extraSkills);}catch(_){extraSkills={};}} const raw=val(k,["skills","skill_list","abilities","special_skills"]) || val(extraSkills,["skills","skill_list","abilities","special_skills"]); let current=[]; if(Array.isArray(raw)) current=raw; else if(raw && typeof raw==="object") current=Object.values(raw); else if(String(raw||"").trim()) current=String(raw).split(/[,،;؛\n]+/).map(x=>x.trim()).filter(Boolean); const options=["کمک‌های اولیه و امداد","امور پزشکی","آشپزی","پذیرایی و توزیع غذا","نظافت و خدمات عمومی","مدیریت موکب","برنامه‌ریزی و امور اجرایی","امور اداری و بایگانی","حسابداری و امور مالی","رایانه و فناوری اطلاعات","طراحی گرافیک","عکاسی و فیلم‌برداری","تدوین فیلم","روابط عمومی و رسانه","ترجمه عربی","ترجمه انگلیسی","رانندگی","تعمیرات برق","تعمیرات فنی","تأسیسات و لوله‌کشی","نجاری","انبارداری و تدارکات","مدیریت جمعیت و راهنمایی زائران","امور فرهنگی و تبلیغی","مداحی و اجرای مراسم","صوت و تجهیزات مراسم","خیاطی","سایر مهارت‌ها"]; return '<div><b>مهارت‌های ثبت‌شده:</b> ' + (current.length ? current.map(x=>'<span class="kj-pill">' + esc(x) + '</span>').join(" ") : "مهارتی در پرونده ثبت نشده است.") + '</div><p class="kj-muted">فهرست پیشنهادی مهارت‌هایی که می‌توان برای خادم ثبت کرد:</p><div class="kj-skill-list">' + options.map(x=>'<span class="kj-pill">' + esc(x) + '</span>').join(" ") + '</div><p class="kj-muted">برای ثبت یا ویرایش مهارت‌ها، از دکمه «ویرایش اطلاعات خادم» در همین پرونده استفاده کنید و در پایان «ذخیره تغییرات» را بزنید.</p>'; })()}
       </details></div>
       <div class="kj-card" style="margin-top:14px"><div class="kj-grid" style="margin:0"><div><div class="kj-muted">کد خادم</div><b>${esc(khademCode(k) || "—")}</b></div><div><div class="kj-muted">تعداد سوابق خدمت</div><b>${fa(services.length)}</b></div><div><div class="kj-muted">تعداد تراکنش‌های مالی</div><b>${fa(financeRows.length)}</b></div></div></div>
       <div class="kj-card" style="margin-top:14px">${relatedSection("سوابق خدمت","service_records",serviceRows,serviceCols,"هنوز سابقه خدمتی برای این خادم ثبت نشده است.")}</div>
