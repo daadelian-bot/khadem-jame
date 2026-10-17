@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.30";
+  const RELEASE_VERSION = "2026.10.17.31";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -272,8 +272,8 @@
       if(next) anchor=next;
       render();place();
     };
+    // برای selectهای بومی اندروید فقط پس از تأیید انتخاب (change) بازسازی کنیم؛ input زودهنگام DOM را عوض می‌کرد و انتخاب را خنثی می‌کرد.
     picker.addEventListener("change",updateCalendarPeriod);
-    picker.addEventListener("input",updateCalendarPeriod);
     document.addEventListener("input",e=>{if(activeInput&&e.target===activeInput){anchor=dateFromInput(activeInput);render();place();}});
     document.addEventListener("focusin",e=>{if(e.target.matches&&e.target.matches(jalaliDateInputSelector()))open(e.target);});
     document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!picker.hidden)close();});
