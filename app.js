@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.4";
+  const RELEASE_VERSION = "2026.10.17.5";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -740,7 +740,7 @@
   function canAccess(tab) {
     // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
     if (state.isPrimaryAdmin || state.accessFull) return true;
-    if (tab === "dashboard" || tab === "changePassword") return true;
+    if (tab === "dashboard" || tab === "changePassword" || tab === "updateCheck") return true;
     if (!state.accessLoaded) return false;
     // Fail closed: users/managers without an explicitly saved permission profile
     // must not inherit unrestricted access by default.
@@ -757,7 +757,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["changePassword","🔐 تغییر رمز عبور"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],["changePassword","🔐 تغییر رمز عبور"]]]
     ];
     for (let i = groups.length - 1; i >= 0; i--) {
       groups[i][1] = groups[i][1].filter(([id]) => canAccess(id));
@@ -2517,6 +2517,112 @@
       ' تغییرات پشتیبانی‌شده پس از اتصال اینترنت ارسال می‌شوند. عملیات حساس مانند پرداخت شهریه، تغییر رمز، مدیریت دسترسی و بارگذاری عکس جدید همچنان به اینترنت نیاز دارند.</div>';
   }
 
+  function updateCheckPage() {
+    return `<div class="kj-page-heading"><div><h1 class="kj-page-title">بررسی به‌روزرسانی سامانه</h1><p class="kj-muted">نسخه منتشرشده را بررسی کنید و در صورت آماده بودن نسخه جدید، آن را اعمال کنید.</p></div></div>
+      <section class="kj-card" style="max-width:760px">
+        <h2 class="kj-section-title">مدیریت نسخه برنامه</h2>
+        <p>بررسی، دریافت و اعمال نسخه جدید از طریق سرویس‌ورکر انجام می‌شود. هنگام اعمال نسخه، صفحه یک‌بار بارگذاری مجدد خواهد شد.</p>
+        <div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-update-check-page">بررسی به‌روزرسانی</button><a class="kj-secondary" href="./release-notes.html?v=20261017-7">گزارش کامل تغییرات نسخه</a></div>
+        <div id="kj-update-status-page" class="kj-notice" role="status" aria-live="polite" hidden></div>
+      </section>`;
+  }
+
+  function bindUpdateCheckPage(root) {
+    const button = root.querySelector("#kj-update-check-page");
+    const status = root.querySelector("#kj-update-status-page");
+    if (!button || !status) return;
+    if (!("serviceWorker" in navigator)) {
+      button.disabled = true;
+      status.hidden = false;
+      status.textContent = "مرورگر فعلی از بررسی خودکار به‌روزرسانی پشتیبانی نمی‌کند.";
+      return;
+    }
+    let registration = null;
+    let updateReady = false;
+    let applying = false;
+    const controllerAtStart = navigator.serviceWorker.controller;
+    const showStatus = message => { status.textContent = message; status.hidden = false; };
+    const markReady = () => {
+      updateReady = true;
+      button.disabled = false;
+      button.textContent = "اعمال نسخه جدید";
+      showStatus("نسخه جدید آماده است. ابتدا تغییرات ثبت‌نشده را ذخیره کنید، سپس «اعمال نسخه جدید» را بزنید.");
+    };
+    const watchRegistration = reg => {
+      registration = reg;
+      if (registration.waiting) markReady();
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        showStatus("نسخه جدید پیدا شد؛ فایل‌ها در حال دریافت هستند…");
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && (navigator.serviceWorker.controller || controllerAtStart)) markReady();
+          else if (worker.state === "redundant" && !updateReady) showStatus("دریافت نسخه جدید کامل نشد؛ دوباره بررسی کنید.");
+        });
+      });
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (applying) {
+        showStatus("نسخه جدید فعال شد؛ در حال بارگذاری مجدد…");
+        window.location.reload();
+      } else if (controllerAtStart && !updateReady) markReady();
+    });
+    button.addEventListener("click", async () => {
+      if (updateReady) {
+        applying = true;
+        button.disabled = true;
+        showStatus("در حال اعمال نسخه جدید…");
+        try {
+          const worker = registration && (registration.waiting || registration.installing);
+          if (worker && worker.state !== "activated") {
+            worker.postMessage({ type: "SKIP_WAITING" });
+            await new Promise(resolve => {
+              let done = false;
+              const finish = () => { if (!done) { done = true; resolve(); } };
+              navigator.serviceWorker.addEventListener("controllerchange", finish, { once: true });
+              window.setTimeout(finish, 5000);
+            });
+          }
+          window.location.reload();
+        } catch (_) {
+          applying = false;
+          button.disabled = false;
+          showStatus("اعمال نسخه جدید ناموفق بود؛ دوباره تلاش کنید.");
+        }
+        return;
+      }
+      button.disabled = true;
+      showStatus("در حال بررسی نسخه منتشرشده…");
+      try {
+        if (!registration) {
+          registration = await navigator.serviceWorker.getRegistration();
+          if (!registration) registration = await navigator.serviceWorker.register("./service-worker.js");
+          watchRegistration(registration);
+        }
+        await registration.update();
+        if (registration.waiting || updateReady) markReady();
+        else if (registration.installing) {
+          const worker = registration.installing;
+          await new Promise(resolve => {
+            let done = false;
+            const finish = () => { if (!done) { done = true; resolve(); } };
+            worker.addEventListener("statechange", () => {
+              if (["installed","activated","redundant"].includes(worker.state)) finish();
+            });
+            window.setTimeout(finish, 15000);
+          });
+          if (registration.waiting || updateReady) markReady();
+          else showStatus("نسخه جدیدی شناسایی نشد. اگر تغییرات تازه منتشر شده‌اند، چند ثانیه بعد دوباره بررسی کنید.");
+        } else showStatus("سامانه به‌روز است؛ اگر نسخه‌ای همین حالا منتشر شده، چند ثانیه بعد دوباره بررسی کنید.");
+      } catch (_) {
+        showStatus("بررسی به‌روزرسانی ناموفق بود؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.");
+      } finally {
+        if (!updateReady) button.disabled = false;
+      }
+    });
+    navigator.serviceWorker.getRegistration().then(reg => { if (reg) watchRegistration(reg); }).catch(() => {});
+  }
+
   function render() {
     if (!token()) { const message = sessionExpiredMessage; sessionExpiredMessage = ""; loginPage(message); return; }
     if (!canAccess(state.tab)) {
@@ -2555,10 +2661,12 @@
       donors: () => genericPage("donors","خیرین",state.donors),
       reports: reportsPage,
       settings: settingsPage,
+      updateCheck: updateCheckPage,
       changePassword: changePasswordPage,
     };
     main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
     installGlobalExportToolbar(main);
+    if (state.tab === "updateCheck") bindUpdateCheckPage(main);
     if (state.tab === "dashboard") bindDashboardExpanders(main);
     if (state.tab === "finance") {
       $$("[data-finance-view]", main).forEach(button => button.addEventListener("click", () => { financeView=button.dataset.financeView; render(); }));
