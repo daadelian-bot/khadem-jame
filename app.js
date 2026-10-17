@@ -1257,7 +1257,19 @@
   }
   function bindPhotoPreview(inputSelector,imgSelector){
     const input=$(inputSelector),img=$(imgSelector);if(!input||!img)return;
-    input.addEventListener("change",()=>{const file=input.files&&input.files[0];if(!file){img.removeAttribute("src");img.style.display="none";return;}if(!["image/jpeg","image/png","image/webp"].includes(file.type)){toast("فرمت عکس باید JPG، PNG یا WEBP باشد.","error");input.value="";img.style.display="none";return;}if(file.size>5*1024*1024){toast("حجم عکس نباید بیشتر از ۵ مگابایت باشد.","error");input.value="";img.style.display="none";return;}img.src=URL.createObjectURL(file);img.style.display="block";});
+    // بعضی انتخاب‌گرهای فایل اندروید نوع MIME را خالی برمی‌گردانند؛ پسوند فایل را هم بررسی می‌کنیم.
+    input.setAttribute("accept","image/*,.jpg,.jpeg,.png,.webp");
+    input.addEventListener("change",()=>{
+      const file=input.files&&input.files[0];
+      if(!file){img.removeAttribute("src");img.style.display="none";return;}
+      const ext=String(file.name||"").split(".").pop().toLowerCase();
+      const mimeByExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"};
+      const mime=["image/jpeg","image/png","image/webp"].includes(file.type)?file.type:(mimeByExt[ext]||"");
+      if(!mime){toast("فرمت عکس باید JPG، PNG یا WEBP باشد. لطفاً عکس را از گالری انتخاب کنید.","error");input.value="";img.style.display="none";return;}
+      if(file.size>5*1024*1024){toast("حجم عکس نباید بیشتر از ۵ مگابایت باشد.","error");input.value="";img.style.display="none";return;}
+      try{if(img.dataset.kjPhotoPreviewUrl)URL.revokeObjectURL(img.dataset.kjPhotoPreviewUrl);const url=URL.createObjectURL(file);img.dataset.kjPhotoPreviewUrl=url;img.src=url;img.style.display="block";}
+      catch(_){toast("نمایش پیش‌نمایش عکس ناموفق بود؛ دوباره عکس را انتخاب کنید.","error");}
+    });
   }
   function khademIdentityText(k) {
     if (!k) return "";
@@ -1927,7 +1939,7 @@
     ];
     return `<form id="kj-registration-form" class="kj-card" style="margin:14px 0" novalidate>
       <h2 class="kj-section-title">فرم ثبت خادم جدید</h2>
-      <label class="kj-field" style="max-width:420px"><b>عکس خادم (اختیاری)</b><input id="kj-registration-photo" name="photo_file" type="file" accept="image/jpeg,image/png,image/webp"><img id="kj-registration-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="${name==="khadem_code"?fa(nextKhademCode()):""}" autocomplete="off" placeholder="${name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}"></label>`).join("")}</div>
+      <label class="kj-field" style="max-width:420px"><b>عکس خادم (اختیاری)</b><input id="kj-registration-photo" name="photo_file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp"><img id="kj-registration-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b><input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="${name==="khadem_code"?fa(nextKhademCode()):""}" autocomplete="off" placeholder="${name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}"></label>`).join("")}</div>
       <fieldset style="border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:14px 0"><legend>مهارت‌ها و توانمندی‌ها</legend><div class="kj-skill-list">${skills.map(s=>`<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;margin:4px"><input type="checkbox" name="skills" value="${esc(s)}">${esc(s)}</label>`).join("")}</div></fieldset>
       <label class="kj-field"><b>توضیحات</b><textarea name="notes" rows="3"></textarea></label>
       <div id="kj-registration-message" class="kj-muted" role="status" aria-live="polite"></div>
@@ -2028,7 +2040,7 @@
       ["notes","توضیحات","text",val(k,["notes","description"])],
       ["active","وضعیت فعالیت (فعال/غیرفعال)","select",val(k,["is_active","active","status"])]
     ];
-    return '<form id="kj-profile-edit-form" novalidate><label class="kj-field" style="max-width:420px"><b>ثبت یا تغییر عکس خادم (اختیاری)</b><input id="kj-profile-photo-input" name="photo_file" type="file" accept="image/jpeg,image/png,image/webp"><img id="kj-profile-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-profile-grid">' +
+    return '<form id="kj-profile-edit-form" novalidate><label class="kj-field" style="max-width:420px"><b>ثبت یا تغییر عکس خادم (اختیاری)</b><input id="kj-profile-photo-input" name="photo_file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp"><img id="kj-profile-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-profile-grid">' +
       fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="select"?'<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+'>فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+'>غیرفعال</option></select>':'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off" dir="auto" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;display:block">')+'</label>').join("") +
       '<fieldset class="kj-edit-skills" style="grid-column:1/-1;min-width:0;border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:8px 0"><legend>مهارت‌ها و توانمندی‌ها — برای انتخاب یا حذف، گزینه‌ها را علامت بزنید</legend><div class="kj-skill-list" style="display:flex;flex-wrap:wrap;gap:8px">'+skillOptions.map(s=>'<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;max-width:100%;white-space:normal;overflow-wrap:anywhere"><input type="checkbox" name="profile_skills" value="'+esc(s)+'" '+(currentSkills.includes(s)?"checked":"")+'>'+esc(s)+'</label>').join("")+'</div><label class="kj-field" style="margin-top:10px"><b>مهارت‌های دیگر (اختیاری؛ با ویرگول جدا کنید)</b><input name="custom_skills" type="text" dir="auto" value="'+esc(currentSkills.filter(s=>!skillOptions.includes(s)).join("، "))+'" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0"></label></fieldset>' +
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
