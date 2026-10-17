@@ -88,7 +88,7 @@ drop policy if exists chat_read_public_or_participant on public.chat_messages;
 drop policy if exists chat_insert_own_public_or_private on public.chat_messages;
 drop policy if exists "chat update own" on public.chat_messages;
 drop policy if exists chat_conversations_select_member on public.chat_conversations;
-create policy chat_conversations_select_member on public.chat_conversations for select to authenticated using(created_by=auth.uid() or public.chat_is_member(id));
+create policy chat_conversations_select_member on public.chat_conversations for select to authenticated using(public.has_app_permission('chat.view') and (created_by=auth.uid() or public.chat_is_member(id)));
 drop policy if exists chat_conversations_insert_authorized on public.chat_conversations;
 create policy chat_conversations_insert_authorized on public.chat_conversations for insert to authenticated with check(created_by=auth.uid() and public.has_app_permission('chat.create'));
 drop policy if exists chat_conversations_update_owner on public.chat_conversations;
