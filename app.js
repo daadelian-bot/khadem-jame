@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.5";
+  const RELEASE_VERSION = "2026.10.17.6";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -47,6 +47,9 @@
     equipmentReceiptItems: [],
     equipmentCommitteePayments: [],
     profiles: [],
+    presenceProfiles: [],
+    presenceRows: [],
+    presenceExpanded: false,
     roles: [],
     permissions: [],
     rolePermissions: [],
@@ -691,6 +694,7 @@
     }
   }
   function signout() {
+    stopPresenceMonitoring(true);
     // خروج امن، داده‌های آفلاین حساب جاری را نیز از دستگاه پاک می‌کند.
     if (window.KJOfflineStore) {
       try { void window.KJOfflineStore.clearCurrentUserData().catch(err => console.warn("KJ: local cache cleanup failed", err)); } catch (_) {}
@@ -747,6 +751,114 @@
     if (!state.accessCustom) return false;
     return state.accessPermissions?.[tab] === true;
   }
+  const PRESENCE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
+  let presenceHeartbeatTimer = null;
+  let presencePollTimer = null;
+  let presenceVisibilityHandler = null;
+  let presenceRefreshInFlight = false;
+
+  function isPresenceOnline(row, now = Date.now()) {
+    const seen = Date.parse(row?.last_seen_at || "");
+    return Number.isFinite(seen) && now - seen >= -30000 && now - seen <= PRESENCE_ONLINE_WINDOW_MS;
+  }
+  function presencePersonName(profile) {
+    return profile?.display_name || profile?.full_name || profile?.username || profile?.email || "کاربر بدون نام";
+  }
+  function adminPresencePanelHtml() {
+    if (!state.isPrimaryAdmin) return "";
+    const now = Date.now();
+    const profiles = Array.isArray(state.presenceProfiles) ? state.presenceProfiles : [];
+    const presenceByUser = new Map((state.presenceRows || []).map(row => [String(row.user_id), row]));
+    const onlineCount = profiles.filter(profile => profile.is_active === true && isPresenceOnline(presenceByUser.get(String(profile.id)), now)).length;
+    const offlineCount = Math.max(0, profiles.length - onlineCount);
+    const rows = profiles.map(profile => {
+      const presence = presenceByUser.get(String(profile.id));
+      const online = profile.is_active === true && isPresenceOnline(presence, now);
+      const name = esc(presencePersonName(profile));
+      const email = esc(profile.email || "");
+      const status = online
+        ? '<span style="display:inline-flex;align-items:center;gap:5px;color:#16734a;font-weight:bold"><i style="width:8px;height:8px;border-radius:50%;background:#20a464;display:inline-block"></i>آنلاین</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:5px;color:#778392"><i style="width:8px;height:8px;border-radius:50%;background:#9aa5b1;display:inline-block"></i>آفلاین</span>';
+      const lastSeen = presence?.last_seen_at
+        ? esc(new Intl.DateTimeFormat("fa-IR", { hour: "2-digit", minute: "2-digit" }).format(new Date(presence.last_seen_at)))
+        : "—";
+      return '<div style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(90px,1fr) auto auto;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #e6ebf0;font-size:12px"><span style="font-weight:700;overflow-wrap:anywhere">' + name + '</span><span style="color:#66788a;overflow-wrap:anywhere">' + email + '</span><span>' + status + '</span><span style="color:#66788a;white-space:nowrap">' + (online ? "اکنون" : "آخرین فعالیت: " + lastSeen) + '</span></div>';
+    }).join("");
+    return '<div id="kj-admin-presence-panel" style="flex:1 1 100%;width:100%;min-width:100%;padding:9px 11px;border:1px solid #dfe6ed;border-right:3px solid #c6a66a;border-radius:12px;background:#fff;box-shadow:0 3px 12px #10283f0a">' +
+      '<button id="kj-admin-presence-toggle" type="button" aria-expanded="' + (state.presenceExpanded ? "true" : "false") + '" style="display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;border:0;background:transparent;color:#173b58;text-align:right;padding:2px;font:inherit;cursor:pointer">' +
+      '<span style="font-weight:700">وضعیت کاربران سامانه</span><span style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px"><b>کل: ' + fa(profiles.length) + '</b><b style="color:#16734a">آنلاین: ' + fa(onlineCount) + '</b><b style="color:#778392">آفلاین: ' + fa(offlineCount) + '</b><span>' + (state.presenceExpanded ? "▲ بستن فهرست" : "▼ مشاهده همه") + '</span></span></button>' +
+      '<div id="kj-admin-presence-list" ' + (state.presenceExpanded ? "" : "hidden") + ' style="margin-top:8px;max-height:260px;overflow:auto;border-top:1px solid #e6ebf0">' +
+      '<div style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(90px,1fr) auto auto;gap:8px;padding:7px 10px;background:#f5f7fa;color:#66788a;font-size:11px;font-weight:bold"><span>نام کاربر</span><span>ایمیل</span><span>وضعیت</span><span>آخرین فعالیت</span></div>' +
+      (rows || "") + (profiles.length ? "" : '<div style="padding:14px;text-align:center;color:#66788a;font-size:12px">در حال دریافت فهرست کاربران…</div>') + '</div></div>';
+  }
+  function renderAdminPresencePanel() {
+    const panel = $("#kj-admin-presence-panel");
+    if (!panel || !state.isPrimaryAdmin) return;
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = adminPresencePanelHtml();
+    const replacement = wrapper.firstElementChild;
+    if (replacement) {
+      panel.replaceWith(replacement);
+      $("#kj-admin-presence-toggle")?.addEventListener("click", () => {
+        state.presenceExpanded = !state.presenceExpanded;
+        renderAdminPresencePanel();
+      });
+    }
+  }
+  async function refreshPresenceDirectory() {
+    if (!state.isPrimaryAdmin || !token() || !navigator.onLine || presenceRefreshInFlight) return;
+    presenceRefreshInFlight = true;
+    try {
+      const [profiles, rows] = await Promise.all([
+        request("/rest/v1/profiles?select=id,full_name,email,username,display_name,is_active,role&order=full_name.asc&limit=1000"),
+        request("/rest/v1/user_presence?select=user_id,last_seen_at&limit=1000")
+      ]);
+      state.presenceProfiles = Array.isArray(profiles) ? profiles : [];
+      state.presenceRows = Array.isArray(rows) ? rows : [];
+      renderAdminPresencePanel();
+    } catch (error) {
+      console.warn("KJ: failed to refresh admin presence directory", error);
+    } finally {
+      presenceRefreshInFlight = false;
+    }
+  }
+  function publishPresence(userId) {
+    if (!userId || !token() || !navigator.onLine) return;
+    const now = new Date().toISOString();
+    void request("/rest/v1/user_presence?on_conflict=user_id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: { user_id: userId, last_seen_at: now, updated_at: now }
+    }).catch(error => console.warn("KJ: presence heartbeat could not be saved", error));
+  }
+  function stopPresenceMonitoring(removeCurrent = false) {
+    if (presenceHeartbeatTimer) clearInterval(presenceHeartbeatTimer);
+    if (presencePollTimer) clearInterval(presencePollTimer);
+    presenceHeartbeatTimer = null;
+    presencePollTimer = null;
+    if (presenceVisibilityHandler) document.removeEventListener("visibilitychange", presenceVisibilityHandler);
+    presenceVisibilityHandler = null;
+    if (removeCurrent && navigator.onLine && token()) {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) {}
+      if (user?.id) void request("/rest/v1/user_presence?user_id=eq." + encodeURIComponent(user.id), { method: "DELETE" }).catch(() => {});
+    }
+  }
+  function startPresenceMonitoring(authUser) {
+    stopPresenceMonitoring(false);
+    if (!authUser?.id || !token()) return;
+    publishPresence(authUser.id);
+    presenceHeartbeatTimer = window.setInterval(() => publishPresence(authUser.id), 45000);
+    presenceVisibilityHandler = () => {
+      if (document.visibilityState === "visible") publishPresence(authUser.id);
+    };
+    document.addEventListener("visibilitychange", presenceVisibilityHandler);
+    if (state.isPrimaryAdmin) {
+      void refreshPresenceDirectory();
+      presencePollTimer = window.setInterval(() => void refreshPresenceDirectory(), 30000);
+    }
+  }
+
   function shell() {
     const app = ensureRoot();
     const user = (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) { return null; } })();
@@ -768,6 +880,7 @@
         <header class="kj-top">
           <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small><div class="kj-header-clock" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;margin-top:5px;color:var(--kj-muted)"><span id="kj-header-jalali-date"></span><b id="kj-header-digital-clock" style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--kj-gold)"></b></div></div>
           <div class="kj-actions"><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><button class="kj-secondary" id="kj-signout">خروج ←</button></div></div>
+          ${adminPresencePanelHtml()}
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
@@ -796,6 +909,10 @@
       }
     };
     refreshHeaderClock();
+    $("#kj-admin-presence-toggle")?.addEventListener("click", () => {
+      state.presenceExpanded = !state.presenceExpanded;
+      renderAdminPresencePanel();
+    });
     if (!window.__kjHeaderClockTimer) window.__kjHeaderClockTimer = window.setInterval(refreshHeaderClock, 1000);
     $$(".kj-group-toggle").forEach(b => b.addEventListener("click", () => {
       const group=b.closest(".kj-menu-group");const open=!group.classList.contains("open");
@@ -2885,6 +3002,7 @@
       state.isPrimaryAdmin = String(authUser.email || "").trim().toLowerCase() === "da.adelian@gmail.com";
       state.accessLoaded = true;
       state.offlineMode = false;
+      startPresenceMonitoring(authUser);
       if (window.KJOfflineStore) {
         try {
           await window.KJOfflineStore.saveMeta("auth-state", {
