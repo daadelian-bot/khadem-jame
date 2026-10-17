@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.31";
+  const RELEASE_VERSION = "2026.10.17.32";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -264,16 +264,24 @@
     },true);
     // تغییر سال/ماه مستقیماً روی خود تقویم شنیده می‌شود؛ در WebView اندروید اتکا به شنوندهٔ document گاهی قابل اعتماد نیست.
     const updateCalendarPeriod = e => {
-      if(!e.target.matches||!e.target.matches("[data-month],[data-year]")) return;
-      const p=jalaliPartsFromDate(anchor);
-      const year=e.target.matches("[data-year]")?Number(e.target.value):p.year;
-      const month=e.target.matches("[data-month]")?Number(e.target.value):p.month;
+      const target=e && e.target;
+      if(!target || !target.matches || !target.matches("[data-month],[data-year]")) return;
+      // مقدار هر دو فهرست را مستقیماً از کنترل‌های فعلی بخوان؛ به مقدار قبلی anchor تکیه نکن.
+      const current=jalaliPartsFromDate(anchor);
+      const yearSelect=picker.querySelector("[data-year]");
+      const monthSelect=picker.querySelector("[data-month]");
+      const year=Number(yearSelect && yearSelect.value) || current.year;
+      const month=Number(monthSelect && monthSelect.value) || current.month;
+      if(year===current.year && month===current.month) return;
       const next=monthStart(year,month);
-      if(next) anchor=next;
-      render();place();
+      if(!next) return;
+      anchor=next;
+      render();
+      place();
     };
-    // برای selectهای بومی اندروید فقط پس از تأیید انتخاب (change) بازسازی کنیم؛ input زودهنگام DOM را عوض می‌کرد و انتخاب را خنثی می‌کرد.
-    picker.addEventListener("change",updateCalendarPeriod);
+    // اندروید/WebView ممکن است change را متفاوت زمان‌بندی کند؛ پوشش change و خروج از فهرست انتخاب.
+    picker.addEventListener("change",updateCalendarPeriod,true);
+    picker.addEventListener("focusout",updateCalendarPeriod,true);
     document.addEventListener("input",e=>{if(activeInput&&e.target===activeInput){anchor=dateFromInput(activeInput);render();place();}});
     document.addEventListener("focusin",e=>{if(e.target.matches&&e.target.matches(jalaliDateInputSelector()))open(e.target);});
     document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!picker.hidden)close();});
