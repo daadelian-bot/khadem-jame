@@ -212,7 +212,7 @@ async function startCall(){
  try{
   const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
-  call={id:crypto.randomUUID(),conversationId:activeConversation.id,peerId:peer.user_id,pc:pc,stream:stream,role:"caller",remoteStream:new MediaStream()};
+  call={id:crypto.randomUUID(),conversationId:activeConversation.id,peerId:peer.user_id,pc:pc,stream:stream,role:"caller",remoteStream:new MediaStream(),pendingIce:[]};
   stream.getTracks().forEach(t=>pc.addTrack(t,stream));
   pc.onicecandidate=e=>{if(e.candidate)sendSignal("ice",{candidate:e.candidate.toJSON()}).catch(()=>{})};
   pc.ontrack=e=>{e.streams[0].getTracks().forEach(t=>call&&call.remoteStream.addTrack(t));attachRemoteAudio()};
@@ -226,6 +226,7 @@ function showCallScreen(text,inCall){
  $("overlayRoot").innerHTML='<div class="call-overlay"><div class="call-card"><div class="call-avatar">📞</div><h2>'+esc(call?personName(call.peerId):"تماس صوتی")+'</h2><p id="callStatus">'+esc(text)+'</p><audio id="remoteAudio" autoplay playsinline></audio><div class="call-controls"><button id="muteCall" style="background:#f6f0dd;color:#634f1f" title="قطع/وصل میکروفون">🎙️</button><button id="endCall" style="background:#b84040;color:#fff" title="پایان تماس">📵</button></div></div></div>';
  $("endCall").onclick=()=>endCall(true);$("muteCall").onclick=toggleMute;
 }
+async function drainIce(){if(!call||!call.pc.remoteDescription)return;const items=call.pendingIce.splice(0);for(const candidate of items){try{await call.pc.addIceCandidate(new RTCIceCandidate(candidate))}catch{}}}
 function attachRemoteAudio(){const audio=$("remoteAudio");if(audio&&call){audio.srcObject=call.remoteStream;audio.play().catch(()=>{})}}
 function toggleMute(){if(!call)return;const tracks=call.stream.getAudioTracks();tracks.forEach(t=>t.enabled=!t.enabled);$("muteCall").textContent=tracks.some(t=>t.enabled)?"🎙️":"🔇"}
 async function handleSignal(s){
@@ -238,8 +239,8 @@ async function handleSignal(s){
  }
  if(!call||s.call_id!==call.id||s.conversation_id!==call.conversationId)return;
  try{
-  if(s.event_type==="answer"&&call.role==="caller"){await call.pc.setRemoteDescription({type:"answer",sdp:s.payload.sdp});const st=$("callStatus");if(st)st.textContent="تماس برقرار شد 🤍"}
-  else if(s.event_type==="ice"&&s.payload&&s.payload.candidate){await call.pc.addIceCandidate(new RTCIceCandidate(s.payload.candidate))}
+  if(s.event_type==="answer"&&call.role==="caller"){await call.pc.setRemoteDescription({type:"answer",sdp:s.payload.sdp});await drainIce();const st=$("callStatus");if(st)st.textContent="تماس برقرار شد 🤍"}
+  else if(s.event_type==="ice"&&s.payload&&s.payload.candidate){if(call.pc.remoteDescription)await call.pc.addIceCandidate(new RTCIceCandidate(s.payload.candidate));else call.pendingIce.push(s.payload.candidate)}
   else if(s.event_type==="end"||s.event_type==="reject"||s.event_type==="busy"){cleanupCall();toast(s.event_type==="busy"?"مخاطب در تماس دیگری است.":s.event_type==="reject"?"تماس رد شد.":"تماس پایان یافت.");}
  }catch(e){toast("برقراری تماس صوتی با مشکل روبه‌رو شد.")}
 }
@@ -248,11 +249,11 @@ async function acceptCall(){
  try{
   const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
-  call={id:s.call_id,conversationId:s.conversation_id,peerId:s.sender_id,pc:pc,stream:stream,role:"callee",remoteStream:new MediaStream()};
+  call={id:s.call_id,conversationId:s.conversation_id,peerId:s.sender_id,pc:pc,stream:stream,role:"callee",remoteStream:new MediaStream(),pendingIce:[]};
   stream.getTracks().forEach(t=>pc.addTrack(t,stream));
   pc.onicecandidate=e=>{if(e.candidate)sendSignal("ice",{candidate:e.candidate.toJSON()}).catch(()=>{})};
   pc.ontrack=e=>{e.streams[0].getTracks().forEach(t=>call&&call.remoteStream.addTrack(t));attachRemoteAudio()};
-  await pc.setRemoteDescription({type:"offer",sdp:s.payload.sdp});
+  await pc.setRemoteDescription({type:"offer",sdp:s.payload.sdp});await drainIce();
   const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
   await sendSignal("answer",{sdp:answer.sdp});
   pendingCall=null;showCallScreen("تماس برقرار شد 🤍",true);
