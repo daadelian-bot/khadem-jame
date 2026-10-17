@@ -253,6 +253,7 @@
 
   // Refresh tokens are kept locally and are never exposed in the UI or sent to non-auth endpoints.
   let refreshInFlight = null;
+  let sessionExpiredMessage = "";
   async function refreshSession() {
     if (refreshInFlight) return refreshInFlight;
     refreshInFlight = (async function () {
@@ -529,9 +530,27 @@
       // Retry only explicit JWT-expiry failures; never retry arbitrary writes or permission denials.
       const isExpiredJwt = response.status === 401 && /jwt expired|expired jwt|token expired/i.test(String(message));
       const isAuthEndpoint = String(path).startsWith("/auth/v1/token");
-      if (isExpiredJwt && !options.__authRetry && !isAuthEndpoint && localStorage.getItem(REFRESH_TOKEN_KEY)) {
-        await refreshSession();
-        return request(path, { ...options, __authRetry: true });
+      if (isExpiredJwt && !options.__authRetry && !isAuthEndpoint) {
+        if (!localStorage.getItem(REFRESH_TOKEN_KEY)) {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          sessionExpiredMessage = "نشست ورود منقضی شده است؛ لطفاً دوباره وارد سامانه شوید.";
+          const error = new Error(sessionExpiredMessage);
+          error.status = 401;
+          throw error;
+        }
+        try {
+          await refreshSession();
+          return request(path, { ...options, __authRetry: true });
+        } catch (refreshError) {
+          if (refreshError && refreshError.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(REFRESH_TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+            sessionExpiredMessage = "نشست ورود تمدید نشد؛ لطفاً دوباره وارد سامانه شوید.";
+          }
+          throw refreshError;
+        }
       }
       const error = new Error(String(message));
       error.status = response.status;
@@ -2524,7 +2543,7 @@
   }
 
   function render() {
-    if (!token()) { loginPage(); return; }
+    if (!token()) { const message = sessionExpiredMessage; sessionExpiredMessage = ""; loginPage(message); return; }
     if (!canAccess(state.tab)) {
       state.tab = "dashboard";
       state.selectedKhadem = null;
@@ -2817,6 +2836,7 @@
             try { const outbox = await window.KJOfflineStore.listOutbox(); state.offlinePendingCount = outbox.filter(row => row.status === "pending").length; state.offlineReviewCount = outbox.length - state.offlinePendingCount; } catch (_) {}
             if (!canAccess(state.tab)) state.tab = "dashboard";
             toast("اینترنت در دسترس نیست؛ اطلاعات ذخیره‌شده قبلی در حالت آفلاین باز می‌شود.", "info");
+            await showReleaseIntroIfNeeded();
             void loadData();
             return;
           }
