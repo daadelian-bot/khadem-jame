@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.8";
+  const RELEASE_VERSION = "2026.10.17.9";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -49,7 +49,7 @@
     profiles: [],
     presenceProfiles: [],
     presenceRows: [],
-    presenceExpanded: true,
+    presenceExpanded: false,
     roles: [],
     permissions: [],
     rolePermissions: [],
@@ -787,14 +787,18 @@
         '<div style="margin-top:5px;color:#718093;font-size:11px;overflow-wrap:anywhere;direction:ltr;text-align:right">' + email + '</div>' +
         '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f5;color:#596b7e;font-size:11px"><span aria-hidden="true">🕒</span><span>آخرین حضور: <b style="font-weight:600;color:#34495e">' + lastSeen + '</b></span></div></div></article>';
     }).join("");
-    return '<section id="kj-admin-presence-panel" style="flex:1 1 100%;width:100%;min-width:0;margin-top:12px;padding:12px;border:1px solid #dfe7ee;border-right:4px solid #c6a66a;border-radius:14px;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);box-shadow:0 4px 14px #10283f0a">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
-      '<button type="button" id="kj-admin-presence-toggle" aria-expanded="' + (state.presenceExpanded ? "true" : "false") + '" style="display:flex;flex:1;min-width:180px;align-items:center;gap:10px;border:0;background:transparent;padding:3px 0;color:#173b58;text-align:right;font:inherit;cursor:pointer">' +
-      '<span style="display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:11px;background:#eaf0f6;font-size:18px">👥</span><span><strong style="display:block;font-size:14px">وضعیت کاربران سامانه</strong><small style="display:block;margin-top:3px;color:#718093;font-size:11px;font-weight:400">نمایش آخرین زمان حضور و وضعیت اتصال کاربران</small></span></button>' +
-      '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="padding:6px 10px;border:1px solid #e0e8ef;border-radius:9px;background:#fff;color:#40556a;font-size:12px">کل <b>' + fa(profiles.length) + '</b></span><span style="padding:6px 10px;border:1px solid #cceedd;border-radius:9px;background:#effaf4;color:#16734a;font-size:12px">آنلاین <b>' + fa(onlineCount) + '</b></span><span style="padding:6px 10px;border:1px solid #e2e7ed;border-radius:9px;background:#f4f6f8;color:#66788a;font-size:12px">آفلاین <b>' + fa(offlineCount) + '</b></span><button type="button" id="kj-presence-refresh" class="kj-secondary" style="padding:7px 10px;font-size:11px">↻ تازه‌سازی</button></div></div>' +
-      '<div id="kj-admin-presence-list" ' + (state.presenceExpanded ? "" : "hidden") + ' style="margin-top:12px;padding-top:12px;border-top:1px solid #e5ebf0"><div style="margin-bottom:9px;color:#718093;font-size:11px">به‌روزرسانی خودکار هر ۳۰ ثانیه · آخرین حضور با تاریخ و ساعت</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:9px;align-items:stretch">' +
-      (cards || '<div style="padding:18px;text-align:center;color:#718093;font-size:12px;border:1px dashed #dce4eb;border-radius:10px;background:#fff">در حال دریافت فهرست کاربران…</div>') +
+    return '<section id="kj-admin-presence-panel" style="flex:' + (state.presenceExpanded ? '1 1 100%;width:100%;' : '0 1 auto;max-width:100%;') + 'min-width:0;align-self:flex-start;margin-top:8px;padding:' + (state.presenceExpanded ? '10px 12px' : '5px 9px') + ';border:1px solid ' + (state.presenceExpanded ? '#dfe7ee' : '#d4e0e9') + ';border-right:3px solid #c6a66a;border-radius:12px;background:' + (state.presenceExpanded ? 'linear-gradient(135deg,#fff 0%,#f8fafc 100%)' : '#ffffff12') + ';box-shadow:0 3px 12px #10283f0a">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+      '<button type="button" id="kj-admin-presence-toggle" aria-expanded="' + (state.presenceExpanded ? 'true' : 'false') + '" aria-controls="kj-admin-presence-list" style="display:flex;flex:1 1 auto;min-width:0;align-items:center;gap:8px;border:0;background:transparent;padding:2px 0;color:' + (state.presenceExpanded ? '#173b58' : '#fff') + ';text-align:right;font:inherit;cursor:pointer">' +
+      '<span style="display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:9px;background:' + (state.presenceExpanded ? '#eaf0f6' : '#ffffff1c') + ';font-size:15px">👥</span>' +
+      '<span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong style="font-size:12px;line-height:1.5">وضعیت کاربران</strong>' +
+      (state.presenceExpanded ? '<small style="display:block;color:#718093;font-size:10px;font-weight:400">آخرین حضور و وضعیت اتصال کاربران</small>' : '<span style="font-size:10px;font-weight:700;color:#d8f8e8;background:#16734a;border-radius:20px;padding:2px 7px">آنلاین ' + fa(onlineCount) + '</span>') +
+      '</span><span aria-hidden="true" style="margin-right:auto;font-size:13px;color:' + (state.presenceExpanded ? '#718093' : '#fff') + '">' + (state.presenceExpanded ? '▲' : '⌄') + '</span></button>' +
+      (state.presenceExpanded ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="padding:5px 8px;border:1px solid #e0e8ef;border-radius:8px;background:#fff;color:#40556a;font-size:11px">کل <b>' + fa(profiles.length) + '</b></span><span style="padding:5px 8px;border:1px solid #cceedd;border-radius:8px;background:#effaf4;color:#16734a;font-size:11px">آنلاین <b>' + fa(onlineCount) + '</b></span><span style="padding:5px 8px;border:1px solid #e2e7ed;border-radius:8px;background:#f4f6f8;color:#66788a;font-size:11px">آفلاین <b>' + fa(offlineCount) + '</b></span><button type="button" id="kj-presence-refresh" class="kj-secondary" style="padding:5px 8px;font-size:10px">↻ تازه‌سازی</button></div>' : '') +
+      '</div>' +
+      '<div id="kj-admin-presence-list" ' + (state.presenceExpanded ? '' : 'hidden') + ' style="margin-top:10px;padding-top:10px;border-top:1px solid #e5ebf0"><div style="margin-bottom:8px;color:#718093;font-size:10px">به‌روزرسانی خودکار هر ۳۰ ثانیه · نمایش تاریخ و ساعت آخرین حضور</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px;align-items:stretch">' +
+      (cards || '<div style="padding:15px;text-align:center;color:#718093;font-size:12px;border:1px dashed #dce4eb;border-radius:10px;background:#fff">در حال دریافت فهرست کاربران…</div>') +
       '</div></div></section>';
   }
   function renderAdminPresencePanel() {
