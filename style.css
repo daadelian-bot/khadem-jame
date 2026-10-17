@@ -1266,3 +1266,13 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
   .kj-action-buttons .kj-user-title{height:27px;min-height:27px;padding:0 4px;}
   .kj-action-buttons button{height:27px;min-height:27px;}
 }
+
+
+/* بانک خادمین: دکمه‌های ثبت و نمایش عکس هم‌تراز و یک‌دست */
+.kj-toolbar:has(#kj-open-import){gap:10px;align-items:center}
+.kj-toolbar .kj-khadem-action,.kj-toolbar .kj-photo-toggle{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:10px 15px;border:1px solid var(--kj-primary-color);border-radius:10px;background:var(--kj-primary-color);color:#fff;font:inherit;font-weight:700;line-height:1.4;box-sizing:border-box}
+.kj-toolbar .kj-khadem-action{cursor:pointer;white-space:nowrap}
+.kj-toolbar .kj-photo-toggle{cursor:pointer;white-space:nowrap}
+.kj-toolbar .kj-photo-toggle input{margin:0}
+.kj-toolbar .kj-khadem-action:hover,.kj-toolbar .kj-photo-toggle:hover{filter:brightness(1.08)}
+@media(max-width:600px){.kj-toolbar .kj-khadem-action,.kj-toolbar .kj-photo-toggle{min-height:40px;padding:8px 10px;font-size:12px}}
