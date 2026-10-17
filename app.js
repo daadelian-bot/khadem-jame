@@ -757,7 +757,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],["changePassword","🔐 تغییر رمز عبور"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],...(state.isPrimaryAdmin ? [["developerConsole","🧠 توسعه هوشمند"]] : []),["changePassword","🔐 تغییر رمز عبور"]]]
     ];
     for (let i = groups.length - 1; i >= 0; i--) {
       groups[i][1] = groups[i][1].filter(([id]) => canAccess(id));
@@ -766,8 +766,8 @@
     app.innerHTML = `
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
-          <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small></div>
-          <div class="kj-actions"><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button><button class="kj-secondary" id="kj-signout">خروج ←</button></div></div>
+          <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small><div class="kj-header-clock" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;margin-top:5px;color:var(--kj-muted)"><span id="kj-header-jalali-date"></span><b id="kj-header-digital-clock" style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--kj-gold)"></b></div></div>
+          <div class="kj-actions"><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><button class="kj-secondary" id="kj-signout">خروج ←</button><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button></div></div>
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
@@ -783,6 +783,20 @@
           <div class="kj-content-wrap"><main id="kj-main" class="kj-main"></main><footer class="kj-footer">سامانه جامع مدیریت خادمین · رابط فارسی راست‌چین</footer></div>
         </div>
       </div>`;
+    const refreshHeaderClock = () => {
+      const now = new Date();
+      const dateEl = $("#kj-header-jalali-date");
+      const timeEl = $("#kj-header-digital-clock");
+      try {
+        if (dateEl) dateEl.textContent = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(now);
+        if (timeEl) timeEl.textContent = new Intl.DateTimeFormat("fa-IR", { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(now);
+      } catch (_) {
+        if (dateEl) dateEl.textContent = now.toLocaleDateString("fa-IR");
+        if (timeEl) timeEl.textContent = now.toLocaleTimeString("fa-IR");
+      }
+    };
+    refreshHeaderClock();
+    if (!window.__kjHeaderClockTimer) window.__kjHeaderClockTimer = window.setInterval(refreshHeaderClock, 1000);
     $$(".kj-group-toggle").forEach(b => b.addEventListener("click", () => {
       const group=b.closest(".kj-menu-group");const open=!group.classList.contains("open");
       group.classList.toggle("open",open);b.setAttribute("aria-expanded",open?"true":"false");
@@ -790,6 +804,7 @@
     $$(".kj-nav [data-tab]").forEach(b => b.addEventListener("click", () => {
       const nextTab = b.dataset.tab;
       if (!nextTab) return;
+      if (nextTab === "developerConsole") { window.location.href = "./developer-console.html?v=20261017-4"; return; }
       if (!canAccess(nextTab)) { toast("دسترسی این بخش برای حساب شما فعال نیست. از مدیر اصلی بخواهید مجوز آن را در بخش «کاربران و دسترسی‌ها» تنظیم کند.", "error"); return; }
       state.tab = nextTab;
       state.selectedKhadem = null;
@@ -2522,7 +2537,7 @@
       <section class="kj-card" style="max-width:760px">
         <h2 class="kj-section-title">مدیریت نسخه برنامه</h2>
         <p>بررسی، دریافت و اعمال نسخه جدید از طریق سرویس‌ورکر انجام می‌شود. هنگام اعمال نسخه، صفحه یک‌بار بارگذاری مجدد خواهد شد.</p>
-        <div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-update-check-page">بررسی به‌روزرسانی</button><a class="kj-secondary" href="./release-notes.html?v=20261017-7">گزارش کامل تغییرات نسخه</a></div>
+        <div class="kj-toolbar"><button type="button" class="kj-primary" id="kj-update-check-page">بررسی به‌روزرسانی</button></div>
         <div id="kj-update-status-page" class="kj-notice" role="status" aria-live="polite" hidden></div>
       </section>`;
   }
