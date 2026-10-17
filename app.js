@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.18.35";
+  const RELEASE_VERSION = "2026.10.18.36";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -2052,6 +2052,7 @@
       ["triple_name","نام ثلاثی","text",val(k,["triple_name","tri_name","full_name_triple"])],
       ["father_name","نام پدر","text",val(k,["father_name"])],
       ["national_code","کد ملی","text",val(k,["national_code","national_id"])],
+      ["blood_type","گروه خونی","bloodselect",val(k,["blood_type","blood_group"]) || val(k?.extra_data||{},["blood_type","blood_group"])],
       ["birth_date","تاریخ تولد (هجری شمسی)","text",dateInputText(val(k,["birth_date"]))],
       ["membership_date","تاریخ عضویت (هجری شمسی)","text",dateInputText(val(k,["membership_date"]))],
       ["occupation","شغل","text",val(k,["occupation","job"])],
@@ -2066,7 +2067,7 @@
       ["active","وضعیت فعالیت (فعال/غیرفعال)","select",val(k,["is_active","active","status"])]
     ];
     return '<form id="kj-profile-edit-form" novalidate><label class="kj-field" style="max-width:420px"><b>ثبت یا تغییر عکس خادم (اختیاری)</b><input id="kj-profile-photo-input" name="photo_file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp"><img id="kj-profile-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-profile-grid">' +
-      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="select"?'<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+'>فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+'>غیرفعال</option></select>':'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off" dir="auto" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;display:block">')+'</label>').join("") +
+      fields.map(([name,label,type,value]) => '<label class="kj-field"><b>'+esc(label)+'</b>'+(type==="bloodselect" ? '<select name="blood_type"><option value="">انتخاب گروه خونی</option>'+["A+","A-","B+","B-","AB+","AB-","O+","O-","نامشخص"].map(v=>'<option value="'+v+'" '+(String(value||"").trim()===v?"selected":"")+'>'+v+'</option>').join("")+'</select>' : (type==="select" ? '<select name="'+name+'"><option value="">انتخاب وضعیت</option><option value="true" '+([true,"true","active","فعال","1"].includes(value)?"selected":"")+' >فعال</option><option value="false" '+([false,"false","inactive","غیرفعال","0"].includes(value)?"selected":"")+' >غیرفعال</option></select>' : '<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off" dir="auto" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;display:block">'))+'</label>').join("") +
       '<fieldset class="kj-edit-skills" style="grid-column:1/-1;min-width:0;border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:8px 0"><legend>مهارت‌ها و توانمندی‌ها — برای انتخاب یا حذف، گزینه‌ها را علامت بزنید</legend><div class="kj-skill-list" style="display:flex;flex-wrap:wrap;gap:8px">'+skillOptions.map(s=>'<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;max-width:100%;white-space:normal;overflow-wrap:anywhere"><input type="checkbox" name="profile_skills" value="'+esc(s)+'" '+(currentSkills.includes(s)?"checked":"")+'>'+esc(s)+'</label>').join("")+'</div><label class="kj-field" style="margin-top:10px"><b>مهارت‌های دیگر (اختیاری؛ با ویرگول جدا کنید)</b><input name="custom_skills" type="text" dir="auto" value="'+esc(currentSkills.filter(s=>!skillOptions.includes(s)).join("، "))+'" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0"></label></fieldset>' +
       '</div><div id="kj-profile-edit-message" class="kj-muted" role="status" aria-live="polite"></div><div class="kj-toolbar"><button class="kj-primary" id="kj-save-profile" type="submit">ذخیره تغییرات</button><button class="kj-secondary" type="button" id="kj-cancel-profile-edit">انصراف</button></div></form>';
   }
@@ -2099,6 +2100,7 @@
     put(["national_code","national_id"], fd.get("national_code"));
     put(["birth_date"], jalaliToGregorian(fd.get("birth_date")));
     put(["membership_date"], jalaliToGregorian(fd.get("membership_date")));
+    put(["blood_type","blood_group"], fd.get("blood_type"));
     put(["occupation","job"], fd.get("occupation"));
     put(["phone","mobile","phone_number"], fd.get("phone"));
     put(["residence","address","home_address"], fd.get("residence"));
