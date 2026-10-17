@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173b58">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>توسعه هوشمند | سامانه جامع خادمین</title>
+<style>
+:root{--navy:#173b58;--navy2:#245975;--gold:#c6a66a;--ink:#1c3045;--muted:#65798a;--line:#dfe6ed;--paper:#fff;--bg:#f3f5f8;--danger:#9c2626;--ok:#155d35}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(120deg,#10283f,var(--navy2));color:#fff;padding:22px max(18px,calc((100% - 860px)/2));border-bottom:3px solid var(--gold)}
+header h1{font-size:21px;margin:0}header p{margin:5px 0 0;font-size:12px;color:#e0eaf2}
+main{max-width:860px;margin:20px auto;padding:0 14px 34px}.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 8px 24px #10283f0a}
+h2{font-size:17px;margin:0 0 8px}.muted{color:var(--muted);font-size:12px}.notice{padding:12px 14px;border-radius:12px;margin:10px 0;background:#eef4f8;color:var(--ink);font-size:13px;overflow-wrap:anywhere}.notice.error{background:#fff0f0;color:var(--danger)}.notice.ok{background:#eaf7ef;color:var(--ok)}.hidden{display:none!important}
+label{display:block;font-size:13px;font-weight:700;margin:13px 0 6px}input,textarea{display:block;width:100%;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfcfd;color:var(--ink);outline:none}textarea{min-height:150px;resize:vertical}input:focus,textarea:focus{border-color:var(--navy2);box-shadow:0 0 0 3px #c6a66a28}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}.btn{border:0;border-radius:12px;padding:10px 15px;background:var(--navy);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.btn.secondary{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn:disabled{opacity:.6;cursor:wait}
+.request{padding:14px 0;border-top:1px solid #edf1f5}.request:first-child{border-top:0}.request h3{font-size:14px;margin:0}.meta{font-size:11px;color:var(--muted);margin:4px 0}.comment{font-size:12px;background:#f7f9fb;border-radius:10px;padding:9px;margin:7px 0;white-space:pre-wrap;overflow-wrap:anywhere}.request a{color:var(--navy2);font-weight:700;overflow-wrap:anywhere}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:0 12px 24px}
+</style>
+</head>
+<body>
+<header><h1>توسعه هوشمند سامانه</h1><p>ثبت درخواست تغییرات نرم‌افزار از داخل APK ـ مخصوص مدیر اصلی</p></header>
+<main>
+<section class="card">
+<h2>درخواست تغییر یا قابلیت جدید</h2>
+<p class="muted">به زبان ساده توضیح دهید چه چیزی باید تغییر کند. درخواست در محیط توسعه محدود بررسی می‌شود؛ تغییرات کد ابتدا آزمون و برای بررسی آماده می‌شوند و به‌صورت خام روی نسخه اصلی اعمال نمی‌شوند.</p>
+<div id="access" class="notice">در حال بررسی نشست و مجوز مدیر اصلی…</div>
+<form id="request-form" class="hidden">
+<label for="title">عنوان درخواست</label>
+<input id="title" maxlength="140" required placeholder="مثلاً اصلاح همگام‌سازی آفلاین">
+<label for="description">شرح دقیق تغییر موردنظر</label>
+<textarea id="description" maxlength="5000" required placeholder="مشکل فعلی چیست؟ چه نتیجه‌ای انتظار دارید؟ کدام بخش‌ها باید حفظ شوند؟"></textarea>
+<p class="muted">رمز عبور، کلید API، اطلاعات بانکی یا اطلاعات خصوصی خادمین را در متن درخواست وارد نکنید.</p>
+<div class="actions"><button class="btn" id="submit" type="submit">ثبت و شروع بررسی خودکار</button><button class="btn secondary" id="refresh" type="button">تازه‌سازی وضعیت</button><a class="btn secondary" href="./live-data.html">بازگشت به سامانه</a></div>
+</form>
+<div id="message" class="notice hidden" role="status" aria-live="polite"></div>
+</section>
+<section class="card">
+<h2>درخواست‌های قبلی و وضعیت اجرا</h2>
+<p class="muted">این فهرست وضعیت ثبت درخواست و پیام‌های گردش‌کار را نشان می‌دهد. اگر اتصال توسعه هنوز پیکربندی نشده باشد، پیام دقیق آن نمایش داده می‌شود.</p>
+<div id="history"><div class="notice">در حال دریافت سوابق…</div></div>
+</section>
+<section class="card">
+<h2>حدود ایمنی</h2>
+<ul class="muted">
+<li>فقط مدیر اصلی فعال اجازه ثبت درخواست توسعه دارد؛ مجوز سمت سرور بررسی می‌شود.</li>
+<li>تغییرات پیشنهادی باید در شاخه جداگانه و پس از آزمون آماده شوند.</li>
+<li>درخواست‌های مربوط به داده‌های زنده، کلیدهای محرمانه یا دور زدن دسترسی‌ها اجرا نمی‌شوند.</li>
+<li>تغییرات کد در این صفحه به معنی انتشار خودکار یا نصب بی‌صدای APK نیست.</li>
+</ul>
+</section>
+</main>
+<footer>سامانه جامع مدیریت خادمین ـ پنل توسعه هوشمند</footer>
+<script>
+(function(){
+"use strict";
+const URL="https://fxxtyfurdzpzfvweoppo.supabase.co";
+const KEY="sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
+const $=id=>document.getElementById(id);
+const access=$("access"),form=$("request-form"),message=$("message"),history=$("history"),submit=$("submit");
+function esc(v){return String(v==null?"":v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;")}
+function token(){try{const raw=localStorage.getItem("kj_access_token");if(raw)return raw;const s=JSON.parse(localStorage.getItem("khadem_session")||"{}");return s.access_token||""}catch(_){return ""}}
+function note(el,text,type){el.textContent=text;el.className="notice"+(type?" "+type:"")}
+async function call(payload){
+ const t=token();if(!t)throw new Error("نشست ورود پیدا نشد؛ ابتدا با حساب مدیر اصلی وارد سامانه شوید.");
+ const r=await fetch(URL+"/functions/v1/submit-developer-request",{method:"POST",headers:{apikey:KEY,Authorization:"Bearer "+t,"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(payload),cache:"no-store",credentials:"omit"});
+ let d={};try{d=await r.json()}catch(_){}
+ if(!r.ok||d.error)throw new Error(d.error||("درخواست ناموفق بود (HTTP "+r.status+")."));
+ return d;
+}
+function prLink(body){
+ const match=String(body||"").match(/https:\/\/github\.com\/daadelian-bot\/khadem-jame\/pull\/\d+/);
+ return match?'<p><a href="'+esc(match[0])+'" target="_blank" rel="noopener noreferrer">مشاهده پیشنهاد تغییر</a></p>':"";
+}
+function draw(items){
+ if(!Array.isArray(items)||!items.length){history.innerHTML='<div class="notice">هنوز درخواستی ثبت نشده است.</div>';return}
+ history.innerHTML=items.map(item=>{
+  const state=item.state==="open"?"در حال بررسی":"بسته‌شده";
+  const comments=Array.isArray(item.comments)?item.comments:[];
+  const latest=comments.slice(-3).map(c=>'<div class="comment">'+esc(c.body||"")+'<div class="meta">'+esc(c.created_at||"")+'</div></div>'+prLink(c.body)).join("");
+  return '<article class="request"><h3>#'+esc(item.number)+' ـ '+esc(item.title)+'</h3><div class="meta">وضعیت درخواست: '+state+' · ثبت: '+esc(item.created_at||"")+'</div>'+ (latest||'<div class="comment">در انتظار پاسخ گردش‌کار توسعه…</div>')+'</article>';
+ }).join("");
+}
+async function loadHistory(){
+ try{const d=await call({action:"list"});draw(d.requests||[])}
+ catch(e){history.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+async function init(){
+ if(!token()){note(access,"نشست ورود پیدا نشد. از سامانه وارد شوید و سپس این بخش را باز کنید.","error");form.classList.add("hidden");history.innerHTML='<div class="notice error">برای دیدن سوابق باید وارد حساب مدیر اصلی شوید.</div>';return}
+ try{
+  await call({action:"check"});
+  note(access,"دسترسی مدیر اصلی تأیید شد.","ok");form.classList.remove("hidden");
+  await loadHistory();
+ }catch(e){note(access,e.message,"error");form.classList.add("hidden");history.innerHTML='<div class="notice error">دسترسی یا اتصال سرویس تأیید نشد.</div>'}
+}
+form.addEventListener("submit",async function(e){
+ e.preventDefault();submit.disabled=true;submit.textContent="در حال ثبت درخواست…";note(message,"در حال ارسال درخواست به سرویس توسعه…");message.classList.remove("hidden");
+ try{
+  const d=await call({action:"submit",title:$("title").value,description:$("description").value});
+  note(message,d.message||"درخواست ثبت شد.","ok");$("title").value="";$("description").value="";
+  await loadHistory();
+ }catch(err){note(message,err.message,"error")}
+ finally{submit.disabled=false;submit.textContent="ثبت و شروع بررسی خودکار"}
+});
+$("refresh").addEventListener("click",loadHistory);
+init();
+})();
+</script>
+</body>
+</html>
