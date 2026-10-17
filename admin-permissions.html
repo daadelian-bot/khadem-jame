@@ -19,8 +19,8 @@ function draw(){
  const saved=u.access?.is_custom?u.access.permissions:null;
  const perms=saved||Object.fromEntries(catalog.map(x=>[x.key,true]));
  const groups=[...new Set(catalog.map(x=>x.group))];
- const actions=[["create","ثبت اطلاعات"],["update","ویرایش اطلاعات"],["delete","حذف اطلاعات"]];
- $("catalog").innerHTML=groups.map(g=>'<section class="group"><h3>'+esc(g)+'</h3><div class="items">'+catalog.filter(x=>x.group===g).map(x=>'<label class="item"><input type="checkbox" data-p="'+esc(x.key)+'" '+(perms[x.key]===true?"checked":"")+'><span>'+esc(x.label)+' — مشاهده</span></label><div style="grid-column:1/-1;padding:4px 8px 10px 18px;border-bottom:1px dashed var(--line)"><div class="items">'+actions.map(a=>'<label class="item"><input type="checkbox" data-p="'+esc(x.key+"."+a[0])+'" '+(perms[x.key+"."+a[0]]===true?"checked":"")+'><span>'+a[1]+'</span></label>').join("")+'</div></div>').join("")+'</div></section>').join("");
+ const actions=[["create","ثبت اطلاعات"],["update","ویرایش اطلاعات"],["delete","حذف اطلاعات"]]; const crudKeyByModule={friday:"services"};
+ $("catalog").innerHTML=groups.map(g=>'<section class="group"><h3>'+esc(g)+'</h3><div class="items">'+catalog.filter(x=>x.group===g).map(x=>'<label class="item"><input type="checkbox" data-p="'+esc(x.key)+'" '+(perms[x.key]===true?"checked":"")+'><span>'+esc(x.label)+' — مشاهده</span></label><div style="grid-column:1/-1;padding:4px 8px 10px 18px;border-bottom:1px dashed var(--line)"><div class="items">'+actions.map(a=>'<label class="item"><input type="checkbox" data-p="'+esc((crudKeyByModule[x.key]||x.key)+"."+a[0])+'" '+(perms[(crudKeyByModule[x.key]||x.key)+"."+a[0]]===true?"checked":"")+'><span>'+a[1]+'</span></label>').join("")+'</div></div>').join("")+'</div></section>').join("");
  $("editor").classList.remove("hidden");
  show(saved?"دسترسی اختصاصی قبلی بارگذاری شد.":"برای حساب جدید، مشاهده منوها فعال است؛ مجوزهای ثبت، ویرایش و حذف را جداگانه تعیین کنید.","ok")
 }
