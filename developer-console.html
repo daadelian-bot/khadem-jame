@@ -76,10 +76,14 @@ function prLink(body){
 function draw(items){
  if(!Array.isArray(items)||!items.length){history.innerHTML='<div class="notice">هنوز درخواستی ثبت نشده است.</div>';return}
  history.innerHTML=items.map(item=>{
-  const state=item.state==="open"?"در حال بررسی":"بسته‌شده";
   const comments=Array.isArray(item.comments)?item.comments:[];
+  const lastActivity=Date.parse(item.updated_at||item.created_at||"");
+  const stale=item.state==="open"&&comments.length===0&&Number.isFinite(lastActivity)&&(Date.now()-lastActivity>35*60*1000);
+  const state=item.state!=="open"?"بسته‌شده":stale?"بدون پاسخ؛ بررسی لازم":"در حال بررسی";
   const latest=comments.slice(-3).map(c=>'<div class="comment">'+esc(c.body||"")+'<div class="meta">'+esc(c.created_at||"")+'</div></div>'+prLink(c.body)).join("");
-  return '<article class="request"><h3>#'+esc(item.number)+' ـ '+esc(item.title)+'</h3><div class="meta">وضعیت درخواست: '+state+' · ثبت: '+esc(item.created_at||"")+'</div>'+ (latest||'<div class="comment">در انتظار پاسخ گردش‌کار توسعه…</div>')+'</article>';
+  const workflowLink=stale?'<p><a href="https://github.com/daadelian-bot/khadem-jame/actions/workflows/chat-code-agent.yml" target="_blank" rel="noopener noreferrer">بررسی اجرای گردش‌کار GitHub Actions</a></p>':"";
+  const fallback=stale?'<div class="comment">بیش از ۳۵ دقیقه پاسخی ثبت نشده است؛ احتمال دارد گردش‌کار اجرا نشده یا متوقف شده باشد. وضعیت GitHub Actions و وجود Secretهای لازم را بررسی کنید.</div>'+workflowLink:'<div class="comment">در انتظار پاسخ گردش‌کار توسعه…</div>';
+  return '<article class="request"><h3>#'+esc(item.number)+' ـ '+esc(item.title)+'</h3><div class="meta">وضعیت درخواست: '+state+' · ثبت: '+esc(item.created_at||"")+'</div>'+ (latest||fallback)+'</article>';
  }).join("");
 }
 async function loadHistory(){
