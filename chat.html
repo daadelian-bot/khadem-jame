@@ -26,7 +26,7 @@ const KEY="sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
 const TOKEN_KEY="kj_access_token",REFRESH_KEY="kj_refresh_token",USER_KEY="kj_user";
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,presenceChannel=null,onlineIds=new Set(),call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,ringTimer=null,ringContext=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false,muted=false,typingTimer=null,typingHideTimer=null,conversationLoadError="",conversationLoadInFlight=null;
+let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,presenceChannel=null,onlineIds=new Set(),call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,ringTimer=null,ringContext=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false,muted=false,typingTimer=null,typingHideTimer=null,conversationLoadError="",conversationLoadInFlight=null,deliveredMessageIds=new Set();
 const BUZZ_BODY="⁣KJ_NIMBUZZ⁣",ADMIN_REMOVED="🗑️ این پیام توسط مدیر اصلی حذف شد.";
 const emojis=["🤍","🌹","🕌","📿","🤲","❤️","🌙","✨","🙏","😊","👍","🌿","☪️","💚","🌸","🌟","🕋","🫶"];
 function toast(msg){const root=$("overlayRoot");if(!root)return;root.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=String(msg);root.appendChild(t);setTimeout(()=>{if(t.isConnected)t.remove()},3500)}
@@ -182,9 +182,10 @@ async function openConversation(id){
  if(messageChannel){try{await sb.removeChannel(messageChannel)}catch{}}
  messageChannel=sb.channel("chat-msg-"+id)
   .on("broadcast",{event:"typing"},event=>{const d=event.payload;if(!d||d.user_id===me.id||d.conversation_id!==id)return;const el=$("typingIndicator");if(!el)return;el.hidden=!d.typing;el.textContent=d.typing?(d.name||personName(d.user_id))+" در حال تایپ است…":"";clearTimeout(typingHideTimer);if(d.typing)typingHideTimer=setTimeout(()=>{el.hidden=true},2200)})
+  .on("broadcast",{event:"delivered"},event=>{const d=event.payload;if(!d||d.conversation_id!==id||d.user_id===me.id||!d.message_id)return;deliveredMessageIds.add(d.message_id);drawMessages()})
   .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"conversation_id=eq."+id},payload=>{
    const row=payload.new;if(!row||row.conversation_id!==id||activeMessages.some(m=>m.id===row.id))return;activeMessages.push(row);drawMessages();
-   if(row.sender_id!==me.id){refreshConversations();if(row.body===BUZZ_BODY){try{if(navigator.vibrate)navigator.vibrate([250,100,250,100,250])}catch{};if(chatIsVisible())toast(personName(row.sender_id)+" برای شما تکان فرستاد 📳")}else notifyIncomingMessage(row);if(chatIsVisible())markConversationRead()}
+   if(row.sender_id!==me.id){messageChannel?.send({type:"broadcast",event:"delivered",payload:{conversation_id:id,message_id:row.id,user_id:me.id}}).catch(()=>{});refreshConversations();if(row.body===BUZZ_BODY){try{if(navigator.vibrate)navigator.vibrate([250,100,250,100,250])}catch{};if(chatIsVisible())toast(personName(row.sender_id)+" برای شما تکان فرستاد 📳")}else notifyIncomingMessage(row);if(chatIsVisible())markConversationRead()}
   })
   .on("postgres_changes",{event:"UPDATE",schema:"public",table:"chat_messages",filter:"conversation_id=eq."+id},payload=>{const row=payload.new,index=activeMessages.findIndex(m=>m.id===row.id);if(index>=0){activeMessages[index]=row;drawMessages()}})
   .on("postgres_changes",{event:"UPDATE",schema:"public",table:"chat_members",filter:"conversation_id=eq."+id},()=>{refreshConversations().then(drawMessages)})
@@ -226,7 +227,7 @@ function drawMessages(){
  root.innerHTML=activeMessages.map(m=>{
   const mine=m.sender_id===me.id,readers=(activeConversation.members||[]).filter(x=>x.user_id!==m.sender_id&&x.last_read_at&&new Date(x.last_read_at).getTime()>=new Date(m.created_at).getTime());
   const recipients=(activeConversation.members||[]).filter(x=>x.user_id!==m.sender_id);
-  const delivered=recipients.some(x=>isOnline(x.user_id));
+  const delivered=deliveredMessageIds.has(m.id);
   const receipt=mine?(readers.length?'<span class="receipt" title="پیام مشاهده شده است" style="color:#159447"><b aria-label="خوانده شد" style="font-size:14px;letter-spacing:-3px">✓✓</b> خوانده شد'+(activeConversation.kind==="group"?' توسط '+esc(readers.map(x=>personName(x.user_id)).join("، ")):'')+'</span>':delivered?'<span class="receipt" title="مخاطب آنلاین است؛ پیام تحویل‌شده در نظر گرفته می‌شود" style="color:#8a9691"><b aria-label="دریافت شد" style="font-size:14px;letter-spacing:-3px">✓✓</b> دریافت شد</span>':'<span class="receipt" title="مخاطب آفلاین است" style="color:#8a9691"><b aria-label="ارسال شد" style="font-size:14px">✓</b> ارسال شد</span>'):"";
   const body=m.body===BUZZ_BODY?(mine?"📳 تکان ارسال شد":"📳 تکان دریافت شد"):esc(m.body);
   const deleted=m.body===ADMIN_REMOVED;
