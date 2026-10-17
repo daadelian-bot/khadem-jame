@@ -26,7 +26,7 @@ const KEY="sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
 const TOKEN_KEY="kj_access_token",REFRESH_KEY="kj_refresh_token",USER_KEY="kj_user";
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,presenceChannel=null,onlineIds=new Set(),call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false;
+let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,presenceChannel=null,onlineIds=new Set(),call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,ringTimer=null,ringContext=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false,muted=false;
 const emojis=["🤍","🌹","🕌","📿","🤲","❤️","🌙","✨","🙏","😊","👍","🌿","☪️","💚","🌸","🌟","🕋","🫶"];
 function toast(msg){const root=$("overlayRoot");root.innerHTML='<div class="toast">'+esc(msg)+'</div>';setTimeout(()=>{const t=root.querySelector(".toast");if(t)t.remove()},3500)}
 function notifyParentCall(state,extra={}){try{parent.postMessage({source:"khadem-chat",type:"call-state",state,name:call?personName(call.peerId):(pendingCall?personName(pendingCall.sender_id):""),callId:call?.id||pendingCall?.call_id||null,conversationId:call?.conversationId||pendingCall?.conversation_id||null,...extra},"*")}catch{}}
@@ -42,6 +42,8 @@ function updatePeerStatus(){const p=$("main")?.querySelector(".peer p");if(!p||!
 async function enableNotifications(){if(!("Notification" in window)){toast("این مرورگر از اعلان‌ها پشتیبانی نمی‌کند.");return}try{const permission=await Notification.requestPermission();$("notifyBtn").textContent=permission==="granted"?"🔔 اعلان‌ها فعال":"🔕 اجازه اعلان داده نشد";toast(permission==="granted"?"اعلان‌های پیام و تماس در این مرورگر فعال شد.":"برای اعلان، اجازه Notifications را در تنظیمات مرورگر فعال کنید.")}catch{toast("فعال‌سازی اعلان‌ها ممکن نشد.")}}
 function chatIsVisible(){const r=$("chatApp")?.getBoundingClientRect();return !document.hidden&&r&&r.width>0&&r.height>0&&r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight}
 function notifyIncomingMessage(row){if(!row||row.sender_id===me?.id)return;const body=String(row.body||"پیام صوتی یا پیوست جدید").slice(0,160);if(!chatIsVisible()&&"Notification" in window&&Notification.permission==="granted"){const title=(row.sender_name||personName(row.sender_id))+" · پیام جدید";try{if(navigator.serviceWorker?.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,tag:"khadem-message-"+row.id,renotify:true})).catch(()=>new Notification(title,{body}));else new Notification(title,{body})}catch{}}}
+function startRingtone(){stopRingtone();try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ringContext=new AC();const ring=()=>{if(!ringContext)return;const now=ringContext.currentTime;[0,.34].forEach(offset=>{const o=ringContext.createOscillator(),g=ringContext.createGain();o.type="sine";o.frequency.value=offset?660:480;g.gain.setValueAtTime(.0001,now+offset);g.gain.exponentialRampToValueAtTime(.12,now+offset+.025);g.gain.exponentialRampToValueAtTime(.0001,now+offset+.23);o.connect(g);g.connect(ringContext.destination);o.start(now+offset);o.stop(now+offset+.25)})};ring();ringTimer=setInterval(ring,1800);ringContext.resume().catch(()=>{})}catch{}}
+function stopRingtone(){if(ringTimer){clearInterval(ringTimer);ringTimer=null}if(ringContext){try{ringContext.close()}catch{}ringContext=null}}
 async function init(){
  const token=localStorage.getItem(TOKEN_KEY)||"",refresh=localStorage.getItem(REFRESH_KEY)||"";
  if(!token){showError("نشست ورود پیدا نشد. ابتدا از صفحه اصلی سامانه وارد شوید.");return}
@@ -232,14 +234,14 @@ async function startCall(){
   pc.onicecandidate=e=>{if(e.candidate)sendSignal("ice",{candidate:e.candidate.toJSON()}).catch(()=>{})};
   pc.ontrack=e=>{e.streams[0].getTracks().forEach(t=>call&&call.remoteStream.addTrack(t));attachRemoteAudio()};
   pc.onconnectionstatechange=()=>{if(call&&["failed","disconnected"].includes(pc.connectionState))showCallScreen("اتصال ناپایدار است",true)};
-  showCallScreen("در حال زنگ خوردن…",false);notifyParentCall("ringing");
+  showCallScreen(isOnline(peer.user_id)?"در حال زنگ خوردن…":"در حال برقراری تماس؛ مخاطب آفلاین به نظر می‌رسد…",false);startRingtone();notifyParentCall("ringing");
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   await sendSignal("offer",{sdp:offer.sdp});
-  clearTimeout(callTimeout);callTimeout=setTimeout(()=>{if(call&&call.role==="caller"&&!callConnectedAt){toast("پاسخی دریافت نشد.");endCall(true)}},45000);
+  clearTimeout(callTimeout);callTimeout=setTimeout(()=>{if(call&&call.role==="caller"&&!callConnectedAt){toast(isOnline(peer.user_id)?"تماس برقرار نشد؛ کاربر پاسخ نداد.":"تماس برقرار نشد؛ کاربر در دسترس نیست یا اینترنت او قطع است.");endCall(true)}},30000);
  }catch(e){cleanupCall();toast("تماس آغاز نشد؛ اجازه دسترسی میکروفون را بررسی کنید.")}
 }
 function showCallScreen(text,inCall){
- callMinimized=false;
+ callMinimized=false;if(inCall)stopRingtone();
  $("overlayRoot").innerHTML='<div class="call-overlay"><div class="call-card"><div class="call-avatar">📞</div><h2>'+esc(call?personName(call.peerId):"تماس صوتی")+'</h2><p id="callStatus">'+esc(text)+'</p><audio id="remoteAudio" autoplay></audio><div class="call-controls"><button id="muteCall" style="background:#f6f0dd;color:#634f1f" title="قطع/وصل میکروفون">🎙️</button><button id="speakerCall" style="background:#e6f2e8;color:#175c45" title="پخش صدا">🔊</button><button id="minimizeCall" style="background:#f6f0dd;color:#634f1f" title="کوچک‌کردن پنجره تماس">▁</button><button id="endCall" style="background:#b84040;color:#fff" title="پایان تماس">📵</button></div></div></div>';
  $("endCall").onclick=()=>endCall(true);$("muteCall").onclick=toggleMute;$("speakerCall").onclick=toggleSpeaker;$("minimizeCall").onclick=minimizeCall;
  attachRemoteAudio();notifyParentCall(inCall?"active":(call?.role==="caller"?"ringing":"incoming"));
@@ -259,13 +261,13 @@ async function toggleSpeaker(){
 }
 async function drainIce(){if(!call||!call.pc.remoteDescription)return;const items=call.pendingIce.splice(0);for(const candidate of items){try{await call.pc.addIceCandidate(new RTCIceCandidate(candidate))}catch{}}}
 function attachRemoteAudio(){const audio=$("remoteAudio");if(audio&&call){audio.srcObject=call.remoteStream;audio.volume=speakerEnabled?1:0;audio.play().catch(()=>{})}}
-function toggleMute(){if(!call)return;const tracks=call.stream.getAudioTracks();tracks.forEach(t=>t.enabled=!t.enabled);$("muteCall").textContent=tracks.some(t=>t.enabled)?"🎙️":"🔇"}
+function toggleMute(){if(!call)return;const tracks=call.stream.getAudioTracks();muted=!tracks.some(t=>t.enabled);tracks.forEach(t=>t.enabled=!muted);const b=$("muteCall");if(b){b.textContent=muted?"🔇":"🎙️";b.title=muted?"میکروفون قطع است؛ برای وصل لمس کنید":"میکروفون روشن است؛ برای قطع لمس کنید"}toast(muted?"🎙️ میکروفون شما قطع شد؛ صدای مخاطب همچنان پخش می‌شود.":"🎙️ میکروفون وصل شد؛ مخاطب صدای شما را می‌شنود.")}
 async function handleSignal(s){
  if(!s||s.sender_id===me.id)return;
  if(s.event_type==="ice"&&(!call||s.call_id!==call.id)){const pending=earlyIce.get(s.call_id)||[];if(s.payload&&s.payload.candidate)pending.push(s.payload.candidate);earlyIce.set(s.call_id,pending);return;}
  if(s.event_type==="offer"){
   if(call){const old={conversationId:s.conversation_id,peerId:s.sender_id,id:s.call_id};try{await sb.from("chat_call_signals").insert({conversation_id:old.conversationId,call_id:old.id,sender_id:me.id,recipient_id:old.peerId,event_type:"busy",payload:{}})}catch{};return}
-  pendingCall=s;notifyParentCall("incoming");
+  pendingCall=s;startRingtone();notifyParentCall("incoming");
   if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("تماس ورودی خادمین",{body:personName(s.sender_id)+" با شما تماس می‌گیرد.",tag:"khadem-call-"+s.call_id})}catch{}}
   $("overlayRoot").innerHTML='<div class="call-overlay"><div class="call-card"><div class="call-avatar">📲</div><h2>تماس صوتی ورودی</h2><p>'+esc(personName(s.sender_id))+' با شما تماس می‌گیرد.</p><div class="call-controls"><button id="acceptCall" style="background:#1f815e;color:white" title="پاسخ">📞</button><button id="rejectCall" style="background:#b84040;color:white" title="رد تماس">✖</button></div></div></div>';
   $("acceptCall").onclick=acceptCall;$("rejectCall").onclick=()=>rejectCall("reject");return;
@@ -280,8 +282,8 @@ async function handleSignal(s){
 async function acceptCall(){
  const s=pendingCall;if(!s)return;
  try{
-  const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-  const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+  stopRingtone();const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun.cloudflare.com:3478"}]});
   call={id:s.call_id,conversationId:s.conversation_id,peerId:s.sender_id,pc:pc,stream:stream,role:"callee",remoteStream:new MediaStream(),pendingIce:earlyIce.get(s.call_id)||[]};earlyIce.delete(s.call_id);callMinimized=false;speakerEnabled=true;
   stream.getTracks().forEach(t=>pc.addTrack(t,stream));
   pc.onicecandidate=e=>{if(e.candidate)sendSignal("ice",{candidate:e.candidate.toJSON()}).catch(()=>{})};
@@ -294,14 +296,14 @@ async function acceptCall(){
 }
 async function rejectCall(type){
  const s=pendingCall;if(s){try{await sb.from("chat_call_signals").insert({conversation_id:s.conversation_id,call_id:s.call_id,sender_id:me.id,recipient_id:s.sender_id,event_type:type,payload:{}})}catch{}}
- pendingCall=null;$("overlayRoot").innerHTML="";notifyParentCall("ended");
+ stopRingtone();pendingCall=null;$("overlayRoot").innerHTML="";notifyParentCall("ended");
 }
 async function endCall(send){
  if(call&&send){try{await sendSignal("end",{})}catch{}}
  cleanupCall();
 }
 function cleanupCall(){
- clearTimeout(callTimeout);clearInterval(callTimer);callTimeout=null;callTimer=null;callConnectedAt=0;
+ stopRingtone();muted=false;clearTimeout(callTimeout);clearInterval(callTimer);callTimeout=null;callTimer=null;callConnectedAt=0;
  if(call){try{call.pc.close()}catch{};try{call.stream.getTracks().forEach(t=>t.stop())}catch{};try{call.remoteStream.getTracks().forEach(t=>t.stop())}catch{}}
  call=null;pendingCall=null;callMinimized=false;$("overlayRoot").innerHTML="";notifyParentCall("ended");
 }
