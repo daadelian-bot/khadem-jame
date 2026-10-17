@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.26";
+  const RELEASE_VERSION = "2026.10.17.27";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -2548,7 +2548,6 @@
       await refreshFinanceAfterSave("transactions");
     }catch(err){toast("تغییر وضعیت انجام نشد؛ مجوز مالی و دسترسی پایگاه داده را بررسی کنید.","error");}
   }
-  function financeFormStatus(formId,message){const el=$("#"+formId);if(el)el.textContent=message;}
   async function refreshFinanceAfterSave(view){
     await loadData();
     financeView=view;
