@@ -140,8 +140,8 @@ jobs:
                   applicationId "ir.sayedazainab.khademjame"
                   minSdk 23
                   targetSdk 28
-                  versionCode 107
-                  versionName "1.0.7"
+                  versionCode 108
+                  versionName "1.0.8"
               }
 
               compileOptions {
@@ -157,6 +157,8 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <application
                   android:allowBackup="false"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
                   android:label="سامانه جامع خادمین"
                   android:usesCleartextTraffic="false"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
@@ -187,7 +189,7 @@ jobs:
           public class MainActivity extends Activity {
               private WebView webView;
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261016-105";
+                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261017-18";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -253,6 +255,33 @@ jobs:
           test -s "${APP_DIR}/app/src/main/AndroidManifest.xml"
           test -s "${JAVA_DIR}/MainActivity.java"
 
+      - name: Generate Android launcher icons from current logo
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -s logo.png || { echo "::error::لوگوی ریشه مخزن (logo.png) پیدا نشد."; exit 1; }
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          src = Image.open("logo.png").convert("RGBA")
+          sizes = {"mdpi":48, "hdpi":72, "xhdpi":96, "xxhdpi":144, "xxxhdpi":192}
+          for density, size in sizes.items():
+              out = Image.new("RGBA", (size, size), (23, 59, 88, 255))
+              logo = src.copy()
+              logo.thumbnail((int(size*.78), int(size*.78)), Image.Resampling.LANCZOS)
+              out.alpha_composite(logo, ((size-logo.width)//2, (size-logo.height)//2))
+              dest = Path("android-app/app/src/main/res") / f"mipmap-{density}" / "ic_launcher.png"
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              out.save(dest, format="PNG", optimize=True)
+          out = Image.new("RGBA", (512, 512), (23, 59, 88, 255))
+          logo = src.copy()
+          logo.thumbnail((400, 400), Image.Resampling.LANCZOS)
+          out.alpha_composite(logo, ((512-logo.width)//2, (512-logo.height)//2))
+          out.save("android-app/launcher-icon-preview.png", format="PNG", optimize=True)
+          print("Launcher icon assets generated from logo.png")
+          PY
+
       - name: Build debug APK
         shell: bash
         run: |
@@ -263,12 +292,11 @@ jobs:
           test -s "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.7-debug.apk"
-          sha256sum "dist/Samane-Jame-Khademin-1.0.7-debug.apk" > "dist/SHA256SUMS.txt"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.0.8-debug.apk"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.0.7 (کد نسخه 107)
+          نسخه: 1.0.8 (کد نسخه 108)
           نوع ساخت: Debug APK
 
           این برنامه یک پوسته WebView است و نسخه منتشرشده سامانه را از اینترنت باز می‌کند.
@@ -281,8 +309,11 @@ jobs:
           3) این نسخه آزمایشی است و APK انتشار نهایی با امضای رسمی نیست.
           EOF
 
-          test -s "dist/SHA256SUMS.txt"
           test -s "dist/README-FA.txt"
+          (cd dist && zip -q "Samane-Jame-Khademin-1.0.8.zip" "Samane-Jame-Khademin-1.0.8-debug.apk" "README-FA.txt")
+          sha256sum dist/Samane-Jame-Khademin-1.0.8-debug.apk dist/Samane-Jame-Khademin-1.0.8.zip > dist/SHA256SUMS.txt
+          test -s "dist/SHA256SUMS.txt"
+          test -s "dist/Samane-Jame-Khademin-1.0.8.zip"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
