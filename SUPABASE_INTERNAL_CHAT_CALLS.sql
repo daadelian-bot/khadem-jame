@@ -52,7 +52,7 @@ create or replace function public.chat_directory()
 returns table(id uuid,display_name text,role text) language plpgsql security definer set search_path=public,auth as $$
 begin
  if auth.uid() is null or not public.has_app_permission('chat.view') then raise exception 'اجازه دسترسی به گفت‌وگوی سامانه را ندارید.'; end if;
- return query select p.id,coalesce(nullif(p.display_name,''),nullif(p.full_name,''),nullif(p.username,''),'کاربر سامانه')::text,p.role::text from public.profiles p where p.is_active=true order by coalesce(nullif(p.display_name,''),nullif(p.full_name,''),nullif(p.username,''),'کاربر سامانه');
+ return query select p.id,coalesce(nullif(p.display_name,''),nullif(p.full_name,''),nullif(p.username,''),'کاربر سامانه')::text,p.role::text from public.profiles p where p.is_active=true and not exists(select 1 from public.user_access_profiles uap where uap.user_id=p.id and uap.is_custom=true and uap.permissions->>'chat'='false') order by coalesce(nullif(p.display_name,''),nullif(p.full_name,''),nullif(p.username,''),'کاربر سامانه');
 end; $$;
 revoke all on function public.chat_directory() from public,anon;
 grant execute on function public.chat_directory() to authenticated;
