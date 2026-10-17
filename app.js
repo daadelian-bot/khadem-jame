@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.3";
+  const RELEASE_VERSION = "2026.10.17.4";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -288,39 +288,11 @@
     finally { refreshInFlight = null; }
   }
 
+  // Release notes must never block entry to the main application.
+  // Full release history remains available from the separate release-notes page.
   async function showReleaseIntroIfNeeded() {
-    if (localStorage.getItem(RELEASE_SEEN_KEY) === RELEASE_VERSION) return;
-    const app = ensureRoot();
-    return new Promise(resolve => {
-      app.innerHTML = `
-        <main dir="rtl" style="max-width:760px;margin:24px auto;padding:clamp(16px,4vw,28px);font-family:Tahoma,Arial,sans-serif;color:#1c3045;line-height:2">
-          <section style="background:#fff;border:1px solid #dfe6ed;border-bottom:4px solid #c6a66a;border-radius:18px;padding:clamp(18px,4vw,30px);box-shadow:0 10px 28px #10283f12">
-            <p style="display:inline-block;background:#173b58;color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">نسخه ${RELEASE_VERSION}</p>
-            <h1 style="font-size:22px;color:#173b58;margin:8px 0">به نسخهٔ جدید سامانه خوش آمدید</h1>
-            <p>پیش از ورود به داشبورد، خلاصهٔ تغییرات این نسخه را مرور کنید.</p>
-            <h2 style="font-size:17px;color:#173b58">تغییرات این نسخه</h2>
-            <ul>
-              <li><strong>تمدید نشست ورود:</strong> سامانه اکنون هنگام دریافت خطای انقضای JWT تلاش می‌کند نشست معتبر را با توکن تمدید کند؛ اگر تمدید ممکن نباشد، ورود دوباره درخواست می‌شود.</li>
-              <li><strong>گزارش نسخه‌ها:</strong> تاریخچهٔ تغییرات از صفحهٔ گزارش نسخه‌ها قابل مشاهده است و در انتشارهای بعدی باید با تغییرات واقعی به‌روزرسانی شود.</li>
-              <li><strong>حفظ امنیت:</strong> این اصلاح مجوزهای سرور را دور نمی‌زند و داده‌های پایگاه را تغییر نمی‌دهد.</li>
-            </ul>
-            <p style="font-size:13px;color:#617487">آزمون‌های خودکار و انتشار سایت باید جداگانه تأیید شوند؛ این پیام به‌تنهایی به معنی تأیید انتشار نیست.</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
-              <a href="./release-notes.html" target="_blank" rel="noopener" style="display:inline-block;border:1px solid #c6a66a;border-radius:10px;padding:10px 14px;color:#173b58;font-weight:bold;text-decoration:none">مشاهدهٔ گزارش کامل نسخه‌ها</a>
-              <button id="kj-release-continue" type="button" style="border:0;border-radius:10px;background:#173b58;color:#fff;padding:11px 18px;font:inherit;font-weight:bold;cursor:pointer">ادامه به داشبورد</button>
-            </div>
-          </section>
-        </main>`;
-      const button = document.getElementById("kj-release-continue");
-      if (!button) { resolve(); return; }
-      button.addEventListener("click", function () {
-        // Continue even if browser storage is blocked or full; the release intro must never trap the user.
-        try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch (storageError) {
-          console.warn("KJ: could not save release intro state", storageError);
-        }
-        resolve();
-      }, { once: true });
-    });
+    try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch (_) {}
+    return;
   }
 
   function headers(extra = {}) {
