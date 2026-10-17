@@ -78,7 +78,7 @@ function draw(items){
  history.innerHTML=items.map(item=>{
   const comments=Array.isArray(item.comments)?item.comments:[];
   const lastActivity=Date.parse(item.updated_at||item.created_at||"");
-  const hasFinalResult=comments.some(c=>/https:\/\/github\\.com\/daadelian-bot\/khadem-jame\/pull\/\\d+/.test(String(c.body||""))||String(c.body||"").includes("تغییری برای ثبت پیدا نکرد"));
+  const hasFinalResult=comments.some(c=>String(c.body||"").includes("https://github.com/daadelian-bot/khadem-jame/pull/")||String(c.body||"").includes("تغییری برای ثبت پیدا نکرد"));
   const stale=item.state==="open"&&!hasFinalResult&&Number.isFinite(lastActivity)&&(Date.now()-lastActivity>35*60*1000);
   const state=item.state!=="open"?"بسته‌شده":stale?"گردش‌کار بدون نتیجه؛ بررسی لازم":"در حال بررسی";
   const latest=comments.slice(-3).map(c=>'<div class="comment">'+esc(c.body||"")+'<div class="meta">'+esc(c.created_at||"")+'</div></div>'+prLink(c.body)).join("");
