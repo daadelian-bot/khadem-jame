@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.19";
+  const RELEASE_VERSION = "2026.10.17.20";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -817,7 +817,7 @@
         '<div style="margin-top:5px;color:#718093;font-size:11px;overflow-wrap:anywhere;direction:ltr;text-align:right">' + email + '</div>' +
         '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:9px;padding-top:8px;border-top:1px solid #edf1f5;color:#596b7e;font-size:11px"><span aria-hidden="true">🕒</span><span>آخرین حضور: <b style="font-weight:600;color:#34495e">' + lastSeen + '</b></span></div></div></article>';
     }).join("");
-    return '<section id="kj-admin-presence-panel" style="flex:' + (state.presenceExpanded ? '1 1 100%;width:100%;' : '0 1 auto;max-width:100%;') + 'min-width:0;align-self:flex-start;margin-top:8px;padding:' + (state.presenceExpanded ? '10px 12px' : '5px 9px') + ';border:1px solid ' + (state.presenceExpanded ? '#dfe7ee' : '#d4e0e9') + ';border-right:3px solid #c6a66a;border-radius:12px;background:' + (state.presenceExpanded ? 'linear-gradient(135deg,#fff 0%,#f8fafc 100%)' : '#ffffff12') + ';box-shadow:0 3px 12px #10283f0a">' +
+    return '<section id="kj-admin-presence-panel" style="flex:' + (state.presenceExpanded ? '1 1 100%;width:100%;' : '0 1 auto;max-width:100%;') + 'min-width:0;align-self:center;margin-top:0;padding:' + (state.presenceExpanded ? '10px 12px' : '5px 9px') + ';border:1px solid ' + (state.presenceExpanded ? '#dfe7ee' : '#d4e0e9') + ';border-right:3px solid #c6a66a;border-radius:12px;background:' + (state.presenceExpanded ? 'linear-gradient(135deg,#fff 0%,#f8fafc 100%)' : '#ffffff12') + ';box-shadow:0 3px 12px #10283f0a">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
       '<button type="button" id="kj-admin-presence-toggle" aria-expanded="' + (state.presenceExpanded ? 'true' : 'false') + '" aria-controls="kj-admin-presence-list" style="display:flex;flex:1 1 auto;min-width:0;align-items:center;gap:8px;border:0;background:transparent;padding:2px 0;color:' + (state.presenceExpanded ? '#173b58' : '#fff') + ';text-align:right;font:inherit;cursor:pointer">' +
       '<span style="display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:9px;background:' + (state.presenceExpanded ? '#eaf0f6' : '#ffffff1c') + ';font-size:15px">👥</span>' +
@@ -919,9 +919,7 @@
       <div class="kj-shell" dir="rtl">
         <header class="kj-top">
           <div class="kj-brand">🕌 سامانه جامع مدیریت خادمین<small>مرکز مدیریت و عملیات</small><div class="kj-header-clock" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;margin-top:5px;color:var(--kj-muted)"><span id="kj-header-jalali-date"></span><b id="kj-header-digital-clock" style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--kj-gold)"></b></div></div>
-          <div class="kj-actions"><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button><button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><button class="kj-secondary" id="kj-signout">خروج ←</button></div></div>
-
-                  ${adminPresencePanelHtml()}
+          <div class="kj-actions"><div class="kj-action-buttons"><button type="button" class="kj-secondary kj-mobile-menu-toggle" id="kj-mobile-menu-toggle" aria-expanded="false">☰ منو</button>${adminPresencePanelHtml()}<button class="kj-secondary" id="kj-refresh" ${state.loading ? "disabled" : ""}>${state.loading ? "در حال به‌روزرسانی…" : "به‌روزرسانی اطلاعات"}</button><span class="kj-user-title">${String(user?.email || "").trim().toLowerCase() === "da.adelian@gmail.com" ? "مدیر مجموعه" : "کاربر سامانه"}</span><button class="kj-secondary" id="kj-signout">خروج ←</button></div></div>
         </header>
         <div class="kj-layout">
           <aside class="kj-sidebar" aria-label="منوی سامانه">
