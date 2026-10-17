@@ -914,6 +914,8 @@
       }
     };
     refreshHeaderClock();
+    $("#kj-admin-presence-toggle")?.addEventListener("click", () => { state.presenceExpanded = !state.presenceExpanded; renderAdminPresencePanel(); });
+    $("#kj-presence-refresh")?.addEventListener("click", () => void refreshPresenceDirectory());
     if (!window.__kjHeaderClockTimer) window.__kjHeaderClockTimer = window.setInterval(refreshHeaderClock, 1000);
     $$(".kj-group-toggle").forEach(b => b.addEventListener("click", () => {
       const group=b.closest(".kj-menu-group");const open=!group.classList.contains("open");
