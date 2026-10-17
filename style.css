@@ -1251,20 +1251,43 @@ input[data-jalali-date]{cursor:pointer;background-image:none!important}
 }
 
 
-/* چیدمان نهایی سربرگ: منو و به‌روزرسانی کنار هم، خروج در چپ، ارتفاع یکسان */
-.kj-action-buttons{direction:rtl;}
-.kj-action-buttons #kj-refresh{order:0;}
-.kj-action-buttons #kj-mobile-menu-toggle{order:-1;}
-.kj-action-buttons #kj-signout{order:3;}
-.kj-action-buttons .kj-user-title{order:2;display:inline-flex;align-items:center;justify-content:center;align-self:stretch;min-height:32px;height:32px;box-sizing:border-box;line-height:1;padding:0 9px;}
-.kj-action-buttons button{height:32px;min-height:32px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;}
+/* سربرگ هماهنگ: همه کنترل‌های اصلی در یک ردیف و با ارتفاع یکسان */
+.kj-top{align-items:center;row-gap:10px}
+.kj-actions{flex:1 1 100%;width:100%;min-width:0;justify-content:stretch;flex-wrap:nowrap;gap:0}
+.kj-action-buttons{direction:rtl;display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:7px;width:100%;min-width:0}
+.kj-action-buttons #kj-mobile-menu-toggle{display:inline-flex!important;order:0;flex:0 0 auto}
+.kj-action-buttons #kj-admin-presence-panel{order:1;flex:1 1 150px!important;width:auto!important;min-width:0!important;max-width:230px!important;box-sizing:border-box}
+.kj-action-buttons #kj-refresh{order:2;flex:0 1 auto}
+.kj-action-buttons .kj-user-title{order:3;display:inline-flex;align-items:center;justify-content:center;align-self:center;flex:0 1 auto;width:auto;min-width:0;height:34px;min-height:34px;box-sizing:border-box;line-height:1;padding:0 10px;border:1px solid #ffffff30;border-radius:10px;background:#ffffff12;color:#f2e3bf;font-size:12px;white-space:nowrap}
+.kj-action-buttons #kj-signout{order:4;flex:0 0 auto}
+.kj-action-buttons button{height:34px;min-height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:10px}
+.kj-action-buttons #kj-admin-presence-toggle{min-width:0}
+.kj-action-buttons #kj-admin-presence-toggle strong{white-space:nowrap}
 @media(max-width:850px){
-  .kj-action-buttons .kj-user-title{height:29px;min-height:29px;padding:0 6px;}
-  .kj-action-buttons button{height:29px;min-height:29px;}
+  .kj-top{align-items:stretch}
+  .kj-actions{width:100%;flex:1 1 100%;justify-content:stretch}
+  .kj-action-buttons{width:100%;gap:5px;justify-content:space-between}
+  .kj-action-buttons #kj-admin-presence-panel{flex:1 1 90px!important;max-width:150px!important}
+  .kj-action-buttons button{flex:0 1 auto;min-width:0;padding:6px 7px;font-size:11px}
+  .kj-action-buttons .kj-user-title{height:31px;min-height:31px;padding:0 6px;font-size:10px}
+}
+@media(max-width:520px){
+  .kj-top{padding:10px!important}
+  .kj-action-buttons{gap:4px}
+  .kj-action-buttons #kj-admin-presence-panel{flex:1 1 70px!important;max-width:118px!important;padding:3px 5px!important}
+  .kj-action-buttons #kj-admin-presence-toggle{gap:4px!important}
+  .kj-action-buttons #kj-admin-presence-toggle>span:first-child{display:none!important}
+  .kj-action-buttons #kj-admin-presence-toggle strong{font-size:10px!important}
+  .kj-action-buttons button{height:30px;min-height:30px;padding:4px 5px;font-size:10px}
+  .kj-action-buttons #kj-refresh{flex:1 1 auto}
+  .kj-action-buttons .kj-user-title{height:30px;min-height:30px;padding:0 5px;font-size:9px}
 }
 @media(max-width:380px){
-  .kj-action-buttons .kj-user-title{height:27px;min-height:27px;padding:0 4px;}
-  .kj-action-buttons button{height:27px;min-height:27px;}
+  .kj-action-buttons{gap:3px}
+  .kj-action-buttons #kj-admin-presence-panel{max-width:96px!important}
+  .kj-action-buttons #kj-refresh{font-size:9px;padding:4px 3px}
+  .kj-action-buttons button{padding:4px 3px;font-size:9px}
+  .kj-action-buttons .kj-user-title{font-size:8px;padding:0 3px}
 }
 
 
