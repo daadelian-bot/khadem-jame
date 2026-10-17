@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.23";
+  const RELEASE_VERSION = "2026.10.17.24";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -1997,7 +1997,11 @@
     let uploadedPhotoPath=null; const photoFile=fd.get("photo_file");
     const put = (aliases, value) => {
       const key = aliases.find(x => known.has(x));
-      if (key) payload[key] = String(value ?? "").trim() || null;
+      if (!key) return;
+      const textValue = String(value ?? "").trim();
+      // مقدارهای نمایشیِ تاریخ نامشخص نباید به پایگاه داده ارسال شوند.
+      const emptyMarkers = ["—", "–", "-", "نامشخص", "null", "undefined"];
+      payload[key] = !textValue || emptyMarkers.includes(textValue.toLowerCase()) ? null : textValue;
     };
     const fullName = String(fd.get("full_name") || "").trim();
     if (known.has("full_name")) put(["full_name"], fullName);
@@ -2057,6 +2061,10 @@
     if (message) message.textContent = "در حال ذخیره تغییرات…";
     try {
       if(photoFile instanceof File && photoFile.size){if(message)message.textContent="در حال بارگذاری عکس خادم…";uploadedPhotoPath=await uploadKhademPhoto(photoFile,k);if(known.has("photo_path"))payload.photo_path=uploadedPhotoPath;else if(known.has("photo_url"))payload.photo_url=uploadedPhotoPath;else throw new Error("ستون ذخیره مسیر عکس در بانک خادمین پیدا نشد.");}
+      // محافظ نهایی برای تمام ستون‌های تاریخ در درخواست ذخیره.
+      for (const [key, value] of Object.entries(payload)) {
+        if (/(date|_at)$/i.test(key) && typeof value === "string" && ["—", "–", "-", "نامشخص", "null", "undefined"].includes(value.trim().toLowerCase())) payload[key] = null;
+      }
       const savedRows = await request("/rest/v1/khadems?"+filter, {method:"PATCH", body:payload, headers:{"Prefer":"return=representation"}});
       if (!Array.isArray(savedRows) || savedRows.length === 0) throw new Error("پایگاه داده هیچ ردیفی را به‌روزرسانی نکرد؛ شناسه خادم یا مجوز ویرایش را بررسی کنید.");
       state.profileEditOpen = false;
