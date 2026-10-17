@@ -1021,6 +1021,7 @@
   }
   function selectedKhademRecord() {
     const selected = String(state.selectedKhadem ?? "");
+    if (selected.startsWith("id:")) return state.khadems.find(k => String(khademId(k)) === selected.slice(3)) || null;
     if (selected.startsWith("code:")) return khademByCode(selected.slice(5));
     return state.khadems.find(k => String(khademId(k)) === selected) ||
       state.khadems.find(k => String(khademCode(k)) === selected) || null;
@@ -1786,7 +1787,7 @@
     const monthOptions = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"].map((m,i)=>`<option value="${i+1}" ${Number(state.birthdayMonth)===i+1?"selected":""}>${m}</option>`).join("");
     const birthdays = `<section class="kj-card kj-birthday-list" style="margin:14px 0"><h2 class="kj-section-title" style="margin-top:0">🎂 متولدین ماه انتخابی</h2><label class="kj-field"><b>انتخاب ماه</b><select id="kj-birthday-month">${monthOptions}</select></label><p class="kj-muted">فهرست خادمین متولد ماه انتخاب‌شده بر اساس تقویم هجری شمسی</p>${tableHtml(birthdayRows,[{key:"full_name",label:"نام خادم"},{key:"birth_date",label:"تاریخ تولد"}],"در این ماه تولدی ثبت نشده است.")}</section>`;
     return `<h1 class="kj-page-title">بانک خادمین</h1>${errBox("khadems")}
-      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><label class="kj-primary" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin:0"><input type="checkbox" id="kj-show-khadem-photos" style="width:16px;height:16px;accent-color:#fff" ${state.showKhademPhotos?"checked":""}> نمایش عکس خادمین</label><span class="kj-pill">تعداد: ${fa(rows.length)}</span>${canPerform("khadems","create")?'<button type="button" class="kj-primary" id="kj-open-registration">＋ ثبت خادم جدید</button><button type="button" class="kj-primary" id="kj-open-import">ثبت فایل</button>':""}</div>
+      <div class="kj-toolbar"><input class="kj-search" id="kj-khadem-search" placeholder="جست‌وجو بر اساس نام، کد، کد ملی یا تلفن…" value="${esc(state.search)}"><label class="kj-primary kj-photo-toggle" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin:0"><input type="checkbox" id="kj-show-khadem-photos" style="width:16px;height:16px;accent-color:#fff" ${state.showKhademPhotos?"checked":""}> نمایش عکس خادمین</label><span class="kj-pill">تعداد: ${fa(rows.length)}</span>${canPerform("khadems","create")?'<button type="button" class="kj-primary kj-khadem-action" id="kj-open-registration">＋ ثبت خادم جدید</button><button type="button" class="kj-primary kj-khadem-action" id="kj-open-import">ثبت فایل</button>':""}</div>
       ${state.registrationOpen ? khademRegistrationForm() : ""}<div class="kj-khadem-table">${table}</div>${birthdays}`;
   }
 
@@ -2999,7 +3000,7 @@
         if(button.closest(".kj-birthday-list")&&button.dataset.recordKey){
           const key=button.dataset.recordKey;
           const record=key.startsWith("id:")?state.khadems.find(x=>String(khademId(x))===key.slice(3)):khademByCode(key.slice(5));
-          if(record){state.selectedKhadem="code:"+String(khademCode(record));render();}
+          if(record){const rid=khademId(record);state.selectedKhadem=rid!==null&&rid!==undefined&&String(rid)!==""?"id:"+String(rid):"code:"+String(khademCode(record));render();}
           return;
         }
         const search=state.search.trim().toLowerCase();
