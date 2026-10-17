@@ -49,7 +49,7 @@
     profiles: [],
     presenceProfiles: [],
     presenceRows: [],
-    presenceExpanded: false,
+    presenceExpanded: true,
     roles: [],
     permissions: [],
     rolePermissions: [],
