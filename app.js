@@ -2289,7 +2289,7 @@
       <div class="kj-card" style="margin-bottom:14px">
         <h2 class="kj-section-title">دسترسی اختصاصی هر مدیر و کاربر</h2>
         <p>برای هر حساب می‌توانید منوهای قابل مشاهده و قابل ورود را جداگانه تنظیم کنید؛ این تنظیمات به همان حساب اختصاص دارد.</p>
-        <a class="kj-primary" href="./admin-permissions.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">مدیریت جزئی دسترسی‌ها ←</a>
+        <a class="kj-primary" href="./admin-permissions.html?v=20261017-appwide-crud2" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">مدیریت جزئی دسترسی‌ها ←</a>
       </div>
       <div class="kj-card" style="margin-bottom:14px">
         <h2 class="kj-section-title">تأیید ثبت‌نام و تعیین نقش کاربران</h2>
