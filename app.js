@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.17.27";
+  const RELEASE_VERSION = "2026.10.17.28";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -221,7 +221,7 @@
         const d=shiftDay(gridStart,i),p=jalaliPartsFromDate(d),same=p.year===current.year&&p.month===current.month;
         const chosen=selected&&p.year===selected.year&&p.month===selected.month&&p.day===selected.day;
         const now=jalaliPartsFromDate(utcDay(new Date())),today=p.year===now.year&&p.month===now.month&&p.day===now.day;
-        cells+='<button type="button" class="kj-jalali-day'+(same?"":" is-outside")+(chosen?" is-selected":"")+(today?" is-today":"")+'" data-iso="'+isoOf(d)+'" aria-label="'+fa(p.year+"/"+String(p.month).padStart(2,"0")+"/"+String(p.day).padStart(2,"0"))+'">'+fa(p.day)+'</button>';
+        cells+='<button type="button" class="kj-jalali-day'+(same?"":" is-outside")+(chosen?" is-selected":"")+(today?" is-today":"")+'" data-iso="'+isoOf(d)+'" data-jalali="'+p.year+"/"+String(p.month).padStart(2,"0")+"/"+String(p.day).padStart(2,"0")+'" aria-label="'+fa(p.year+"/"+String(p.month).padStart(2,"0")+"/"+String(p.day).padStart(2,"0"))+'">'+fa(p.day)+'</button>';
       }
       const months=monthNames.map((name,i)=>'<option value="'+(i+1)+'" '+(current.month===i+1?"selected":"")+'>'+name+'</option>').join("");
       const years=Array.from({length:201},(_,i)=>1300+i).map(y=>'<option value="'+y+'" '+(current.year===y?"selected":"")+'>'+fa(y)+'</option>').join("");
@@ -253,7 +253,7 @@
         const move=e.target.closest("[data-move]");
         if(move){const p=jalaliPartsFromDate(anchor);anchor=monthStart(p.year,p.month);anchor=shiftDay(anchor,Number(move.dataset.move)*35);const next=jalaliPartsFromDate(anchor);anchor=monthStart(next.year,next.month);render();place();return;}
         const day=e.target.closest("[data-iso]");
-        if(day&&activeInput){setInputValue(jalaliInputDate(day.dataset.iso));close();return;}
+        if(day&&activeInput){setInputValue(day.dataset.jalali||jalaliInputDate(day.dataset.iso));close();return;}
         if(e.target.closest("[data-today]")){setInputValue(jalaliInputDate(isoOf(utcDay(new Date()))));close();return;}
         if(e.target.closest("[data-clear]")){setInputValue("");close();return;}
         if(e.target.closest("[data-close]")){close();return;}
