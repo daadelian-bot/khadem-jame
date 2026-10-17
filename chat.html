@@ -151,9 +151,10 @@ function showWelcome(){$("main").innerHTML='<div class="welcome"><div class="big
 async function openConversation(id){
  const c=conversations.find(x=>x.id===id);if(!c)return;
  activeConversation=c;activeMembers=c.members||[];emojiOpen=false;
- $("main").innerHTML='<div class="conversation-head"><div class="peer"><span class="avatar">'+(c.kind==="group"?"☪️":esc(initials(convoName(c))))+'</span><div><h2>'+esc(convoName(c))+'</h2><p>'+esc(convoSub(c))+'</p></div></div><div class="head-actions"><button class="icon-btn" id="callBtn" title="تماس صوتی" aria-label="تماس صوتی">📞</button><button class="icon-btn" id="detailsBtn" title="اعضای گفت‌وگو" aria-label="اعضای گفت‌وگو">👥</button></div></div><div class="messages" id="messages"><div class="empty">در حال دریافت پیام‌ها…</div></div><div id="emojiTray" class="emoji-row" hidden></div><form class="composer" id="composer"><button class="icon-btn" type="button" id="emojiBtn" title="شکلک‌ها">😊</button><textarea id="messageText" rows="1" maxlength="5000" placeholder="پیام خود را بنویسید…"></textarea><button class="send" type="submit" aria-label="ارسال پیام">➤</button></form>';
+ $("main").innerHTML='<div class="conversation-head"><div class="peer"><span class="avatar">'+(c.kind==="group"?"☪️":esc(initials(convoName(c))))+'</span><div><h2>'+esc(convoName(c))+'</h2><p>'+esc(convoSub(c))+'</p></div></div><div class="head-actions"><button class="icon-btn" id="callBtn" title="تماس صوتی" aria-label="تماس صوتی">📞</button><button class="icon-btn" id="detailsBtn" title="اعضای گفت‌وگو" aria-label="اعضای گفت‌وگو">👥</button></div></div><div class="messages" id="messages"><div class="empty">در حال دریافت پیام‌ها…</div></div><div id="emojiTray" class="emoji-row" hidden></div><form class="composer" id="composer"><button class="icon-btn" type="button" id="emojiBtn" title="شکلک‌ها">😊</button><textarea id="messageText" rows="1" maxlength="5000" placeholder="پیام خود را بنویسید…"></textarea><button class="send" id="sendBtn" type="submit" aria-label="ارسال پیام">➤</button></form>';
  $("callBtn").addEventListener("click",startCall);$("detailsBtn").addEventListener("click",showMembers);$("emojiBtn").addEventListener("click",toggleEmoji);
  $("composer").addEventListener("submit",sendMessage);
+ $("sendBtn").addEventListener("click",e=>{e.preventDefault();sendMessage(e)});
  $("messageText").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("composer").requestSubmit()}});
  await loadMessages();
  if(messageChannel){try{await sb.removeChannel(messageChannel)}catch{}}
@@ -181,18 +182,20 @@ function toggleEmoji(){
  tray.querySelectorAll("[data-emoji]").forEach(b=>b.addEventListener("click",()=>{$("messageText").value+=b.dataset.emoji;$("messageText").focus()}));
 }
 async function sendMessage(e){
- e.preventDefault();if(!activeConversation)return;
+ e?.preventDefault?.();if(!activeConversation||!sb||!me)return;
  const box=$("messageText"),body=box.value.trim();if(!body)return;
- const target=activeConversation,btn=$(".send");btn.disabled=true;box.disabled=true;
+ const target=activeConversation,btn=$("sendBtn")||$(".send");if(btn.disabled)return;
+ btn.disabled=true;btn.textContent="…";box.disabled=true;
  try{
-  const res=await sb.from("chat_messages").insert({conversation_id:target.id,sender_id:me.id,sender_name:me.name,body:body,conversation_type:"group",recipient_id:null});
+  const res=await sb.from("chat_messages").insert({conversation_id:target.id,sender_id:me.id,sender_name:me.name,body:body,conversation_type:"group",recipient_id:null}).select("id,conversation_id,sender_id,sender_name,body,created_at,deleted_at,conversation_type").single();
   if(res.error)throw res.error;
-  box.value="";
+  if(res.data&&!activeMessages.some(m=>m.id===res.data.id))activeMessages.push(res.data);
+  box.value="";drawMessages();
+  try{await sb.from("chat_conversations").update({updated_at:new Date().toISOString()}).eq("id",target.id)}catch(updateError){console.warn("conversation timestamp update failed",updateError)}
   await loadMessages();
-  await sb.from("chat_conversations").update({updated_at:new Date().toISOString()}).eq("id",target.id);
   await refreshConversations();
- }catch(e){console.error("chat send failed",e);toast("ارسال پیام ناموفق بود: "+String(e?.message||e?.details||e?.hint||"خطای دسترسی یا اتصال").slice(0,180))}
- finally{btn.disabled=false;box.disabled=false;box.focus()}
+ }catch(err){console.error("chat send failed",err);toast("ارسال پیام ناموفق بود: "+String(err?.message||err?.details||err?.hint||err?.code||"خطای دسترسی یا اتصال").slice(0,180))}
+ finally{btn.disabled=false;btn.textContent="➤";box.disabled=false;box.focus()}
 }
 function showMembers(){
  if(!activeConversation)return;
@@ -237,7 +240,7 @@ function minimizeCall(){
  if(!call)return;callMinimized=true;
  $("overlayRoot").innerHTML='<button class="call-banner" id="restoreCall" style="position:absolute;left:12px;right:12px;top:12px;width:calc(100% - 24px);z-index:12;border-radius:14px;border:1px solid #e6d6a8;cursor:pointer"><strong>📞 '+esc(personName(call.peerId))+' · '+(callConnectedAt?"در حال مکالمه":"در انتظار پاسخ")+'</strong><span>بازگشت به تماس</span></button>';
  $("restoreCall").onclick=()=>showCallScreen(callConnectedAt?"تماس برقرار است 🤍":"در حال زنگ خوردن…",!!callConnectedAt);
- notifyParentCall(callConnectedAt?"active":"ringing");
+ notifyParentCall("minimized");
 }
 async function toggleSpeaker(){
  speakerEnabled=!speakerEnabled;
