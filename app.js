@@ -13,7 +13,7 @@
   const TOKEN_KEY = "kj_access_token";
   const REFRESH_TOKEN_KEY = "kj_refresh_token";
   const USER_KEY = "kj_user";
-  const RELEASE_VERSION = "2026.10.18.36";
+  const RELEASE_VERSION = "2026.10.18.37";
   const RELEASE_SEEN_KEY = "kj_release_seen_version";
   const TIMEOUT_MS = 20000;
 
@@ -1955,7 +1955,7 @@
   function khademRegistrationForm() {
     const skills = ["کمک‌های اولیه و امداد","امور پزشکی","پرستاری و مراقبت از بیمار","تزریقات و پانسمان (دارای صلاحیت)","آشپزی","آماده‌سازی مواد غذایی","نظافت و خدمات عمومی","برنامه‌ریزی و امور اجرایی","سرپرستی گروه","امور اداری و بایگانی","ثبت اطلاعات و ورود داده","حسابداری و امور مالی","خرید و تدارکات","انبارداری و کنترل موجودی","مدیریت اقلام و توزیع تجهیزات","تأسیسات و لوله‌کشی","تعمیرات فنی","نجاری","جوشکاری","خیاطی و تعمیر لباس","رانندگی خودرو","رانندگی خودروهای سنگین (دارای گواهینامه)","مکانیکی خودرو","راهنمایی مسیر و پاسخ‌گویی به زائران","زبان عربی","ترجمه عربی","زبان انگلیسی","ترجمه انگلیسی","ترجمه زبان‌های دیگر","روابط عمومی و ارتباط با زائران","تولید محتوا","عکاسی","فیلم‌برداری","تدوین فیلم","طراحی گرافیک","مدیریت شبکه‌های اجتماعی","پخش صوت و تصویر","صدابرداری و تجهیزات صوتی","مداحی و اجرای مراسم","قرائت قرآن","اجرای برنامه و مجری‌گری","امور فرهنگی و تبلیغی","آموزش و تدریس","مشاوره و پاسخ‌گویی","خدمات حراست و نظم (با مجوز لازم)","مدیریت بحران و تخلیه اضطراری","کمک به سالمندان و افراد کم‌توان","سایر مهارت‌ها"];
     const fields = [
-      ["khadem_code","کد خادم (صدور خودکار)","text"],["full_name","نام و نام خانوادگی *","text"],["referrer_name","معرف خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
+      ["khadem_code","کد خادم (تعیین نهایی بر اساس تاریخ عضویت)","text"],["full_name","نام و نام خانوادگی *","text"],["referrer_name","معرف خادم","text"],["father_name","نام پدر","text"],["national_code","کد ملی","text"],
       ["birth_date","تاریخ تولد","text"],["membership_date","تاریخ عضویت","text"],["blood_type","گروه خونی","select"],["phone","شماره تلفن خادم","tel"],["occupation","شغل","text"],
       ["primary_responsibility","مسئولیت اصلی","text"],["address","نشانی محل سکونت","text"],
       ["emergency_contact_name","تماس اضطراری ۱ — نام","text"],["emergency_contact_phone","تماس اضطراری ۱ — شماره تلفن","tel"],
@@ -1963,7 +1963,7 @@
     ];
     return `<form id="kj-registration-form" class="kj-card" style="margin:14px 0" novalidate>
       <h2 class="kj-section-title">فرم ثبت خادم جدید</h2>
-      <label class="kj-field" style="max-width:420px"><b>عکس خادم (اختیاری)</b><input id="kj-registration-photo" name="photo_file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp"><img id="kj-registration-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b>${type==="select"?`<select name="${name}"><option value="">انتخاب گروه خونی</option>${["A+","A-","B+","B-","AB+","AB-","O+","O-","نامشخص"].map(v=>`<option value="${v}">${v}</option>`).join("")}</select>`:`<input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="${name==="khadem_code"?fa(nextKhademCode()):""}" autocomplete="off" placeholder="${name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}">`}</label>`).join("")}}</div>
+      <label class="kj-field" style="max-width:420px"><b>عکس خادم (اختیاری)</b><input id="kj-registration-photo" name="photo_file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp"><img id="kj-registration-photo-preview" alt="پیش‌نمایش عکس خادم" style="display:none;max-width:160px;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px"></label><div class="kj-registration-grid">${fields.map(([name,label,type])=>`<label class="kj-field ${name==="khadem_code"?"kj-code-field":name==="full_name"?"kj-name-field":""}"><b>${label}</b>${type==="select"?`<select name="${name}"><option value="">انتخاب گروه خونی</option>${["A+","A-","B+","B-","AB+","AB-","O+","O-","نامشخص"].map(v=>`<option value="${v}">${v}</option>`).join("")}</select>`:`<input name="${name}" type="${type}" ${name==="full_name"?"required":""} ${name==="khadem_code"?'readonly inputmode="numeric" aria-readonly="true"':""} value="" autocomplete="off" placeholder="${name==="khadem_code"?"پس از ثبت بر اساس تاریخ عضویت تعیین می‌شود":name==="full_name"?"نام و نام خانوادگی را وارد کنید":""}">`}</label>`).join("")}}</div>
       <fieldset style="border:1px solid #ddd6ce;border-radius:12px;padding:12px;margin:14px 0"><legend>مهارت‌ها و توانمندی‌ها</legend><div class="kj-skill-list">${skills.map(s=>`<label class="kj-pill" style="display:inline-flex;align-items:center;gap:6px;margin:4px"><input type="checkbox" name="skills" value="${esc(s)}">${esc(s)}</label>`).join("")}</div></fieldset>
       <label class="kj-field"><b>توضیحات</b><textarea name="notes" rows="3"></textarea></label>
       <div id="kj-registration-message" class="kj-muted" role="status" aria-live="polite"></div>
