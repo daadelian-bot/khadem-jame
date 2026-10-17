@@ -314,7 +314,10 @@
       const button = document.getElementById("kj-release-continue");
       if (!button) { resolve(); return; }
       button.addEventListener("click", function () {
-        localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION);
+        // Continue even if browser storage is blocked or full; the release intro must never trap the user.
+        try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch (storageError) {
+          console.warn("KJ: could not save release intro state", storageError);
+        }
         resolve();
       }, { once: true });
     });
