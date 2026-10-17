@@ -3,6 +3,12 @@ name: Chat-requested code changes
 on:
   issues:
     types: [opened, reopened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'شماره درخواست توسعه'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -10,13 +16,13 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: chat-codex-${{ github.event.issue.number }}
+  group: chat-codex-${{ inputs.issue_number || github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
   create-draft-pr:
     # Only requests created by the repository owner with the exact prefix run the coding agent.
-    if: github.event.issue.user.login == 'daadelian-bot' && startsWith(github.event.issue.title, '[AI-DEV]')
+    if: (github.event_name == 'issues' && github.event.issue.user.login == 'daadelian-bot' && startsWith(github.event.issue.title, '[AI-DEV]')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -27,12 +33,40 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Load and validate developer request
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! [[ "${ISSUE_NUMBER}" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid developer issue number."
+            exit 1
+          fi
+          ISSUE_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}")"
+          ISSUE_AUTHOR="$(jq -r '.user.login // ""' <<< "${ISSUE_JSON}")"
+          ISSUE_TITLE="$(jq -r '.title // ""' <<< "${ISSUE_JSON}")"
+          ISSUE_BODY="$(jq -r '.body // ""' <<< "${ISSUE_JSON}")"
+          if [ "${ISSUE_AUTHOR}" != "daadelian-bot" ] || [[ "${ISSUE_TITLE}" != \[AI-DEV\]* ]]; then
+            echo "::error::The selected issue is not a valid developer request."
+            exit 1
+          fi
+          printf 'ISSUE_NUMBER=%s\n' "${ISSUE_NUMBER}" >> "${GITHUB_ENV}"
+          printf 'ISSUE_TITLE=%s\n' "${ISSUE_TITLE}" >> "${GITHUB_ENV}"
+          BODY_DELIMITER="ISSUE_BODY_$(date +%s%N)"
+          {
+            printf 'ISSUE_BODY<<%s\n' "${BODY_DELIMITER}"
+            printf '%s\n' "${ISSUE_BODY}"
+            printf '%s\n' "${BODY_DELIMITER}"
+          } >> "${GITHUB_ENV}"
+
       - name: Verify required API secret without exposing it
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GH_AUTOMATION_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         shell: bash
         run: |
           if [ -z "${OPENAI_API_KEY}" ]; then
@@ -48,7 +82,7 @@ jobs:
 
       - name: Create isolated working branch
         env:
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         shell: bash
         run: |
           set -euo pipefail
@@ -58,8 +92,8 @@ jobs:
 
       - name: Prepare task prompt
         env:
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
+          ISSUE_BODY: ${{ env.ISSUE_BODY }}
         shell: bash
         run: |
           set -euo pipefail
@@ -94,8 +128,8 @@ jobs:
       - name: Create a draft pull request for review
         env:
           GH_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
           CODEX_SUMMARY: ${{ steps.codex.outputs.final-message }}
         shell: bash
         run: |
