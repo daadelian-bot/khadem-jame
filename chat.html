@@ -26,9 +26,10 @@ const KEY="sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
 const TOKEN_KEY="kj_access_token",REFRESH_KEY="kj_refresh_token",USER_KEY="kj_user";
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false;
+let sb=null,me=null,people=[],conversations=[],activeConversation=null,activeMembers=[],activeMessages=[],messageChannel=null,callChannel=null,call=null,pendingCall=null,earlyIce=new Map(),listMode="chats",emojiOpen=false,callTimeout=null,callTimer=null,callConnectedAt=0,speakerEnabled=true,callMinimized=false;
 const emojis=["🤍","🌹","🕌","📿","🤲","❤️","🌙","✨","🙏","😊","👍","🌿","☪️","💚","🌸","🌟","🕋","🫶"];
 function toast(msg){const root=$("overlayRoot");root.innerHTML='<div class="toast">'+esc(msg)+'</div>';setTimeout(()=>{const t=root.querySelector(".toast");if(t)t.remove()},3500)}
+function notifyParentCall(state,extra={}){try{parent.postMessage({source:"khadem-chat",type:"call-state",state,name:call?personName(call.peerId):(pendingCall?personName(pendingCall.sender_id):""),callId:call?.id||pendingCall?.call_id||null,conversationId:call?.conversationId||pendingCall?.conversation_id||null,...extra},"*")}catch{}}
 function roleLabel(r){return r==="admin"?"مدیر اصلی":r==="manager"?"مدیر":"کاربر"}
 function personName(id){const p=people.find(x=>x.id===id);return p?p.display_name:"کاربر سامانه"}
 function initials(name){return String(name||"خ").trim().slice(0,1)||"خ"}
