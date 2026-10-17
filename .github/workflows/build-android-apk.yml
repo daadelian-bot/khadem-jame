@@ -195,7 +195,7 @@ jobs:
               private ValueCallback<Uri[]> filePathCallback;
               private static final int FILE_CHOOSER_REQUEST_CODE = 4107;
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261018-android-file-picker";
+                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261018-android-file-picker-111";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -330,18 +330,22 @@ jobs:
 
           APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
           test -s "${APK_PATH}"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "${APK_PATH}" | grep -F "package: name='ir.sayedazainab.khademjame' versionCode='111' versionName='1.1.1'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.0-debug.apk"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.1-debug.apk"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.1.0 (کد نسخه 110)
-          نوع ساخت: Debug APK\n\nاین نسخه پشتیبانی انتخاب عکس از گالری/فایل را در WebView اندروید اضافه می‌کند.\nامضای این بسته آزمایشی باید با نسخه نصب‌شده سازگار باشد تا به‌صورت به‌روزرسانی نصب شود؛ اگر ناسازگار بود، آن را روی نسخه فعلی نصب نکنید.
+          نسخه: 1.1.1 (کد نسخه 111)
+          نوع ساخت: Debug APK
+
+          این نسخه پشتیبانی انتخاب عکس از گالری/فایل را در WebView اندروید اضافه می‌کند.
+          هشدار: امضای Debug ممکن است با نسخه نصب‌شده روی گوشی یکسان نباشد. اگر هنگام نصب پیام ناسازگاری امضا یا امکان به‌روزرسانی مشاهده شد، نسخه قبلی را حذف نکنید و این APK را نصب نکنید.
 
           این برنامه یک پوسته WebView است و نسخه منتشرشده سامانه را از اینترنت باز می‌کند.
-          برای استفاده، اتصال اینترنت لازم است. تغییرات منتشرشده در GitHub Pages در اجرای برنامه
-          نمایش داده می‌شوند؛ فایل‌های سایت داخل APK به‌صورت آفلاین بسته‌بندی نشده‌اند.
+          برای استفاده، اتصال اینترنت لازم است. فایل‌های سایت داخل APK به‌صورت آفلاین بسته‌بندی نشده‌اند.
 
           نصب:
           1) فایل APK را به گوشی اندرویدی منتقل کنید.
@@ -350,8 +354,8 @@ jobs:
           EOF
 
           test -s "dist/README-FA.txt"
-          (cd dist && zip -q "Samane-Jame-Khademin-1.1.0.zip" "Samane-Jame-Khademin-1.1.0-debug.apk" "README-FA.txt")
-          sha256sum dist/Samane-Jame-Khademin-1.1.0-debug.apk dist/Samane-Jame-Khademin-1.1.0.zip > dist/SHA256SUMS.txt
+          (cd dist && zip -q "Samane-Jame-Khademin-1.1.1.zip" "Samane-Jame-Khademin-1.1.1-debug.apk" "README-FA.txt")
+          sha256sum dist/Samane-Jame-Khademin-1.1.0-debug.apk dist/Samane-Jame-Khademin-1.1.1.zip > dist/SHA256SUMS.txt
           test -s "dist/SHA256SUMS.txt"
           test -s "dist/Samane-Jame-Khademin-1.1.0.zip"
 
