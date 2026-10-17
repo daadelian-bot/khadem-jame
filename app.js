@@ -738,6 +738,8 @@
     return app;
   }
   function canAccess(tab) {
+    // محیط توسعه فقط برای مدیر اصلی مجاز است؛ دسترسی کامل سایر مدیران این محدودیت را دور نمی‌زند.
+    if (tab === "developerConsole") return state.isPrimaryAdmin === true;
     // تا زمان دریافت نقش و مجوزهای واقعی، دسترسی را پیش‌فرض باز نکن.
     if (state.isPrimaryAdmin || state.accessFull) return true;
     if (tab === "dashboard" || tab === "changePassword" || tab === "updateCheck") return true;
@@ -757,7 +759,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],["changePassword","🔐 تغییر رمز عبور"]]]
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],["developerConsole","🧠 توسعه هوشمند"],["changePassword","🔐 تغییر رمز عبور"]]]
     ];
     for (let i = groups.length - 1; i >= 0; i--) {
       groups[i][1] = groups[i][1].filter(([id]) => canAccess(id));
@@ -2517,6 +2519,15 @@
       ' تغییرات پشتیبانی‌شده پس از اتصال اینترنت ارسال می‌شوند. عملیات حساس مانند پرداخت شهریه، تغییر رمز، مدیریت دسترسی و بارگذاری عکس جدید همچنان به اینترنت نیاز دارند.</div>';
   }
 
+  function developerConsolePage() {
+    return `<div class="kj-page-heading"><div><h1 class="kj-page-title">توسعه هوشمند سامانه</h1><p class="kj-muted">محیط ثبت و پیگیری درخواست‌های تغییر نرم‌افزار؛ ویژه مدیر اصلی.</p></div></div>
+      <section class="kj-card" style="max-width:760px">
+        <h2 class="kj-section-title">درخواست تغییرات نرم‌افزار</h2>
+        <p>برای ثبت درخواست قابلیت جدید یا اصلاح سامانه، محیط توسعه هوشمند را باز کنید. درخواست‌ها از مسیر امن بررسی می‌شوند و تغییرات بدون بررسی و تأیید منتشر نخواهند شد.</p>
+        <div class="kj-toolbar"><a class="kj-primary" href="./developer-console.html?v=20261017-4">ورود به توسعه هوشمند ←</a></div>
+      </section>`;
+  }
+
   function updateCheckPage() {
     return `<div class="kj-page-heading"><div><h1 class="kj-page-title">بررسی به‌روزرسانی سامانه</h1><p class="kj-muted">نسخه منتشرشده را بررسی کنید و در صورت آماده بودن نسخه جدید، آن را اعمال کنید.</p></div></div>
       <section class="kj-card" style="max-width:760px">
@@ -2662,6 +2673,7 @@
       reports: reportsPage,
       settings: settingsPage,
       updateCheck: updateCheckPage,
+      developerConsole: developerConsolePage,
       changePassword: changePasswordPage,
     };
     main.innerHTML = offlineNotice() + (views[state.tab] || dashboard)();
