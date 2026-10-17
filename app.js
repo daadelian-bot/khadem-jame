@@ -471,7 +471,12 @@
   }
   async function request(path, options = {}) {
     const method = String(options.method || "GET").toUpperCase();
-    if (method !== "GET" && !options.__skipOfflineQueue && !navigator.onLine) {
+    // صف آفلاین فقط برای تغییرات REST مشخص و دارای مجوز است؛ ورود، بررسی مجوزها و Edge Functionها
+    // باید هرگز به صف CRUD فرستاده نشوند. navigator.onLine نیز فقط یک نشانه تقریبی از اتصال است.
+    const offlineDescriptor = offlineMutationDescriptor(path);
+    const mayQueueOffline = method !== "GET" && !options.__skipOfflineQueue &&
+      !!offlineDescriptor && canQueueOfflineMutation(path, options);
+    if (method !== "GET" && !options.__skipOfflineQueue && !navigator.onLine && mayQueueOffline) {
       return queueOfflineMutation(path, options);
     }
     const controller = new AbortController();
@@ -490,14 +495,14 @@
       });
       raw = await response.text();
     } catch (e) {
-      if (!options.__skipOfflineQueue && method !== "GET") {
-        try { return await queueOfflineMutation(path, options); }
-        catch (queueError) {
-          if (queueError && queueError.message) throw queueError;
-        }
+      // فقط عملیات REST که از ابتدا برای صف آفلاین تأیید شده‌اند می‌توانند به صف بروند.
+      // خطای شبکه در ورود/مجوزها نباید با خطای گمراه‌کنندهٔ «مجوز آفلاین» جایگزین شود.
+      if (!options.__skipOfflineQueue && method !== "GET" &&
+          offlineDescriptor && canQueueOfflineMutation(path, options)) {
+        return await queueOfflineMutation(path, options);
       }
       if (e && e.name === "AbortError") throw new Error("مهلت اتصال یا دریافت پاسخ از پایگاه داده تمام شد. اینترنت را بررسی کنید و دوباره تلاش کنید.");
-      throw new Error("ارتباط با Supabase برقرار نشد. اینترنت و تنظیمات اتصال را بررسی کنید.");
+      throw new Error("ارتباط با Supabase برقرار نشد. برای ورود و بررسی مجوزها اینترنت را وصل کنید و دوباره تلاش کنید.");
     } finally {
       clearTimeout(timer);
     }
