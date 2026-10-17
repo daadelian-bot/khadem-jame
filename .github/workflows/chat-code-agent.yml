@@ -2,7 +2,7 @@ name: Chat-requested code changes
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 permissions:
   contents: read
