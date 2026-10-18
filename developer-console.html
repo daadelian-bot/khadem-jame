@@ -79,8 +79,9 @@ function draw(items){
   const comments=Array.isArray(item.comments)?item.comments:[];
   const lastActivity=Date.parse(item.updated_at||item.created_at||"");
   const hasFinalResult=comments.some(c=>String(c.body||"").includes("https://github.com/daadelian-bot/khadem-jame/pull/")||String(c.body||"").includes("تغییری برای ثبت پیدا نکرد"));
-  const stale=item.state==="open"&&!hasFinalResult&&Number.isFinite(lastActivity)&&(Date.now()-lastActivity>35*60*1000);
-  const state=item.state!=="open"?"بسته‌شده":stale?"گردش‌کار بدون نتیجه؛ بررسی لازم":"در حال بررسی";
+  const freeMode=comments.some(c=>String(c.body||"").includes("به‌صورت پیش‌فرض غیرفعال است تا هیچ هزینه ناخواسته‌ای ایجاد نشود"));
+  const stale=item.state==="open"&&!hasFinalResult&&!freeMode&&Number.isFinite(lastActivity)&&(Date.now()-lastActivity>35*60*1000);
+  const state=item.state!=="open"?"بسته‌شده":hasFinalResult?"نتیجه آماده بررسی":freeMode?"ثبت شد؛ کدنویسی خودکار رایگان هنوز فعال نیست":stale?"گردش‌کار بدون نتیجه؛ بررسی لازم":"در حال بررسی";
   const latest=comments.slice(-3).map(c=>'<div class="comment">'+esc(c.body||"")+'<div class="meta">'+esc(c.created_at||"")+'</div></div>'+prLink(c.body)).join("");
   const workflowLink=stale?'<p><a href="https://github.com/daadelian-bot/khadem-jame/actions/workflows/chat-code-agent.yml" target="_blank" rel="noopener noreferrer">بررسی اجرای گردش‌کار GitHub Actions</a></p>':"";
   const fallback='<div class="comment">در انتظار پاسخ گردش‌کار توسعه…</div>';
