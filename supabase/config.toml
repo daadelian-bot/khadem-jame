@@ -14,6 +14,3 @@ verify_jwt = true
 [functions.password-recovery]
 verify_jwt = false
 
-# The in-app developer console validates the caller and requires a valid Supabase JWT.
-[functions.submit-developer-request]
-verify_jwt = true
