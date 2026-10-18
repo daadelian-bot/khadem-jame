@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173b58">
+<title>دستیار هوشمند خدام | سامانه جامع مدیریت خادمین</title>
+<link rel="icon" type="image/png" href="./logo.png">
+<style>
+:root{--navy:#173b58;--gold:#c6a66a;--bg:#f3f5f8;--ink:#1c3045;--muted:#66798a;--line:#dfe6ed}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,"Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:#fff;padding:16px max(16px,calc((100vw - 860px)/2));display:flex;align-items:center;gap:12px}
+header img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:10px;padding:4px}
+header h1{font-size:17px;margin:0 0 5px}header p{font-size:12px;margin:0;color:#dbe6ee}
+main{max-width:860px;margin:18px auto;padding:0 12px 24px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px #10283f0a;overflow:hidden}
+.intro{padding:16px;border-bottom:1px solid var(--line);line-height:1.9;font-size:13px;color:#506579}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:1px solid #cdd8e2;background:#f8fafc;color:var(--navy);border-radius:999px;padding:8px 11px;font:inherit;font-size:12px;cursor:pointer}
+#messages{padding:16px;min-height:250px;max-height:55vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:92%;padding:12px 14px;border-radius:14px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.msg.bot{align-self:flex-start;background:#f0f4f7;border:1px solid #e0e7ed}
+.msg.user{align-self:flex-end;background:#e6eff6;border:1px solid #c9dbe8}
+.msg.error{border-color:#e5c2b9;background:#fff5f2;color:#8a3424}
+form{display:flex;gap:9px;padding:12px;border-top:1px solid var(--line);background:#fbfcfd}
+textarea{resize:vertical;min-height:48px;max-height:140px;flex:1;border:1px solid #cdd8e2;border-radius:12px;padding:12px;font:inherit;font-size:14px;line-height:1.7;outline-color:var(--gold)}
+button.send{border:0;border-radius:12px;background:var(--navy);color:white;padding:0 18px;font:inherit;font-weight:700;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+.foot{font-size:11px;color:var(--muted);padding:12px 16px;line-height:1.8}
+.toplinks{max-width:860px;margin:12px auto 0;padding:0 12px;display:flex;justify-content:space-between;gap:8px}
+.toplinks a{color:var(--navy);font-size:12px;text-decoration:none;font-weight:700}
+#status{font-size:12px;color:var(--muted);padding:0 16px 10px}
+@media(max-width:520px){header h1{font-size:15px}#messages{min-height:220px;max-height:52vh}.msg{max-width:98%}button.send{padding:0 13px}}
+</style>
+</head>
+<body>
+<header><img src="./logo.png" alt="نشان مجموعه"><div><h1>دستیار هوشمند خدام</h1><p>سامانه جامع مدیریت خادمین مجموعة السیدة زینب (س)</p></div></header>
+<div class="toplinks"><a href="./live-data.html">← بازگشت به سامانه</a><a href="./login.html">ورود به حساب کاربری</a></div>
+<main>
+<section class="card">
+<div class="intro">
+از اینجا می‌توانید به فارسی درباره بانک خدام، آمار خدام، سوابق خدمت و حضور جلسات سؤال کنید. پاسخ‌ها از اطلاعات قابل‌دسترسی سامانه تهیه می‌شوند.
+<div class="chips">
+<button class="chip" type="button" data-prompt="تعداد خدام فعال و غیرفعال چند نفر است؟">آمار خدام</button>
+<button class="chip" type="button" data-prompt="سوابق خدمت خادم با کد ۱۰۰۰ را نمایش بده.">سوابق خدمت</button>
+<button class="chip" type="button" data-prompt="خلاصه وضعیت حضور جلسات را گزارش کن.">گزارش حضور جلسات</button>
+<button class="chip" type="button" data-prompt="چطور می‌توانم پرونده خادم را جست‌وجو کنم؟">راهنمای استفاده</button>
+</div>
+</div>
+<div id="messages" aria-live="polite"><div class="msg bot">سلام! من دستیار هوشمند سامانه خدام هستم. برای شروع یکی از پیشنهادها را انتخاب کنید یا سؤال خود را بنویسید.</div></div>
+<div id="status">برای دریافت پاسخ، اتصال اینترنت و ورود معتبر به سامانه لازم است.</div>
+<form id="chat-form">
+<textarea id="prompt" maxlength="4000" rows="2" placeholder="مثلاً: تعداد خدام فعال چند نفر است؟" aria-label="پیام شما" required></textarea>
+<button class="send" id="send" type="submit">ارسال</button>
+</form>
+<div class="foot">دستیار فقط عملیات خواندنی مجاز را انجام می‌دهد. برای ثبت یا تغییر اطلاعات، از بخش‌های اصلی سامانه استفاده کنید. اطلاعات حساس و کلیدهای محرمانه را در پیام‌ها وارد نکنید.</div>
+</section>
+</main>
+<script>
+(function(){
+  "use strict";
+  const SUPABASE_URL="https://fxxtyfurdzpzfvweoppo.supabase.co";
+  const SUPABASE_KEY="sb_publishable_HA3Z2cmNMddMTmpFoLmerA_k-YtEId7";
+  const TOKEN_KEY="kj_access_token";
+  const messages=document.getElementById("messages");
+  const form=document.getElementById("chat-form");
+  const prompt=document.getElementById("prompt");
+  const send=document.getElementById("send");
+  const status=document.getElementById("status");
+  function addMessage(text,kind){
+    const node=document.createElement("div");node.className="msg "+kind;node.textContent=String(text||"");
+    messages.appendChild(node);messages.scrollTop=messages.scrollHeight;return node;
+  }
+  async function ask(text){
+    const message=String(text||"").trim();if(!message||send.disabled)return;
+    addMessage(message,"user");prompt.value="";send.disabled=true;status.textContent="در حال بررسی درخواست و دریافت پاسخ…";
+    const token=localStorage.getItem(TOKEN_KEY);
+    if(!token){addMessage("برای استفاده از دستیار ابتدا وارد سامانه شوید، سپس همین صفحه را دوباره باز کنید.","error");status.textContent="ورود لازم است.";send.disabled=false;return;}
+    try{
+      const response=await fetch(SUPABASE_URL+"/functions/v1/khadem-ai-agent",{
+        method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+token},
+        body:JSON.stringify({message})
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok){
+        if(response.status===401){addMessage("نشست ورود شما معتبر نیست یا منقضی شده است. از سامانه خارج شوید و دوباره وارد شوید.","error");}
+        else if(data.code==="OPENAI_NOT_CONFIGURED"){addMessage("اتصال سمت سرور ایجاد شده، اما کلید سرویس هوش مصنوعی هنوز تنظیم نشده است. مدیر فنی باید OPENAI_API_KEY را در Secrets تابع Edge به‌صورت محرمانه ثبت کند؛ کلید را در این صفحه وارد نکنید.","error");}
+        else{addMessage(data.error||"پاسخ دریافت نشد. لطفاً بعداً دوباره تلاش کنید.","error");}
+        status.textContent="درخواست با خطا روبه‌رو شد.";return;
+      }
+      addMessage(data.answer||"پاسخی دریافت نشد.","bot");status.textContent="پاسخ از دستیار هوشمند دریافت شد.";
+    }catch(e){addMessage("ارتباط برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.","error");status.textContent="خطای اتصال.";}
+    finally{send.disabled=false;prompt.focus();}
+  }
+  form.addEventListener("submit",e=>{e.preventDefault();ask(prompt.value);});
+  document.querySelectorAll("[data-prompt]").forEach(btn=>btn.addEventListener("click",()=>{prompt.value=btn.getAttribute("data-prompt")||"";ask(prompt.value);}));
+  prompt.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
+})();
+</script>
+</body>
+</html>
