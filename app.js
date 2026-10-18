@@ -1053,7 +1053,7 @@
       ["جلسات و حضور و غیاب", [["meetings","👥 جلسات و حضور و غیاب"]]],
       ["امور مالی و پشتیبانی", [["finance","💰 امور مالی و شهریه"],["fund","🏦 خزانه و صندوق"],["donors","🤝 نیکوکاران و خیرین"],["equipment","👕 البسه، تجهیزات و ناوگان"]]],
       ["گزارش‌ها و کنترل", [["reports","📊 گزارش‌ها و تحلیل"],["audit","📁 سوابق فعالیت و ممیزی"]]],
-      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],...(state.isPrimaryAdmin ? [["developerConsole","🧠 توسعه هوشمند"]] : []),["changePassword","🔐 تغییر رمز عبور"]]],
+      ["مدیریت سامانه", [["users","🧩 کاربران و دسترسی‌ها"],["settings","⚙️ تنظیمات سامانه"],["updateCheck","🔄 بررسی به‌روزرسانی"],["changePassword","🔐 تغییر رمز عبور"]]],
       ["درباره برنامه", [["aboutApp","ℹ️ سازنده و تغییرات نسخه"]]]
     ];
     for (let i = groups.length - 1; i >= 0; i--) {
@@ -1103,7 +1103,6 @@
     $$(".kj-nav [data-tab]").forEach(b => b.addEventListener("click", () => {
       const nextTab = b.dataset.tab;
       if (!nextTab) return;
-      if (nextTab === "developerConsole") { window.location.href = "./developer-console.html?v=20261017-4"; return; }
       if (!canAccess(nextTab)) { toast("دسترسی این بخش برای حساب شما فعال نیست. از مدیر اصلی بخواهید مجوز آن را در بخش «کاربران و دسترسی‌ها» تنظیم کند.", "error"); return; }
       state.tab = nextTab;
       state.selectedKhadem = null;
