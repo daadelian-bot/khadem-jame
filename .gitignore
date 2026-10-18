@@ -1,0 +1,13 @@
+# Local database backups and sensitive exports
+/backups/
+/backup/
+/exports/
+*.dump
+*.backup
+*.tar
+*.tar.gz
+
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
