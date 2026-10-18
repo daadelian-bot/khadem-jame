@@ -19,11 +19,8 @@
     .boot{max-width:520px;margin:12vh auto;padding:24px;background:#fff;border:1px solid #dfe6ed;border-bottom:3px solid #c6a66a;border-radius:18px;text-align:center;line-height:2}
     .boot h1{font-size:20px}
     .boot p{color:#65798a}
-  
-    #kj-update-widget{position:fixed;left:10px;bottom:10px;z-index:10000;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:min(320px,calc(100vw - 20px));font-family:Tahoma,Arial,sans-serif}
-    #kj-release-notes,#kj-developer-console{display:inline-block;text-decoration:none;border:1px solid #c6a66a;border-radius:10px;background:#fff;color:#173b58;padding:8px 11px;font-size:12px;font-weight:700;box-shadow:0 3px 12px #10283f18}
-    #kj-developer-console{display:none;text-decoration:none;border:1px solid #173b58;border-radius:10px;background:#fff;color:#173b58;padding:8px 11px;font-size:12px;font-weight:700;box-shadow:0 3px 12px #10283f18}
-    #kj-developer-console.ready{display:inline-block}
+    #kj-ai-assistant{position:fixed;right:10px;bottom:10px;z-index:10001;display:flex;align-items:center;gap:7px;text-decoration:none;border:1px solid #c6a66a;border-radius:12px;background:#173b58;color:#fff;padding:11px 14px;font-size:12px;font-weight:800;font-family:Tahoma,Arial,sans-serif;box-shadow:0 5px 18px #10283f2a}
+    #kj-ai-assistant .ai-icon{font-size:17px;line-height:1}
   </style>
 </head>
 <body>
@@ -34,6 +31,7 @@
       <p>برای مشاهده اطلاعات، با حساب کاربری معتبر سامانه وارد شوید.</p>
     </main>
   </div>
+  <a id="kj-ai-assistant" href="./assistant.html" aria-label="باز کردن دستیار هوشمند خدام"><span class="ai-icon">✦</span><span>دستیار هوشمند</span></a>
   <noscript><main class="boot"><h1>جاوااسکریپت غیرفعال است</h1><p>برای استفاده از سامانه، جاوااسکریپت مرورگر را فعال کنید.</p></main></noscript>
   <script src="./offline-store.js?v=20261018-release-111" defer></script>
   <script src="./chat-persistence.js?v=20261018-release-111" defer></script>
@@ -48,7 +46,5 @@
       });
     }
   </script>
-
-
 </body>
 </html>
