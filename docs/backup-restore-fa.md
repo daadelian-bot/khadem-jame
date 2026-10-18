@@ -46,6 +46,25 @@ bash scripts/restore-supabase.sh backups/khadem-supabase-<timestamp>
 ## ۴. فایل‌ها و عکس‌های Storage
 فایل‌های عکس در Storage با مسیر یا URL در جدول‌ها ارجاع داده می‌شوند؛ کپی دیتابیس به‌تنهایی خود فایل‌ها را منتقل نمی‌کند. فهرست bucketها، تنظیمات public/private، سیاست‌های Storage و همه objectها را جداگانه صادر کنید. پس از انتقال، مسیرها را حفظ یا mapping آن‌ها را کنترل کنید و چند عکس را در برنامه باز کنید. کلید service role را در مرورگر یا APK استفاده نکنید.
 
+برای خروجی‌گرفتن و بازگرداندن objectها، Node.js و بسته `@supabase/supabase-js` را در یک پوشه کاری محلی نصب کنید. از service role key فقط در محیط امن محلی استفاده کنید:
+
+```bash
+npm install @supabase/supabase-js
+export SUPABASE_URL='https://fxxtyfurdzpzfvweoppo.supabase.co'
+export SUPABASE_SERVICE_ROLE_KEY='کلید-خصوصی-پروژه'
+export STORAGE_BACKUP_DIR='backups/storage-export'
+node scripts/backup-storage.mjs
+```
+
+برای بازیابی Storage در پروژه مقصد:
+```bash
+export RESTORE_SUPABASE_URL='https://آدرس-پروژه-مقصد.supabase.co'
+export RESTORE_SUPABASE_SERVICE_ROLE_KEY='کلید-خصوصی-مقصد'
+node scripts/restore-storage.mjs backups/storage-export
+```
+
+اسکریپت، نام bucketها و فایل‌ها را با حفظ مسیر صادر/بارگذاری می‌کند. این اسکریپت به‌تنهایی سیاست‌های دسترسی Storage را منتقل نمی‌کند؛ سیاست‌های Storage و دسترسی private/public را جداگانه بازبینی و در مقصد بازسازی کنید. هرگز کلید خصوصی را داخل فایل‌های پروژه، Git یا APK ذخیره نکنید.
+
 ## ۵. آماده‌سازی انتقال در آینده
 - تغییرات ساختار فقط از طریق migrationهای شماره‌دار و بازبینی‌شده در `supabase/migrations/` اعمال شوند.
 - هر تغییر schema باید همراه فایل migration در Git ثبت شود؛ از تغییرات دستیِ بدون migration پرهیز کنید.
