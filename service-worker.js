@@ -1,6 +1,6 @@
-/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۲۰۰ */
-const CACHE_NAME = 'khadem-jame-shell-v239';
-const APP_SHELL = ['./', './index.html', './live-data.html', './manifest.webmanifest', './logo.png', './style.css', './app.js', './offline-store.js', './release-notes.html', './developer-console.html', './chat.html', './chat-persistence.js', './call-alerts.js'];
+/* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۲۰۱ */
+const CACHE_NAME = 'khadem-jame-shell-v240';
+const APP_SHELL = ['./', './index.html', './live-data.html', './assistant.html', './manifest.webmanifest', './logo.png', './style.css', './app.js', './offline-store.js', './release-notes.html', './developer-console.html', './chat.html', './chat-persistence.js', './call-alerts.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -43,7 +43,6 @@ self.addEventListener('fetch', event => {
     const cachedEntry = url.pathname === scopePath + 'live-data.html' ? './live-data.html' : './index.html';
     event.respondWith(
       fetch(request, { cache: 'no-store' }).then(response => {
-        // Cache only the two public app entry documents, never recovery/invitation URLs.
         if (isOfflineAppEntry && response && response.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(cachedEntry, copy));
