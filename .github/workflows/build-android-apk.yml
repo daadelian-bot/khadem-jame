@@ -8,6 +8,7 @@ on:
       - "index.html"
       - "live-data.html"
       - "app.js"
+      - "chat.html"
       - "style.css"
       - "styles.css"
       - "manifest.webmanifest"
@@ -139,9 +140,9 @@ jobs:
               defaultConfig {
                   applicationId "ir.sayedazainab.khademjame"
                   minSdk 23
-                  targetSdk 28
-                  versionCode 111
-                  versionName "1.1.1"
+                  targetSdk 33
+                  versionCode 112
+                  versionName "1.1.2"
               }
 
               compileOptions {
@@ -155,6 +156,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.VIBRATE" />
               <application
                   android:allowBackup="false"
                   android:icon="@mipmap/ic_launcher"
@@ -330,15 +333,15 @@ jobs:
 
           APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
           test -s "${APK_PATH}"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "${APK_PATH}" | grep -F "package: name='ir.sayedazainab.khademjame' versionCode='111' versionName='1.1.1'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "${APK_PATH}" | grep -F "package: name='ir.sayedazainab.khademjame' versionCode='112' versionName='1.1.2'"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.1-debug.apk"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.2-debug.apk"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.1.1 (کد نسخه 111)
+          نسخه: 1.1.2 (کد نسخه 112)
           نوع ساخت: Debug APK
 
           این نسخه پشتیبانی انتخاب عکس از گالری/فایل را در WebView اندروید اضافه می‌کند.
@@ -354,7 +357,7 @@ jobs:
           EOF
 
           test -s "dist/README-FA.txt"
-          (cd dist && zip -q "Samane-Jame-Khademin-1.1.1.zip" "Samane-Jame-Khademin-1.1.1-debug.apk" "README-FA.txt")
+          (cd dist && zip -q "Samane-Jame-Khademin-1.1.2.zip" "Samane-Jame-Khademin-1.1.1-debug.apk" "README-FA.txt")
           sha256sum dist/Samane-Jame-Khademin-1.1.1-debug.apk dist/Samane-Jame-Khademin-1.1.1.zip > dist/SHA256SUMS.txt
           test -s "dist/SHA256SUMS.txt"
           test -s "dist/Samane-Jame-Khademin-1.1.1.zip"
