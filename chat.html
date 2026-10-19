@@ -545,6 +545,31 @@ function cleanupCall(){
 }
 function startCallClock(){clearInterval(callTimer);callTimer=setInterval(()=>{if(!callConnectedAt)return;const secs=Math.floor((Date.now()-callConnectedAt)/1000),label=String(Math.floor(secs/60)).padStart(2,"0")+":"+String(secs%60).padStart(2,"0");const status=$("callStatus");if(status)status.textContent="تماس برقرار است · "+label;notifyParentCall("active",{duration:label})},1000)}
 window.addEventListener("message",e=>{if(e.source!==parent||!e.data||e.data.source!=="khadem-parent")return;const action=e.data.action;if(action==="answer")acceptCall();else if(action==="reject")rejectCall("reject");else if(action==="end")endCall(true);else if(action==="mute")toggleMute();else if(action==="speaker")toggleSpeaker();else if(action==="expand"&&call)showCallScreen(callConnectedAt?"تماس برقرار است 🤍":"در حال زنگ خوردن…",!!callConnectedAt)});
+// Android/WebView Back: close the top-most layer first, then return to chat list.
+try{history.pushState({khademChatBackGuard:true},"",location.href)}catch{}
+window.addEventListener("popstate",()=>{
+  const overlay=$("overlayRoot");
+  if(overlay&&overlay.innerHTML.trim()){
+    overlay.innerHTML="";
+  }else if(call||pendingCall){
+    // Keep an ongoing call alive; collapse its screen rather than exiting the app.
+    if(call){callMinimized=true;showCallScreen("تماس در حال ادامه است 🤍",true);callMinimized=true}
+    else if(pendingCall){showCallScreen("تماس ورودی",false)}
+  }else if(activeConversation){
+    $("chatApp").classList.remove("chat-open");
+    activeConversation=null;activeMembers=[];showWelcome();drawList();
+  }else{
+    // At the chat root, consume Back so the Android WebView does not close the app.
+  }
+  try{history.pushState({khademChatBackGuard:true},"",location.href)}catch{}
+});
+window.addEventListener("message",e=>{
+  if(e.source!==parent||!e.data||e.data.source!=="khadem-parent"||e.data.action!=="android-back")return;
+  const overlay=$("overlayRoot");
+  if(overlay&&overlay.innerHTML.trim())overlay.innerHTML="";
+  else if(activeConversation){$("chatApp").classList.remove("chat-open");activeConversation=null;activeMembers=[];showWelcome();drawList()}
+  try{history.pushState({khademChatBackGuard:true},"",location.href)}catch{}
+});
 init();
 </script>
 </body></html>
