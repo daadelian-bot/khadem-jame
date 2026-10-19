@@ -3410,6 +3410,56 @@
     })();
   });
 
+  // Android/WebView back: restore the previous in-app view instead of leaving the app.
+  const kjBackStack = [];
+  let kjBackGuardReady = false;
+  function kjCurrentView() {
+    return { tab: state.tab, selectedKhadem: state.selectedKhadem, profileEditOpen: state.profileEditOpen, registrationOpen: state.registrationOpen };
+  }
+  function kjRestoreView(view) {
+    if (!view) return;
+    state.tab = canAccess(view.tab) ? view.tab : "dashboard";
+    state.selectedKhadem = view.selectedKhadem ?? null;
+    state.profileEditOpen = !!view.profileEditOpen;
+    state.registrationOpen = !!view.registrationOpen;
+    render();
+  }
+  function kjKeepBackGuard() {
+    try { history.pushState({ kjBackGuard: true }, "", location.href); kjBackGuardReady = true; } catch (_) {}
+  }
+  // Capture before the normal navigation handler changes the active tab.
+  document.addEventListener("click", function (event) {
+    const nav = event.target && event.target.closest ? event.target.closest(".kj-nav [data-tab]") : null;
+    if (!nav || !nav.dataset.tab || !canAccess(nav.dataset.tab) || nav.dataset.tab === state.tab) return;
+    kjBackStack.push(kjCurrentView());
+    if (kjBackStack.length > 40) kjBackStack.shift();
+    try { history.pushState({ kjAppView: true }, "", location.href); } catch (_) {}
+  }, true);
+  window.addEventListener("popstate", function () {
+    // If a record detail is open, the first Back returns to its list.
+    if (state.selectedKhadem !== null) {
+      state.selectedKhadem = null;
+      state.profileEditOpen = false;
+      render();
+      kjKeepBackGuard();
+      return;
+    }
+    const previous = kjBackStack.pop();
+    if (previous) {
+      kjRestoreView(previous);
+      kjKeepBackGuard();
+      return;
+    }
+    // At the app's root, keep the WebView alive rather than allowing accidental exit.
+    if (state.tab !== "dashboard") {
+      state.tab = "dashboard";
+      state.selectedKhadem = null;
+      render();
+    }
+    kjKeepBackGuard();
+  });
+  if (!kjBackGuardReady) kjKeepBackGuard();
+
   window.KJ = {
     start: startApp,
     refresh: loadData,
