@@ -823,10 +823,10 @@
     catch (e) { if (note) note.textContent = e.message; return; }
     if (button) { button.disabled = true; button.textContent = "در حال ارسال کد…"; }
     try {
-      await request("/auth/v1/otp", { method: "POST", body: { phone, create_user: false, channel: "sms" }, __skipOfflineQueue: true });
+      await request("/auth/v1/otp", { method: "POST", body: { phone, create_user: true, channel: "sms", data: { full_name: ($("#kj-phone-name")?.value || "").trim(), phone } }, __skipOfflineQueue: true });
       $("#kj-phone-normalized").value = phone;
       $("#kj-phone-otp-wrap").hidden = false;
-      if (note) note.textContent = "اگر این شماره قبلاً به حساب فعال سامانه متصل و ورود پیامکی تنظیم شده باشد، کد پیامک می‌شود.";
+      if (note) note.textContent = "اگر شماره حساب موبایلی داشته باشد وارد می‌شوید؛ در غیر این صورت درخواست ثبت‌نام موبایلی ساخته می‌شود و تا تأیید مدیر اصلی دسترسی ندارد. برای حساب‌های قدیمی ایمیلی، مدیر باید ابتدا شماره را به همان حساب پیوند دهد.";
       toast("درخواست کد ورود ارسال شد؛ پیامک را بررسی کنید.", "success");
       $("#kj-phone-otp")?.focus();
     } catch (e) {
@@ -890,6 +890,8 @@
             <p class="kj-small" style="text-align:center;margin-top:12px"><a href="./forgot-password.html" style="color:#173b58;font-weight:bold;text-decoration:none">فراموشی رمز عبور؟ بازیابی از طریق ایمیل</a></p>
           </div>
           <div id="kj-phone-login" hidden>
+            <label for="kj-phone-name">نام و نام خانوادگی (برای ثبت‌نام جدید)</label>
+            <input id="kj-phone-name" type="text" autocomplete="name" maxlength="100" placeholder="نام خادم">
             <label for="kj-phone">شماره موبایل</label>
             <input id="kj-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="مثلاً ۰۹۱۲۱۲۳۴۵۶۷">
             <input id="kj-phone-normalized" type="hidden">
