@@ -823,10 +823,10 @@
     catch (e) { if (note) note.textContent = e.message; return; }
     if (button) { button.disabled = true; button.textContent = "در حال ارسال کد…"; }
     try {
-      await request("/auth/v1/otp", { method: "POST", body: { phone, create_user: true, channel: "sms", data: { full_name: ($("#kj-phone-name")?.value || "").trim(), phone } }, __skipOfflineQueue: true });
+      await request("/auth/v1/otp", { method: "POST", body: { phone, create_user: false, channel: "sms" }, __skipOfflineQueue: true });
       $("#kj-phone-normalized").value = phone;
       $("#kj-phone-otp-wrap").hidden = false;
-      if (note) note.textContent = "اگر شماره حساب موبایلی داشته باشد وارد می‌شوید؛ در غیر این صورت درخواست ثبت‌نام موبایلی ساخته می‌شود و تا تأیید مدیر اصلی دسترسی ندارد. برای حساب‌های قدیمی ایمیلی، مدیر باید ابتدا شماره را به همان حساب پیوند دهد.";
+      if (note) note.textContent = "کد فقط برای حسابی ارسال می‌شود که شماره موبایل آن از قبل در حساب کاربری ثبت شده باشد. برای پیوند شماره به حساب قدیمی ایمیلی، مدیر اصلی باید ابتدا شماره را به همان حساب اضافه کند؛ این صفحه حساب تازه و تأییدنشده نمی‌سازد.";
       toast("درخواست کد ورود ارسال شد؛ پیامک را بررسی کنید.", "success");
       $("#kj-phone-otp")?.focus();
     } catch (e) {
@@ -3436,6 +3436,8 @@
     try { history.pushState({ kjAppView: true }, "", location.href); } catch (_) {}
   }, true);
   window.addEventListener("popstate", function () {
+    if (state.tab === "chat") { const frame = document.querySelector('iframe[title="ارتباطات خادمین"]'); if (frame && frame.contentWindow) { try { frame.contentWindow.postMessage({ source: "khadem-parent", action: "android-back" }, "*"); } catch (_) {} kjKeepBackGuard(); return; } }
+
     // If a record detail is open, the first Back returns to its list.
     if (state.selectedKhadem !== null) {
       state.selectedKhadem = null;
