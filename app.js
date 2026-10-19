@@ -808,7 +808,7 @@
     }
   }
   function normalizePhoneForOtp(raw) {
-    let v = String(raw || "").trim().replace(/[\s().-]/g, "");
+    let v = String(raw || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).trim().replace(/[\s().-]/g, "");
     if (v.startsWith("00")) v = "+" + v.slice(2);
     if (/^09\d{9}$/.test(v)) v = "+98" + v.slice(1);
     else if (/^9\d{9}$/.test(v)) v = "+98" + v;
