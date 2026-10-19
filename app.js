@@ -807,6 +807,52 @@
       if (button) { button.disabled = false; button.textContent = "ورود به سامانه"; }
     }
   }
+  function normalizePhoneForOtp(raw) {
+    let v = String(raw || "").replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).trim().replace(/[\s().-]/g, "");
+    if (v.startsWith("00")) v = "+" + v.slice(2);
+    if (/^09\d{9}$/.test(v)) v = "+98" + v.slice(1);
+    else if (/^9\d{9}$/.test(v)) v = "+98" + v;
+    else if (/^98\d{10}$/.test(v)) v = "+" + v;
+    if (!/^\+[1-9]\d{7,14}$/.test(v)) throw new Error("شماره را با کد کشور وارد کنید؛ برای ایران نمونه: ۰۹۱۲۱۲۳۴۵۶۷");
+    return v;
+  }
+  async function sendPhoneOtp() {
+    const button = $("#kj-phone-send"), note = $("#kj-phone-note");
+    let phone;
+    try { phone = normalizePhoneForOtp($("#kj-phone")?.value); }
+    catch (e) { if (note) note.textContent = e.message; return; }
+    if (button) { button.disabled = true; button.textContent = "در حال ارسال کد…"; }
+    try {
+      await request("/auth/v1/otp", { method: "POST", body: { phone, create_user: false, channel: "sms" }, __skipOfflineQueue: true });
+      $("#kj-phone-normalized").value = phone;
+      $("#kj-phone-otp-wrap").hidden = false;
+      if (note) note.textContent = "اگر این شماره قبلاً به حساب فعال سامانه متصل و ورود پیامکی تنظیم شده باشد، کد پیامک می‌شود.";
+      toast("درخواست کد ورود ارسال شد؛ پیامک را بررسی کنید.", "success");
+      $("#kj-phone-otp")?.focus();
+    } catch (e) {
+      if (note) note.textContent = "ارسال کد انجام نشد: " + (e.message || "خطای پیامک");
+      toast("ارسال کد انجام نشد؛ تنظیمات پیامک و ثبت شماره در حساب را بررسی کنید.", "error");
+    } finally { if (button) { button.disabled = false; button.textContent = "ارسال کد یکبارمصرف"; } }
+  }
+  async function verifyPhoneOtp() {
+    const phone = $("#kj-phone-normalized")?.value || "";
+    const token = String($("#kj-phone-otp")?.value || "").trim();
+    const button = $("#kj-phone-verify"), note = $("#kj-phone-note");
+    if (!phone || !/^\d{4,8}$/.test(token)) { if (note) note.textContent = "شماره را ثبت کنید و کد پیامک را درست وارد کنید."; return; }
+    if (button) { button.disabled = true; button.textContent = "در حال بررسی…"; }
+    try {
+      const result = await request("/auth/v1/verify", { method: "POST", body: { phone, token, type: "sms" }, __skipOfflineQueue: true });
+      if (!result || !result.access_token) throw new Error("توکن ورود از سرور دریافت نشد.");
+      localStorage.setItem(TOKEN_KEY, result.access_token);
+      if (result.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, result.refresh_token);
+      localStorage.setItem(USER_KEY, JSON.stringify(result.user || { phone }));
+      toast("ورود با شماره موبایل موفق بود.", "success");
+      await startApp();
+    } catch (e) {
+      if (note) note.textContent = "ورود پیامکی ناموفق بود: " + (e.message || "کد نامعتبر است.");
+      toast("ورود پیامکی انجام نشد؛ شماره ثبت‌شده، کد و تنظیمات SMS را بررسی کنید.", "error");
+    } finally { if (button) { button.disabled = false; button.textContent = "تأیید کد و ورود"; } }
+  }
   function signout() {
     stopPresenceMonitoring(true);
     // خروج امن، داده‌های آفلاین حساب جاری را نیز از دستگاه پاک می‌کند.
@@ -834,17 +880,36 @@
           <h1>سامانه جامع مدیریت خادمین</h1>
           <p class="kj-muted">مجموعه السیدة زینب سلام الله علیها</p>
           ${message ? `<div class="kj-alert">${esc(message)}</div>` : ""}
-          <label for="kj-email">ایمیل</label>
-          <input id="kj-email" type="email" autocomplete="username" inputmode="email" required placeholder="ایمیل حساب کاربری">
-          <label for="kj-password">رمز عبور</label>
-          <input id="kj-password" type="password" autocomplete="current-password" required placeholder="رمز عبور">
-          <button id="kj-login-btn" class="kj-primary" type="submit">ورود به سامانه</button>
-          <p class="kj-small" style="text-align:center;margin-top:12px"><a href="./forgot-password.html" style="color:#173b58;font-weight:bold;text-decoration:none">فراموشی رمز عبور؟ بازیابی از طریق ایمیل</a></p>
+          <div style="display:flex;gap:8px;margin:14px 0"><button id="kj-mode-email" type="button" class="kj-primary" style="flex:1">ورود با ایمیل</button><button id="kj-mode-phone" type="button" class="kj-secondary" style="flex:1">ورود با موبایل</button></div>
+          <div id="kj-email-login">
+            <label for="kj-email">ایمیل</label>
+            <input id="kj-email" type="email" autocomplete="username" inputmode="email" required placeholder="ایمیل حساب کاربری">
+            <label for="kj-password">رمز عبور</label>
+            <input id="kj-password" type="password" autocomplete="current-password" required placeholder="رمز عبور">
+            <button id="kj-login-btn" class="kj-primary" type="submit">ورود به سامانه</button>
+            <p class="kj-small" style="text-align:center;margin-top:12px"><a href="./forgot-password.html" style="color:#173b58;font-weight:bold;text-decoration:none">فراموشی رمز عبور؟ بازیابی از طریق ایمیل</a></p>
+          </div>
+          <div id="kj-phone-login" hidden>
+            <label for="kj-phone">شماره موبایل</label>
+            <input id="kj-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="مثلاً ۰۹۱۲۱۲۳۴۵۶۷">
+            <input id="kj-phone-normalized" type="hidden">
+            <button id="kj-phone-send" type="button" class="kj-primary" style="width:100%;margin-top:8px">ارسال کد یکبارمصرف</button>
+            <div id="kj-phone-otp-wrap" hidden>
+              <label for="kj-phone-otp" style="margin-top:12px">کد پیامک‌شده</label>
+              <input id="kj-phone-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="کد ورود">
+              <button id="kj-phone-verify" type="button" class="kj-primary" style="width:100%;margin-top:8px">تأیید کد و ورود</button>
+            </div>
+            <p id="kj-phone-note" class="kj-small" aria-live="polite">برای ورود بدون ایمیل، شماره باید قبلاً به حساب خادم متصل و ورود پیامکی در Supabase فعال شده باشد.</p>
+          </div>
           <p class="kj-small" style="text-align:center;margin-top:8px"><a href="./create-account.html?v=20261016-43" style="color:#173b58;font-weight:bold;text-decoration:none">حساب کاربری ندارید؟ ایجاد حساب جدید</a></p>
           <p class="kj-small">برای ورود، حساب کاربری معتبر Supabase لازم است.</p>
         </form>
       </div>`;
-    $("#kj-login-form").addEventListener("submit", e => { e.preventDefault(); login(); });
+    $("#kj-login-form").addEventListener("submit", e => { e.preventDefault(); if (!$("#kj-email-login").hidden) login(); });
+    $("#kj-mode-email").addEventListener("click", () => { $("#kj-email-login").hidden=false; $("#kj-phone-login").hidden=true; $("#kj-email").required=true; $("#kj-password").required=true; });
+    $("#kj-mode-phone").addEventListener("click", () => { $("#kj-email-login").hidden=true; $("#kj-phone-login").hidden=false; $("#kj-email").required=false; $("#kj-password").required=false; });
+    $("#kj-phone-send").addEventListener("click", sendPhoneOtp);
+    $("#kj-phone-verify").addEventListener("click", verifyPhoneOtp);
   }
   function ensureRoot() {
     let app = $("#app");
@@ -3007,7 +3072,7 @@
     }
     const views = {
       dashboard,
-      chat: () => '<iframe title="ارتباطات خادمین" src="./chat.html?embedded=1&v=20261017-chat7" allow="microphone; autoplay" style="width:100%;height:calc(100dvh - 260px);min-height:640px;border:0;border-radius:18px;display:block;background:#fbfaf6"></iframe>',
+      chat: () => '<iframe title="ارتباطات خادمین" src="./chat.html?embedded=1&v=20261019-chat8" allow="microphone; autoplay" style="width:100%;height:calc(100dvh - 120px);min-height:760px;border:0;border-radius:18px;display:block;background:#fbfaf6"></iframe>',
       khadems: khademList,
       serviceRegister: serviceRegisterPage,
       services: officialServicesPage,

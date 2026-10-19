@@ -1,5 +1,5 @@
 /* سامانه جامع خادمین — پوستهٔ آفلاین نسخهٔ ۲۰۱ */
-const CACHE_NAME = 'khadem-jame-shell-v241';
+const CACHE_NAME = 'khadem-jame-shell-v242';
 const APP_SHELL = ['./', './index.html', './live-data.html', './manifest.webmanifest', './logo.png', './style.css', './app.js', './offline-store.js', './release-notes.html', './chat.html', './call-alerts.js'];
 
 self.addEventListener('install', event => {
@@ -67,4 +67,34 @@ self.addEventListener('fetch', event => {
       return response;
     }).catch(() => caches.match(request, { ignoreSearch: true }).then(cached => cached || Response.error()))
   );
+});
+/* Background push notifications: requires a registered push subscription and a server-side sender. */
+self.addEventListener('push', event => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (_) {
+    try { payload = { body: event.data ? event.data.text() : '' }; } catch (_) {}
+  }
+  const buzz = payload.type === 'buzz' || payload.buzz === true;
+  const title = payload.title || (buzz ? 'تکان جدید در گفت‌وگوی خادمین 📳' : 'پیام جدید · سامانه خادمین');
+  const options = {
+    body: payload.body || (buzz ? 'یکی از خادمین برای شما تکان فرستاده است.' : 'یک پیام جدید دریافت کردید.'),
+    icon: './logo.png',
+    badge: './logo.png',
+    tag: payload.tag || ('khadem-chat-' + (payload.messageId || Date.now())),
+    renotify: true,
+    vibrate: buzz ? [250, 100, 250, 100, 250] : [150, 80, 150],
+    requireInteraction: buzz,
+    data: { url: payload.url || './index.html' }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || './index.html', self.registration.scope).href;
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const client of list) {
+      if ('focus' in client) return client.navigate(target).then(c => c && c.focus());
+    }
+    return clients.openWindow(target);
+  }));
 });
