@@ -183,6 +183,17 @@ jobs:
           package ir.sayedazainab.khademjame;
 
           import android.app.Activity;
+          import android.Manifest;
+          import android.app.Notification;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.app.PendingIntent;
+          import android.content.Context;
+          import android.content.pm.PackageManager;
+          import android.os.Build;
+          import android.os.VibrationEffect;
+          import android.os.Vibrator;
+          import android.webkit.JavascriptInterface;
           import android.content.ActivityNotFoundException;
           import android.content.Intent;
           import android.net.Uri;
@@ -197,8 +208,10 @@ jobs:
               private WebView webView;
               private ValueCallback<Uri[]> filePathCallback;
               private static final int FILE_CHOOSER_REQUEST_CODE = 4107;
+              private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 4108;
+              private static final String CHANNEL_ID = "khadem_chat_messages";
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261018-android-file-picker-111";
+                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261019-android-notifications-112";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -206,6 +219,8 @@ jobs:
 
                   webView = new WebView(this);
                   setContentView(webView);
+                  webView.addJavascriptInterface(new AndroidBridge(), "KhademAndroid");
+                  ensureNotificationChannel();
 
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
@@ -245,6 +260,91 @@ jobs:
                       webView.restoreState(savedInstanceState);
                   } else {
                       webView.loadUrl(APP_URL);
+                  }
+              }
+
+              private void ensureNotificationChannel() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                      if (manager != null && manager.getNotificationChannel(CHANNEL_ID) == null) {
+                          NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "پیام‌های گفت‌وگوی خادمین", NotificationManager.IMPORTANCE_HIGH);
+                          channel.setDescription("اعلان پیام‌ها و تکان‌های گفت‌وگوی خادمین");
+                          channel.enableVibration(true);
+                          channel.setVibrationPattern(new long[]{0, 250, 100, 250, 100, 250});
+                          manager.createNotificationChannel(channel);
+                      }
+                  }
+              }
+
+              private boolean hasNotificationPermission() {
+                  return Build.VERSION.SDK_INT < 33
+                      || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+              }
+
+              private void notifyPermissionResult(boolean granted) {
+                  if (webView == null) return;
+                  String js = "window.postMessage({source:'khadem-android',type:'notification-permission',granted:" + granted + "}, '*');";
+                  webView.post(() -> webView.evaluateJavascript(js, null));
+              }
+
+              private void showNativeNotification(String title, String body, boolean buzz) {
+                  ensureNotificationChannel();
+                  if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                      requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+                      return;
+                  }
+                  NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                  if (manager == null) return;
+                  Intent intent = new Intent(this, MainActivity.class);
+                  intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                  PendingIntent pending = PendingIntent.getActivity(this, 4109, intent,
+                      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                      ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
+                  builder.setSmallIcon(R.mipmap.ic_launcher)
+                      .setContentTitle(title == null || title.isEmpty() ? "سامانه جامع خادمین" : title)
+                      .setContentText(body == null ? "پیام جدید دریافت شد." : body)
+                      .setContentIntent(pending).setAutoCancel(true)
+                      .setVibrate(buzz ? new long[]{0, 250, 100, 250, 100, 250} : new long[]{0, 150, 80, 150});
+                  manager.notify((title + String.valueOf(body)).hashCode() & 0x7fffffff, builder.build());
+              }
+
+              private final class AndroidBridge {
+                  @JavascriptInterface public boolean hasNotificationPermission() {
+                      return MainActivity.this.hasNotificationPermission();
+                  }
+                  @JavascriptInterface public void requestNotifications() {
+                      runOnUiThread(() -> {
+                          ensureNotificationChannel();
+                          if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                              requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+                          } else {
+                              notifyPermissionResult(true);
+                          }
+                      });
+                  }
+                  @JavascriptInterface public void showNotification(String title, String body, boolean buzz) {
+                      runOnUiThread(() -> showNativeNotification(title, body, buzz));
+                  }
+                  @JavascriptInterface public void vibrate() {
+                      runOnUiThread(() -> {
+                          Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                          if (vibrator == null || !vibrator.hasVibrator()) return;
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 120, 60, 120}, -1));
+                          } else {
+                              vibrator.vibrate(new long[]{0, 120, 60, 120}, -1);
+                          }
+                      });
+                  }
+              }
+
+              @Override
+              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+                  super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                  if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+                      boolean granted = hasNotificationPermission();
+                      notifyPermissionResult(granted);
                   }
               }
 
