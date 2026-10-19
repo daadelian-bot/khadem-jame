@@ -467,10 +467,10 @@ jobs:
           EOF
 
           test -s "dist/README-FA.txt"
-          (cd dist && zip -q "Samane-Jame-Khademin-1.1.2.zip" "Samane-Jame-Khademin-1.1.1-debug.apk" "README-FA.txt")
-          sha256sum dist/Samane-Jame-Khademin-1.1.1-debug.apk dist/Samane-Jame-Khademin-1.1.1.zip > dist/SHA256SUMS.txt
+          (cd dist && zip -q "Samane-Jame-Khademin-1.1.2.zip" "Samane-Jame-Khademin-1.1.2-debug.apk" "README-FA.txt")
+          sha256sum dist/Samane-Jame-Khademin-1.1.2-debug.apk dist/Samane-Jame-Khademin-1.1.2.zip > dist/SHA256SUMS.txt
           test -s "dist/SHA256SUMS.txt"
-          test -s "dist/Samane-Jame-Khademin-1.1.1.zip"
+          test -s "dist/Samane-Jame-Khademin-1.1.2.zip"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
