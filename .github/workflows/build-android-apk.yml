@@ -8,6 +8,7 @@ on:
       - "index.html"
       - "live-data.html"
       - "app.js"
+      - "chat.html"
       - "style.css"
       - "styles.css"
       - "manifest.webmanifest"
@@ -139,9 +140,9 @@ jobs:
               defaultConfig {
                   applicationId "ir.sayedazainab.khademjame"
                   minSdk 23
-                  targetSdk 28
-                  versionCode 111
-                  versionName "1.1.1"
+                  targetSdk 33
+                  versionCode 112
+                  versionName "1.1.2"
               }
 
               compileOptions {
@@ -155,6 +156,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.VIBRATE" />
               <application
                   android:allowBackup="false"
                   android:icon="@mipmap/ic_launcher"
@@ -180,6 +183,17 @@ jobs:
           package ir.sayedazainab.khademjame;
 
           import android.app.Activity;
+          import android.Manifest;
+          import android.app.Notification;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.app.PendingIntent;
+          import android.content.Context;
+          import android.content.pm.PackageManager;
+          import android.os.Build;
+          import android.os.VibrationEffect;
+          import android.os.Vibrator;
+          import android.webkit.JavascriptInterface;
           import android.content.ActivityNotFoundException;
           import android.content.Intent;
           import android.net.Uri;
@@ -194,8 +208,10 @@ jobs:
               private WebView webView;
               private ValueCallback<Uri[]> filePathCallback;
               private static final int FILE_CHOOSER_REQUEST_CODE = 4107;
+              private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 4108;
+              private static final String CHANNEL_ID = "khadem_chat_messages";
               private static final String APP_URL =
-                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261018-android-file-picker-111";
+                  "https://daadelian-bot.github.io/khadem-jame/live-data.html?v=20261019-android-notifications-112";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -203,6 +219,8 @@ jobs:
 
                   webView = new WebView(this);
                   setContentView(webView);
+                  webView.addJavascriptInterface(new AndroidBridge(), "KhademAndroid");
+                  ensureNotificationChannel();
 
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
@@ -211,9 +229,19 @@ jobs:
                       @Override
                       public boolean shouldOverrideUrlLoading(
                               WebView view, WebResourceRequest request) {
-                          String scheme = request.getUrl().getScheme();
-                          return !("https".equalsIgnoreCase(scheme)
-                              || "http".equalsIgnoreCase(scheme));
+                          Uri uri = request.getUrl();
+                          String scheme = uri.getScheme();
+                          String host = uri.getHost();
+                          if ("https".equalsIgnoreCase(scheme)
+                                  && "daadelian-bot.github.io".equalsIgnoreCase(host)) {
+                              return false;
+                          }
+                          if ("https".equalsIgnoreCase(scheme)) {
+                              try {
+                                  startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                              } catch (ActivityNotFoundException ignored) {}
+                          }
+                          return true;
                       }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
@@ -242,6 +270,91 @@ jobs:
                       webView.restoreState(savedInstanceState);
                   } else {
                       webView.loadUrl(APP_URL);
+                  }
+              }
+
+              private void ensureNotificationChannel() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                      if (manager != null && manager.getNotificationChannel(CHANNEL_ID) == null) {
+                          NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "پیام‌های گفت‌وگوی خادمین", NotificationManager.IMPORTANCE_HIGH);
+                          channel.setDescription("اعلان پیام‌ها و تکان‌های گفت‌وگوی خادمین");
+                          channel.enableVibration(true);
+                          channel.setVibrationPattern(new long[]{0, 250, 100, 250, 100, 250});
+                          manager.createNotificationChannel(channel);
+                      }
+                  }
+              }
+
+              private boolean hasNotificationPermission() {
+                  return Build.VERSION.SDK_INT < 33
+                      || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+              }
+
+              private void notifyPermissionResult(boolean granted) {
+                  if (webView == null) return;
+                  String js = "window.postMessage({source:'khadem-android',type:'notification-permission',granted:" + granted + "}, '*');";
+                  webView.post(() -> webView.evaluateJavascript(js, null));
+              }
+
+              private void showNativeNotification(String title, String body, boolean buzz) {
+                  ensureNotificationChannel();
+                  if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                      requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+                      return;
+                  }
+                  NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                  if (manager == null) return;
+                  Intent intent = new Intent(this, MainActivity.class);
+                  intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                  PendingIntent pending = PendingIntent.getActivity(this, 4109, intent,
+                      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                      ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
+                  builder.setSmallIcon(R.mipmap.ic_launcher)
+                      .setContentTitle(title == null || title.isEmpty() ? "سامانه جامع خادمین" : title)
+                      .setContentText(body == null ? "پیام جدید دریافت شد." : body)
+                      .setContentIntent(pending).setAutoCancel(true)
+                      .setVibrate(buzz ? new long[]{0, 250, 100, 250, 100, 250} : new long[]{0, 150, 80, 150});
+                  manager.notify((title + String.valueOf(body)).hashCode() & 0x7fffffff, builder.build());
+              }
+
+              private final class AndroidBridge {
+                  @JavascriptInterface public boolean hasNotificationPermission() {
+                      return MainActivity.this.hasNotificationPermission();
+                  }
+                  @JavascriptInterface public void requestNotifications() {
+                      runOnUiThread(() -> {
+                          ensureNotificationChannel();
+                          if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                              requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+                          } else {
+                              notifyPermissionResult(true);
+                          }
+                      });
+                  }
+                  @JavascriptInterface public void showNotification(String title, String body, boolean buzz) {
+                      runOnUiThread(() -> showNativeNotification(title, body, buzz));
+                  }
+                  @JavascriptInterface public void vibrate() {
+                      runOnUiThread(() -> {
+                          Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                          if (vibrator == null || !vibrator.hasVibrator()) return;
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 120, 60, 120}, -1));
+                          } else {
+                              vibrator.vibrate(new long[]{0, 120, 60, 120}, -1);
+                          }
+                      });
+                  }
+              }
+
+              @Override
+              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+                  super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                  if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+                      boolean granted = hasNotificationPermission();
+                      notifyPermissionResult(granted);
                   }
               }
 
@@ -330,15 +443,15 @@ jobs:
 
           APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
           test -s "${APK_PATH}"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "${APK_PATH}" | grep -F "package: name='ir.sayedazainab.khademjame' versionCode='111' versionName='1.1.1'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "${APK_PATH}" | grep -F "package: name='ir.sayedazainab.khademjame' versionCode='112' versionName='1.1.2'"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "${APK_PATH}"
 
           mkdir -p dist
-          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.1-debug.apk"
+          cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.2-debug.apk"
 
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
-          نسخه: 1.1.1 (کد نسخه 111)
+          نسخه: 1.1.2 (کد نسخه 112)
           نوع ساخت: Debug APK
 
           این نسخه پشتیبانی انتخاب عکس از گالری/فایل را در WebView اندروید اضافه می‌کند.
@@ -354,10 +467,10 @@ jobs:
           EOF
 
           test -s "dist/README-FA.txt"
-          (cd dist && zip -q "Samane-Jame-Khademin-1.1.1.zip" "Samane-Jame-Khademin-1.1.1-debug.apk" "README-FA.txt")
-          sha256sum dist/Samane-Jame-Khademin-1.1.1-debug.apk dist/Samane-Jame-Khademin-1.1.1.zip > dist/SHA256SUMS.txt
+          (cd dist && zip -q "Samane-Jame-Khademin-1.1.2.zip" "Samane-Jame-Khademin-1.1.2-debug.apk" "README-FA.txt")
+          sha256sum dist/Samane-Jame-Khademin-1.1.2-debug.apk dist/Samane-Jame-Khademin-1.1.2.zip > dist/SHA256SUMS.txt
           test -s "dist/SHA256SUMS.txt"
-          test -s "dist/Samane-Jame-Khademin-1.1.1.zip"
+          test -s "dist/Samane-Jame-Khademin-1.1.2.zip"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

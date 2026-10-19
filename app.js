@@ -3421,3 +3421,11 @@
     startApp();
   }
 })(); 
+
+/* Forward Android notification-permission results from the native WebView to the chat iframe. */
+window.addEventListener("message", function (event) {
+  const data = event && event.data;
+  if (!data || data.source !== "khadem-android" || data.type !== "notification-permission") return;
+  const frame = document.querySelector('iframe[title="ارتباطات خادمین"]');
+  if (frame && frame.contentWindow) frame.contentWindow.postMessage(data, window.location.origin);
+});
