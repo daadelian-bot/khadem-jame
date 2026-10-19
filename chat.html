@@ -41,6 +41,86 @@
 }
 
 
+
+/* WhatsApp-inspired visual polish: palette, spacing, status and message bubbles */
+:root{--green:#075e54;--green2:#128c7e;--gold:#d6b15e;--paper:#efeae2;--ink:#202c33;--muted:#667781;--line:#e5e9e6;--white:#fff;--danger:#c62828}
+body{background:#dfe5e2;color:var(--ink)}
+.chat-app{background:#f7f9f8;border-color:#d6dfda;box-shadow:0 8px 32px #172c2412}
+.top{background:#075e54;border-bottom:0;padding:12px 18px}
+.brand-mark{border:0;border-radius:50%;background:#ffffff1a}
+.brand h1{font-size:16px;letter-spacing:.1px}
+.brand p{color:#d4e8e4}
+.notify-btn{border:1px solid #ffffff45;border-radius:20px;background:#128c7e;color:#fff;padding:7px 12px}
+.layout{grid-template-columns:340px minmax(0,1fr)}
+.left{background:#fff;border-left:1px solid #dce3df}
+.left-head{padding:13px 14px 10px;background:#f0f2f5}
+.left-actions .btn{border-radius:22px}
+.btn-green{background:#128c7e}
+.btn-green:hover,.send:hover{background:#08796c}
+.btn-gold{background:#fff;border:1px solid #d8e0dc;color:#42635a}
+.search{border:0;border-radius:9px;background:#fff;padding:11px 14px;box-shadow:0 1px 2px #0000000b}
+.tabs{gap:3px;padding:3px;background:#e3e9e6;border-radius:10px}
+.tab{border-radius:8px;color:#53656a}
+.tab.active{background:#fff;color:#075e54;box-shadow:0 1px 3px #00000010}
+.list-row{position:relative;border-bottom:1px solid #f0f2f1;padding:12px 14px;transition:background .15s}
+.list-row:hover,.list-row.active{background:#f0f7f5}
+.avatar{background:linear-gradient(145deg,#128c7e,#075e54);box-shadow:0 0 0 1px #dce5e1;border:2px solid white}
+.row-title{font-weight:600;color:#202c33}
+.row-sub{color:#667781}
+.badge{background:#dff4e8;color:#08796c;border-radius:14px}
+.main{background:#efeae2}
+.welcome{color:#667781}
+.welcome .big{font-size:54px}
+.welcome h2{color:#075e54}
+.conversation-head{background:#f0f2f5;border-bottom:1px solid #dce3df;padding:10px 15px}
+.peer .avatar{background:linear-gradient(145deg,#128c7e,#075e54)}
+.peer h2{font-weight:600;color:#202c33}
+.peer p{color:#667781}
+.icon-btn{border:0;border-radius:50%;background:transparent;color:#54656d}
+.icon-btn:hover{background:#e1e8e5}
+.messages{background-color:#efeae2;background-image:radial-gradient(#b9c9be 0.55px,transparent .55px);background-size:19px 19px;padding:20px clamp(10px,3vw,28px)}
+.bubble{background:#fff;border:0;border-radius:8px 8px 8px 2px;box-shadow:0 1px 1px #00000013;padding:7px 10px;color:#202c33}
+.bubble.mine{background:#d9fdd3;border:0;border-radius:8px 8px 2px 8px}
+.bubble .sender{color:#128c7e}
+.bubble .time,.receipt{color:#667781}
+.day{background:#fff;color:#54656d;box-shadow:0 1px 1px #00000010;padding:4px 13px}
+.typing-indicator{background:#f0f2f5;color:#128c7e}
+.composer{background:#f0f2f5;border-top:1px solid #dce3df;padding:10px 12px}
+.composer textarea{background:#fff;border:0;border-radius:22px;padding:11px 16px;min-height:44px}
+.composer .icon-btn{background:#fff}
+.send{background:#128c7e;border-radius:50%;min-width:44px;width:44px;height:44px}
+.emoji-row{background:#f0f2f5}
+.emoji-row button{background:#fff}
+.empty{color:#667781}
+.modal{border-radius:14px}
+.toast{background:#075e54;border-radius:22px}
+.call-overlay{background:#063f39f2}
+.call-avatar{background:linear-gradient(145deg,#128c7e,#075e54);border-color:#a7d8cc}
+.footnote{background:#f7f9f8;color:#87958f}
+@media(max-width:700px){
+ .chat-app{height:calc(100dvh - 8px);border-radius:0}
+ .top{padding:10px 13px}
+ .brand-mark{width:38px;height:38px}
+ .brand h1{font-size:15px}
+ .left-head{background:#f0f2f5;padding:10px 12px}
+ .left-actions .btn{font-size:12px}
+ .list-row{padding:12px 14px;min-height:72px}
+ .avatar{width:49px;height:49px;flex-basis:49px}
+ .row-title{font-size:14px}
+ .row-sub{font-size:11px}
+ .conversation-head{background:#f0f2f5}
+ .messages{background-size:17px 17px;padding:12px 9px}
+ .bubble{max-width:88%;font-size:13px;padding:7px 9px}
+ .composer{padding:8px}
+ .composer textarea{min-height:42px}
+ .footnote{display:none}
+}
+@media(min-width:701px){
+ .chat-app{height:calc(100vh - 24px);min-height:620px}
+ .layout{grid-template-columns:340px minmax(0,1fr)}
+ .left-head{padding:14px}
+}
+
 </style>
 </head>
 <body>
