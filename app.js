@@ -3007,7 +3007,7 @@
     }
     const views = {
       dashboard,
-      chat: () => '<iframe title="ارتباطات خادمین" src="./chat.html?embedded=1&v=20261017-chat7" allow="microphone; autoplay" style="width:100%;height:calc(100dvh - 260px);min-height:640px;border:0;border-radius:18px;display:block;background:#fbfaf6"></iframe>',
+      chat: () => '<iframe title="ارتباطات خادمین" src="./chat.html?embedded=1&v=20261019-chat8" allow="microphone; autoplay" style="width:100%;height:calc(100dvh - 120px);min-height:760px;border:0;border-radius:18px;display:block;background:#fbfaf6"></iframe>',
       khadems: khademList,
       serviceRegister: serviceRegisterPage,
       services: officialServicesPage,
