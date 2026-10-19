@@ -412,13 +412,13 @@ function drawMessages(){
   const body=m.body===BUZZ_BODY?(mine?"📳 تکان ارسال شد":"📳 تکان دریافت شد"):esc(m.body),tools=deleted?"":'<div class="message-tools"><button type="button" class="message-tool '+(selected?"active":"")+'" data-select-message="'+esc(m.id)+'">'+(selected?"☑️ انتخاب شد":"☐ انتخاب")+'</button><button type="button" class="message-tool" data-copy-message="'+esc(m.id)+'">📋 کپی</button><button type="button" class="message-tool '+(star?"active":"")+'" data-star-message="'+esc(m.id)+'">'+(star?"⭐ ستاره‌دار":"☆ ستاره")+'</button><button type="button" class="message-tool '+(pinned?"active":"")+'" data-pin-message="'+esc(m.id)+'">📌 سنجاق</button><button type="button" class="message-tool" data-info-message="'+esc(m.id)+'">ℹ️ اطلاعات</button><button type="button" class="message-tool" data-trash-message="'+esc(m.id)+'">🗑️ سطل</button></div>';
   return '<article data-message-id="'+esc(m.id)+'" class="bubble '+(mine?"mine ":"")+(deleted?"removed ":"")+(pinned?"pinned ":"")+(selected?"selected":"")+'">'+(pinned?'<span class="pinned-label">📌 پیام سنجاق‌شده</span>':"")+(activeConversation.kind==="group"&&!mine?'<div class="sender">'+esc(personName(m.sender_id))+'</div>':"")+body+'<span class="time">'+esc(fmtTime(m.created_at))+'</span>'+receipt+tools+'</article>';
  }).join("");
- root.querySelectorAll("[data-select-message]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.selectMessage;selectedMessageIds.has(id)?selectedMessageIds.delete(id):selectedMessageIds.add(id);drawMessages()}));
+ root.querySelectorAll("[data-select-message]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const id=b.dataset.selectMessage;if(!id)return;const scrollTop=root.scrollTop;selectedMessageIds.has(id)?selectedMessageIds.delete(id):selectedMessageIds.add(id);drawMessages();root.scrollTop=scrollTop;}));
  root.querySelectorAll("[data-copy-message]").forEach(b=>b.addEventListener("click",()=>copyMessage(b.dataset.copyMessage)));
  root.querySelectorAll("[data-star-message]").forEach(b=>b.addEventListener("click",()=>toggleStar(b.dataset.starMessage)));
  root.querySelectorAll("[data-pin-message]").forEach(b=>b.addEventListener("click",()=>togglePin(b.dataset.pinMessage)));
  root.querySelectorAll("[data-info-message]").forEach(b=>b.addEventListener("click",()=>showMessageInfo(b.dataset.infoMessage)));
  root.querySelectorAll("[data-trash-message]").forEach(b=>b.addEventListener("click",()=>moveToTrash([b.dataset.trashMessage])));
- root.querySelectorAll("[data-message-id]").forEach(el=>el.addEventListener("contextmenu",e=>{e.preventDefault();const id=el.dataset.messageId;selectedMessageIds.has(id)?selectedMessageIds.delete(id):selectedMessageIds.add(id);drawMessages()}));
+ root.querySelectorAll("[data-message-id]").forEach(el=>el.addEventListener("contextmenu",e=>{e.preventDefault();e.stopPropagation();const id=el.dataset.messageId;if(!id)return;const scrollTop=root.scrollTop;selectedMessageIds.has(id)?selectedMessageIds.delete(id):selectedMessageIds.add(id);drawMessages();root.scrollTop=scrollTop;}));
  root.scrollTop=root.scrollHeight;
 }
 function toggleEmoji(){
