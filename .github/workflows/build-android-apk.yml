@@ -229,9 +229,19 @@ jobs:
                       @Override
                       public boolean shouldOverrideUrlLoading(
                               WebView view, WebResourceRequest request) {
-                          String scheme = request.getUrl().getScheme();
-                          return !("https".equalsIgnoreCase(scheme)
-                              || "http".equalsIgnoreCase(scheme));
+                          Uri uri = request.getUrl();
+                          String scheme = uri.getScheme();
+                          String host = uri.getHost();
+                          if ("https".equalsIgnoreCase(scheme)
+                                  && "daadelian-bot.github.io".equalsIgnoreCase(host)) {
+                              return false;
+                          }
+                          if ("https".equalsIgnoreCase(scheme)) {
+                              try {
+                                  startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                              } catch (ActivityNotFoundException ignored) {}
+                          }
+                          return true;
                       }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
