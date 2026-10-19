@@ -215,34 +215,47 @@ jobs:
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+
                   webView = new WebView(this);
                   setContentView(webView);
                   webView.addJavascriptInterface(new AndroidBridge(), "KhademAndroid");
                   ensureNotificationChannel();
+
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
                   webView.getSettings().setSupportZoom(true);
                   webView.setWebViewClient(new WebViewClient() {
                       @Override
-                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                      public boolean shouldOverrideUrlLoading(
+                              WebView view, WebResourceRequest request) {
                           Uri uri = request.getUrl();
                           String scheme = uri.getScheme();
                           String host = uri.getHost();
-                          if ("https".equalsIgnoreCase(scheme) && "daadelian-bot.github.io".equalsIgnoreCase(host)) return false;
+                          if ("https".equalsIgnoreCase(scheme)
+                                  && "daadelian-bot.github.io".equalsIgnoreCase(host)) {
+                              return false;
+                          }
                           if ("https".equalsIgnoreCase(scheme)) {
-                              try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); }
-                              catch (ActivityNotFoundException ignored) {}
+                              try {
+                                  startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                              } catch (ActivityNotFoundException ignored) {}
                           }
                           return true;
                       }
                   });
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override
-                      public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
-                          if (filePathCallback != null) filePathCallback.onReceiveValue(null);
+                      public boolean onShowFileChooser(
+                              WebView view,
+                              ValueCallback<Uri[]> callback,
+                              FileChooserParams fileChooserParams) {
+                          if (filePathCallback != null) {
+                              filePathCallback.onReceiveValue(null);
+                          }
                           filePathCallback = callback;
                           try {
-                              startActivityForResult(params.createIntent(), FILE_CHOOSER_REQUEST_CODE);
+                              Intent chooserIntent = fileChooserParams.createIntent();
+                              startActivityForResult(chooserIntent, FILE_CHOOSER_REQUEST_CODE);
                               return true;
                           } catch (ActivityNotFoundException exception) {
                               filePathCallback = null;
@@ -251,8 +264,12 @@ jobs:
                           }
                       }
                   });
-                  if (savedInstanceState != null) webView.restoreState(savedInstanceState);
-                  else webView.loadUrl(APP_URL);
+
+                  if (savedInstanceState != null) {
+                      webView.restoreState(savedInstanceState);
+                  } else {
+                      webView.loadUrl(APP_URL);
+                  }
               }
 
               private void ensureNotificationChannel() {
@@ -269,7 +286,8 @@ jobs:
               }
 
               private boolean hasNotificationPermission() {
-                  return Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+                  return Build.VERSION.SDK_INT < 33
+                      || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
               }
 
               private void notifyPermissionResult(boolean granted) {
@@ -288,8 +306,10 @@ jobs:
                   if (manager == null) return;
                   Intent intent = new Intent(this, MainActivity.class);
                   intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                  PendingIntent pending = PendingIntent.getActivity(this, 4109, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                  Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
+                  PendingIntent pending = PendingIntent.getActivity(this, 4109, intent,
+                      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                      ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
                   builder.setSmallIcon(R.mipmap.ic_launcher)
                       .setContentTitle(title == null || title.isEmpty() ? "سامانه جامع خادمین" : title)
                       .setContentText(body == null ? "پیام جدید دریافت شد." : body)
@@ -299,12 +319,17 @@ jobs:
               }
 
               private final class AndroidBridge {
-                  @JavascriptInterface public boolean hasNotificationPermission() { return MainActivity.this.hasNotificationPermission(); }
+                  @JavascriptInterface public boolean hasNotificationPermission() {
+                      return MainActivity.this.hasNotificationPermission();
+                  }
                   @JavascriptInterface public void requestNotifications() {
                       runOnUiThread(() -> {
                           ensureNotificationChannel();
-                          if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
-                          else notifyPermissionResult(true);
+                          if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                              requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+                          } else {
+                              notifyPermissionResult(true);
+                          }
                       });
                   }
                   @JavascriptInterface public void showNotification(String title, String body, boolean buzz) {
@@ -314,8 +339,11 @@ jobs:
                       runOnUiThread(() -> {
                           Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
                           if (vibrator == null || !vibrator.hasVibrator()) return;
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 120, 60, 120}, -1));
-                          else vibrator.vibrate(new long[]{0, 120, 60, 120}, -1);
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 120, 60, 120}, -1));
+                          } else {
+                              vibrator.vibrate(new long[]{0, 120, 60, 120}, -1);
+                          }
                       });
                   }
               }
@@ -323,12 +351,17 @@ jobs:
               @Override
               public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
                   super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-                  if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) notifyPermissionResult(hasNotificationPermission());
+                  if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+                      boolean granted = hasNotificationPermission();
+                      notifyPermissionResult(granted);
+                  }
               }
 
               @Override
               protected void onSaveInstanceState(Bundle outState) {
-                  if (webView != null) webView.saveState(outState);
+                  if (webView != null) {
+                      webView.saveState(outState);
+                  }
                   super.onSaveInstanceState(outState);
               }
 
@@ -337,7 +370,10 @@ jobs:
                   if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
                       ValueCallback<Uri[]> callback = filePathCallback;
                       filePathCallback = null;
-                      if (callback != null) callback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+                      if (callback != null) {
+                          Uri[] results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+                          callback.onReceiveValue(results);
+                      }
                       return;
                   }
                   super.onActivityResult(requestCode, resultCode, data);
@@ -345,8 +381,11 @@ jobs:
 
               @Override
               public void onBackPressed() {
-                  if (webView != null && webView.canGoBack()) webView.goBack();
-                  else super.onBackPressed();
+                  if (webView != null && webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
               }
 
               @Override
@@ -400,12 +439,15 @@ jobs:
         run: |
           set -Eeuo pipefail
           gradle -p android-app --no-daemon --stacktrace clean assembleDebug
+
           APK_PATH="android-app/app/build/outputs/apk/debug/app-debug.apk"
           test -s "${APK_PATH}"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "${APK_PATH}" | grep -F "package: name='ir.sayedazainab.khademjame' versionCode='112' versionName='1.1.2'"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "${APK_PATH}"
+
           mkdir -p dist
           cp "${APK_PATH}" "dist/Samane-Jame-Khademin-1.1.2-debug.apk"
+
           cat > "dist/README-FA.txt" <<'EOF'
           سامانه جامع خادمین — بسته آزمایشی اندروید
           نسخه: 1.1.2 (کد نسخه 112)
@@ -422,6 +464,7 @@ jobs:
           2) فایل را باز کنید و در صورت درخواست، اجازه نصب از این منبع را فعال کنید.
           3) این نسخه آزمایشی است و APK انتشار نهایی با امضای رسمی نیست.
           EOF
+
           test -s "dist/README-FA.txt"
           (cd dist && zip -q "Samane-Jame-Khademin-1.1.2.zip" "Samane-Jame-Khademin-1.1.2-debug.apk" "README-FA.txt")
           sha256sum dist/Samane-Jame-Khademin-1.1.2-debug.apk dist/Samane-Jame-Khademin-1.1.2.zip > dist/SHA256SUMS.txt
